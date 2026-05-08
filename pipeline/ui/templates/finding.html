@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ finding.title }} · ai-protect{% endblock %}
+{% block autorefresh %}{% endblock %}{# don't auto-refresh detail pages #}
+
+{% block content %}
+  <a class="back" href="{{ url_for('index') }}">← back to all findings</a>
+  <article class="finding-detail">
+    <header>
+      <span class="sev-badge sev-{{ finding.severity.value }}">{{ finding.severity.value }}</span>
+      <span class="tier-badge tier-{{ finding.tier }}">Tier {{ finding.tier }}</span>
+      <span class="cat">{{ finding.category.value }}</span>
+      <h1>{{ finding.title }}</h1>
+      <div class="meta">
+        <span><strong>app:</strong> {{ finding.app_name }}</span>
+        <span><strong>adapter:</strong> {{ finding.adapter }}</span>
+        <span><strong>stage:</strong> {{ finding.stage }}</span>
+        <span><strong>fingerprint:</strong> <code>{{ finding.fingerprint }}</code></span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Description</h2>
+      <p>{{ finding.description }}</p>
+    </section>
+
+    {% if finding.remediation %}
+    <section>
+      <h2>Remediation</h2>
+      <p>{{ finding.remediation }}</p>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Evidence</h2>
+      <table class="kv">
+        {% for k, v in finding.evidence.items() %}
+          <tr><td class="kv-key">{{ k }}</td><td class="kv-val"><pre>{{ v }}</pre></td></tr>
+        {% endfor %}
+      </table>
+    </section>
+
+    <section>
+      <h2>Affected</h2>
+      <table class="kv">
+        {% for k, v in finding.affected.items() %}
+          <tr><td class="kv-key">{{ k }}</td><td class="kv-val mono">{{ v }}</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+
+    {% if finding.compliance %}
+    <section>
+      <h2>Compliance evidence</h2>
+      <ul class="compliance-list">
+        {% for c in finding.compliance %}
+          <li>{{ c }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if finding.references %}
+    <section>
+      <h2>References</h2>
+      <ul>
+        {% for r in finding.references %}
+          <li><a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </article>
+{% endblock %}

@@ -11,6 +11,7 @@ from .mcp_scope import MCPScopeAdapter
 from .metasploit import MetasploitAdapter
 from .nuclei import NucleiAdapter
 from .pyrit import PyRITAdapter
+from .semgrep import SemgrepAdapter
 from .telemetry_drift import AnomalyDetectorAdapter, TelemetryDriftAdapter
 from .threat_model_check import ThreatModelCheckAdapter
 from .trufflehog import TruffleHogAdapter
@@ -27,6 +28,7 @@ REGISTRY: dict[str, type[Adapter]] = {
     "mcp_scope": MCPScopeAdapter,
     "nuclei": NucleiAdapter,
     "trufflehog": TruffleHogAdapter,
+    "semgrep": SemgrepAdapter,
     "eval_suite": EvalSuiteAdapter,
     "telemetry_drift": TelemetryDriftAdapter,
     "anomaly_detector": AnomalyDetectorAdapter,

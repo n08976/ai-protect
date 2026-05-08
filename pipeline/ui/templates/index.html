@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Findings · ai-protect{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div class="hero-stats">
+      <div class="stat stat-total">
+        <div class="stat-num">{{ stats.total }}</div>
+        <div class="stat-label">findings</div>
+      </div>
+      <div class="stat stat-high">
+        <div class="stat-num">{{ stats.high_or_above }}</div>
+        <div class="stat-label">HIGH or CRITICAL</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">{{ stats.by_app|length }}</div>
+        <div class="stat-label">apps scanned</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">{{ stats.by_adapter|length }}</div>
+        <div class="stat-label">adapters used</div>
+      </div>
+    </div>
+
+    <div class="severity-row">
+      {% for sev in severities %}
+        {% set cnt = stats.by_severity.get(sev, 0) %}
+        <a class="severity-pill sev-{{ sev }}{% if filter_severity == sev %} active{% endif %}"
+           href="{% if filter_severity == sev %}{{ url_for('index') }}{% else %}{{ url_for('index', severity=sev) }}{% endif %}">
+          {{ sev }} <strong>{{ cnt }}</strong>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="filters">
+    <div class="filter-group">
+      <label>App</label>
+      <select onchange="if(this.value) location.href='?app='+this.value; else location.href='/'">
+        <option value="">all apps</option>
+        {% for a in apps %}
+          <option value="{{ a }}" {% if filter_app == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Adapter</label>
+      <select onchange="if(this.value) location.href='?adapter='+this.value; else location.href='/'">
+        <option value="">all adapters</option>
+        {% for a in adapters %}
+          <option value="{{ a }}" {% if filter_adapter == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Category</label>
+      <select onchange="if(this.value) location.href='?category='+this.value; else location.href='/'">
+        <option value="">all categories</option>
+        {% for c in categories %}
+          <option value="{{ c }}" {% if filter_category == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if filter_severity or filter_app or filter_adapter or filter_category %}
+      <a class="clear-filters" href="{{ url_for('index') }}">clear filters</a>
+    {% endif %}
+  </section>
+
+  <section class="findings-list">
+    {% if findings %}
+      <table class="findings">
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>App</th>
+            <th>Tier</th>
+            <th>Adapter</th>
+            <th>Category</th>
+            <th>Title</th>
+            <th>Affected</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in findings %}
+          <tr class="finding-row sev-row-{{ f.severity.value }}">
+            <td><span class="sev-badge sev-{{ f.severity.value }}">{{ f.severity.value }}</span></td>
+            <td class="mono">{{ f.app_name }}</td>
+            <td><span class="tier-badge tier-{{ f.tier }}">T{{ f.tier }}</span></td>
+            <td class="mono">{{ f.adapter }}</td>
+            <td><span class="cat">{{ f.category.value }}</span></td>
+            <td><a href="{{ url_for('finding_detail', finding_id=f.finding_id) }}">{{ f.title }}</a></td>
+            <td class="mono small">
+              {% if f.evidence.get('file') %}{{ f.evidence['file'] | replace('/opt/app/', '') }}
+                {% if f.evidence.get('line') %}:{{ f.evidence['line'] }}{% endif %}
+                {% if f.evidence.get('start_line') %}:{{ f.evidence['start_line'] }}{% endif %}
+              {% elif f.affected.get('file') %}{{ f.affected['file'] | replace('/opt/app/', '') }}
+              {% elif f.affected.get('target') %}{{ f.affected['target'] }}
+              {% elif f.affected.get('app') %}—
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">
+        No findings yet. Run a scan:
+        <pre>python -m pipeline.cli --findings &lt;path&gt; run &lt;manifest&gt; --stage build</pre>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

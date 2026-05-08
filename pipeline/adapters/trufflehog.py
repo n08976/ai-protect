@@ -33,7 +33,10 @@ class TruffleHogAdapter(Adapter):
     def run(self):
         self.preflight()
         path = self.config.get("path", self.manifest.raw.get("source_path", "."))
-        only_verified = self.config.get("only_verified", True)
+        # Default to surfacing unverified secrets too — without network egress to
+        # validate, only-verified mode silently produces zero findings on offline
+        # codebases.
+        only_verified = self.config.get("only_verified", False)
         cmd = ["trufflehog", "filesystem", path, "--json", "--no-update"]
         if only_verified:
             cmd.append("--only-verified")

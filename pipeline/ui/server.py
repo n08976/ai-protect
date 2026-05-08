@@ -1,0 +1,149 @@
+"""Flask web UI — live findings dashboard.
+
+Reads the FindingStore on every request, so adapters can be running in another
+process and findings will surface as they're written.
+
+Run:
+    python -m pipeline.ui.server --findings /tmp/findings.jsonl --port 8000
+"""
+from __future__ import annotations
+
+import argparse
+import os
+from collections import Counter, defaultdict
+from pathlib import Path
+
+from flask import Flask, jsonify, render_template, request
+
+from ..core.findings import FindingStore, Severity
+from ..core.tiering import classify
+from ..core.manifest import Manifest
+
+
+def create_app(findings_path: str, manifests_dir: str) -> Flask:
+    app = Flask(
+        __name__,
+        template_folder=str(Path(__file__).parent / "templates"),
+        static_folder=str(Path(__file__).parent / "static"),
+    )
+    app.config["FINDINGS_PATH"] = findings_path
+    app.config["MANIFESTS_DIR"] = manifests_dir
+
+    @app.route("/")
+    def index():
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None  # always re-read
+        findings = store.all()
+        # Filters
+        sev_filter = request.args.get("severity")
+        cat_filter = request.args.get("category")
+        app_filter = request.args.get("app")
+        adapter_filter = request.args.get("adapter")
+        if sev_filter:
+            findings = [f for f in findings if f.severity.value == sev_filter]
+        if cat_filter:
+            findings = [f for f in findings if f.category.value == cat_filter]
+        if app_filter:
+            findings = [f for f in findings if f.app_name == app_filter]
+        if adapter_filter:
+            findings = [f for f in findings if f.adapter == adapter_filter]
+        findings.sort(key=lambda f: (-f.severity_score, f.detected_at), reverse=False)
+        findings.sort(key=lambda f: -f.severity_score)
+        all_findings = store.all()
+        return render_template(
+            "index.html",
+            findings=findings,
+            stats=_stats(all_findings),
+            filter_severity=sev_filter,
+            filter_category=cat_filter,
+            filter_app=app_filter,
+            filter_adapter=adapter_filter,
+            apps=sorted({f.app_name for f in all_findings}),
+            categories=sorted({f.category.value for f in all_findings}),
+            adapters=sorted({f.adapter for f in all_findings}),
+            severities=["critical", "high", "medium", "low", "info"],
+        )
+
+    @app.route("/finding/<finding_id>")
+    def finding_detail(finding_id):
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        for f in store.all():
+            if f.finding_id == finding_id:
+                return render_template("finding.html", finding=f)
+        return "Not found", 404
+
+    @app.route("/api/findings")
+    def api_findings():
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        return jsonify([f.to_dict() for f in store.all()])
+
+    @app.route("/api/stats")
+    def api_stats():
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        return jsonify(_stats(store.all()))
+
+    @app.route("/manifests")
+    def manifests():
+        md = Path(app.config["MANIFESTS_DIR"])
+        items = []
+        if md.is_dir():
+            for p in sorted(md.glob("*.yml")):
+                try:
+                    m = Manifest.from_yaml(p)
+                    d = classify(m)
+                    items.append({
+                        "name": m.name,
+                        "owner": m.owner,
+                        "tier": d.tier,
+                        "data_sensitivity": m.data_sensitivity,
+                        "decision_impact": m.decision_impact,
+                        "path": str(p),
+                    })
+                except Exception as e:
+                    items.append({"name": p.name, "error": str(e), "path": str(p)})
+        return render_template("manifests.html", manifests=items)
+
+    return app
+
+
+def _stats(findings) -> dict:
+    by_sev: Counter = Counter()
+    by_cat: Counter = Counter()
+    by_adapter: Counter = Counter()
+    by_app: Counter = Counter()
+    high_or_above = 0
+    for f in findings:
+        by_sev[f.severity.value] += 1
+        by_cat[f.category.value] += 1
+        by_adapter[f.adapter] += 1
+        by_app[f.app_name] += 1
+        if f.severity in (Severity.HIGH, Severity.CRITICAL):
+            high_or_above += 1
+    return {
+        "total": len(findings),
+        "high_or_above": high_or_above,
+        "by_severity": dict(by_sev),
+        "by_category": dict(by_cat),
+        "by_adapter": dict(by_adapter),
+        "by_app": dict(by_app),
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--findings", required=True)
+    ap.add_argument("--manifests-dir",
+                    default=str(Path(__file__).resolve().parent.parent / "manifests"))
+    ap.add_argument("--host", default="0.0.0.0")
+    ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--debug", action="store_true")
+    args = ap.parse_args()
+    app = create_app(args.findings, args.manifests_dir)
+    app.run(host=args.host, port=args.port, debug=args.debug)
+
+
+if __name__ == "__main__":
+    main()

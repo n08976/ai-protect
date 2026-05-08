@@ -53,6 +53,9 @@ def test_low_risk_tier_4_minimal_pipeline(tmp_path):
     store = FindingStore(tmp_path / "f.jsonl")
     orc = Orchestrator(m, store, dry_run=True)
     result = orc.run_stage("build")
-    # Tier 4 build has just trufflehog
+    # Tier 4 build has trufflehog (blocking) + semgrep — the SAST pair.
+    # No red-team adapters at Tier 4.
     names = [ar.adapter for ar in result.adapter_results]
-    assert names == ["trufflehog"]
+    assert "trufflehog" in names
+    assert "semgrep" in names
+    assert all(n not in names for n in ("garak", "pyrit", "atomic"))

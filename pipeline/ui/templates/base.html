@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ai-protect{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">●</span>
+      <span class="brand-name">ai-protect</span>
+      <span class="brand-tag">empirical truth function for AI risk</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('index') }}">Findings</a>
+      <a href="{{ url_for('manifests') }}">Manifests</a>
+      <a href="{{ url_for('api_findings') }}" target="_blank">API</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <span>v2.1 operating model · pipeline live · auto-refreshes every 5s</span>
+  </footer>
+  <script>
+    // Auto-refresh — keeps the dashboard live during a scan run.
+    {% block autorefresh %}
+    setInterval(() => { window.location.reload(); }, 5000);
+    {% endblock %}
+  </script>
+</body>
+</html>

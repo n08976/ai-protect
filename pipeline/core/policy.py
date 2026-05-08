@@ -28,6 +28,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "design":     [AdapterCall("threat_model_check", blocking=True)],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("semgrep"),
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "all"}),
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection"]}),
@@ -51,6 +52,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "design":     [AdapterCall("threat_model_check")],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("semgrep"),
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}),
             AdapterCall("pyrit", config={"strategies": ["injection"]}),
@@ -71,6 +73,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "design":     [],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("semgrep"),
             AdapterCall("garak", config={"probes": "promptinject,leakage"}),
         ],
         "preprod": [
@@ -87,6 +90,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "design":     [],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("semgrep"),
         ],
         "preprod":    [],
         "production": [

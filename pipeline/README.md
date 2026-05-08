@@ -60,7 +60,22 @@ python -m pipeline.cli policy --tier 1 --stage preprod
 
 # 7. Tests
 python -m pytest pipeline/tests/ -q
+
+# 8. Live findings web UI (Flask) — auto-refreshes every 5s
+python -m pipeline.ui.server --findings /tmp/findings.jsonl --port 8000
+# open http://localhost:8000/
 ```
+
+## Web UI
+
+`pipeline/ui/` is a small Flask dashboard that reads the FindingStore on every request, so you can run a scan in one terminal and watch findings stream into the browser in another.
+
+- `/` — findings table with severity / app / adapter / category filters.
+- `/finding/<id>` — drill-down with description, remediation, evidence, affected, compliance evidence (HIPAA, HITRUST, NIST AI RMF, MITRE ATLAS), and references.
+- `/manifests` — registered apps with their tier classification.
+- `/api/findings`, `/api/stats` — JSON, for plugging into Slack alerts, SIEM, or custom dashboards.
+
+Visual style mirrors the v2.1 doc family — navy header, accent-orange rule, takeaway-blue pills, navy-banded tables.
 
 ## Manifest schema
 
@@ -90,6 +105,7 @@ Every adapter implements the same interface (`pipeline/adapters/base.py`): prefl
 | `manifest_validator` | (built-in) | intake | Schema + sanctioned-infra policy. PHI without BAA fails immediately. |
 | `threat_model_check` | (built-in) | design | Tier 1-2 require a signed-off threat model artifact. |
 | `trufflehog` | [TruffleHog](https://github.com/trufflesecurity/trufflehog) | build | Source-tree secret scanning. CRITICAL on verified hits. |
+| `semgrep` | [Semgrep](https://github.com/semgrep/semgrep) | build | SAST patterns — Python + security-audit + secrets registries by default. |
 | `nuclei` | [Nuclei](https://github.com/projectdiscovery/nuclei) | build | Template-driven web vuln scan. |
 | `garak` | [NVIDIA garak](https://github.com/NVIDIA/garak) | build + preprod | LLM probes (prompt injection, leakage, jailbreak, encoding). |
 | `pyrit` | [Microsoft PyRIT](https://github.com/Azure/PyRIT) | build + preprod | Multi-turn orchestrators (injection, encoding, multiturn, crescendo, leakage). |

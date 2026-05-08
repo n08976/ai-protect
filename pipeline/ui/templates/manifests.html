@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Manifests · ai-protect{% endblock %}
+
+{% block content %}
+  <h1>Registered manifests</h1>
+  <p class="muted">Apps registered with the pipeline. Tier is computed from the v2.1 four-dimension scoring.</p>
+
+  {% if manifests %}
+    <table class="findings">
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>App</th>
+          <th>Owner</th>
+          <th>Data</th>
+          <th>Decision</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in manifests %}
+          <tr>
+            {% if m.tier %}
+              <td><span class="tier-badge tier-{{ m.tier }}">T{{ m.tier }}</span></td>
+            {% else %}
+              <td>—</td>
+            {% endif %}
+            <td class="mono">{{ m.name }}</td>
+            <td>{{ m.owner or "—" }}</td>
+            <td>{{ m.data_sensitivity or "—" }}</td>
+            <td>{{ m.decision_impact or "—" }}</td>
+            <td class="mono small">{{ m.path }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">No manifests in the configured directory.</p>
+  {% endif %}
+{% endblock %}
