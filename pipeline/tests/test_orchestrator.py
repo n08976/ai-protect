@@ -55,6 +55,8 @@ def test_low_risk_tier_4_minimal_pipeline(tmp_path):
     result = orc.run_stage("build")
     # Tier 4 build runs the SAST + secret + dep + multi-mode stack (no red-team adapters).
     names = [ar.adapter for ar in result.adapter_results]
-    for expected in ("trufflehog", "gitleaks", "semgrep", "bandit", "pip_audit", "trivy"):
+    for expected in ("trufflehog", "gitleaks", "detect_secrets",
+                     "semgrep", "bandit", "bearer", "codeql", "njsscan", "hadolint",
+                     "pip_audit", "dependency_check", "trivy"):
         assert expected in names, f"missing {expected} in tier 4 build"
-    assert all(n not in names for n in ("garak", "pyrit", "atomic"))
+    assert all(n not in names for n in ("garak", "pyrit", "atomic", "sqlmap", "burp"))

@@ -126,6 +126,62 @@ CATALOG: dict[str, dict] = {
         "category": "Static analysis · secrets · deps",
         "kind": "static",
     },
+    "bearer": {
+        "description": "Bearer — privacy-flow SAST. Tracks how PHI/PII flows through code paths; healthcare-fit.",
+        "source_url": "https://github.com/Bearer/bearer",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "codeql": {
+        "description": "GitHub CodeQL — semantic SAST with full taint / data-flow analysis. Different class than Semgrep.",
+        "source_url": "https://github.com/github/codeql-cli-binaries",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "detect_secrets": {
+        "description": "Yelp detect-secrets — entropy + pattern secret scanning. Third opinion alongside TruffleHog and Gitleaks.",
+        "source_url": "https://github.com/Yelp/detect-secrets",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "njsscan": {
+        "description": "njsscan — Node.js-specific SAST (Express, prototype pollution, JWT misconfig, eval).",
+        "source_url": "https://github.com/ajinabraham/njsscan",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "dependency_check": {
+        "description": "OWASP Dependency-Check — multi-language CVE scanner against NIST NVD. Broader language coverage than pip_audit.",
+        "source_url": "https://github.com/dependency-check/DependencyCheck",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "hadolint": {
+        "description": "hadolint — Dockerfile linter (build-time best practices, CIS-aligned rules).",
+        "source_url": "https://github.com/hadolint/hadolint",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "dockle": {
+        "description": "dockle — container image hygiene scanner (different focus than Trivy: image best practices).",
+        "source_url": "https://github.com/goodwithtech/dockle",
+        "stages": "preprod",
+        "category": "Dynamic · web · network",
+        "kind": "dynamic",
+    },
+    "sqlmap": {
+        "description": "sqlmap — SQL injection confirmation + characterization. Confirms what Nuclei/ZAP detect.",
+        "source_url": "https://github.com/sqlmapproject/sqlmap",
+        "stages": "preprod",
+        "category": "Dynamic · web · network",
+        "kind": "dynamic",
+    },
 
     # ---------- dynamic / web ----------
     "nuclei": {
