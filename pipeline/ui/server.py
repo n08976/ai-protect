@@ -15,9 +15,11 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
+from ..adapters.registry import REGISTRY
 from ..core.findings import FindingStore, Severity
 from ..core.tiering import classify
 from ..core.manifest import Manifest
+from .catalog import CATALOG, CATEGORY_ORDER
 
 
 def create_app(findings_path: str, manifests_dir: str) -> Flask:
@@ -84,6 +86,75 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
         return jsonify(_stats(store.all()))
+
+    @app.route("/about")
+    def about():
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        findings = store.all()
+        # Per-adapter live counts from the current findings store
+        from collections import Counter
+        counts = Counter(f.adapter for f in findings)
+        registered = set(REGISTRY)
+        catalog_names = set(CATALOG)
+
+        # Group adapters by category, in display order
+        by_category: dict[str, list[dict]] = {c: [] for c in CATEGORY_ORDER}
+        for name in sorted(registered | catalog_names):
+            meta = CATALOG.get(name, {
+                "description": "(No catalog entry)",
+                "source_url": "",
+                "stages": "",
+                "category": "Production · telemetry",
+                "kind": "policy",
+            })
+            by_category.setdefault(meta["category"], []).append({
+                "name": name,
+                "description": meta["description"],
+                "source_url": meta["source_url"],
+                "stages": meta["stages"],
+                "kind": meta["kind"],
+                "registered": name in registered,
+                "count": counts.get(name, 0),
+            })
+
+        # Live results table — split into found / clean / unavailable / not-applicable
+        # We classify by the *current* findings store + which adapters are registered.
+        results = {"found": [], "clean": [], "not_applicable": []}
+        for name in sorted(registered):
+            cnt = counts.get(name, 0)
+            meta = CATALOG.get(name, {})
+            row = {
+                "name": name,
+                "count": cnt,
+                "stages": meta.get("stages", ""),
+                "category": meta.get("category", ""),
+                "kind": meta.get("kind", "policy"),
+            }
+            if cnt > 0:
+                results["found"].append(row)
+            else:
+                # Without per-run telemetry we can't tell clean vs unavailable
+                # at the catalog level — that's what the orchestrator output
+                # has. The about page categorizes by whether the current
+                # manifest target supports this kind of adapter (best effort).
+                results["clean"].append(row)
+        results["found"].sort(key=lambda r: -r["count"])
+
+        total = len(findings)
+        high_or_above = sum(
+            1 for f in findings
+            if f.severity in (Severity.HIGH, Severity.CRITICAL)
+        )
+
+        return render_template(
+            "about.html",
+            by_category=by_category,
+            category_order=CATEGORY_ORDER,
+            results=results,
+            total=total,
+            high_or_above=high_or_above,
+        )
 
     @app.route("/manifests")
     def manifests():

@@ -320,3 +320,125 @@ table.kv .kv-val pre {
 }
 
 h1 { color: var(--navy); }
+
+/* About page */
+.about { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 36px 48px; }
+.about-hero { border-bottom: 2px solid var(--accent); padding-bottom: 18px; margin-bottom: 28px; }
+.about-hero .eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.about-hero h1 {
+  margin: 6px 0 12px;
+  font-size: 28px;
+  color: var(--navy);
+  font-weight: 700;
+}
+.about-hero .lede {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.55;
+  max-width: 880px;
+}
+.about h2 {
+  color: var(--navy);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 6px;
+  display: inline-block;
+  margin-top: 32px;
+  margin-bottom: 14px;
+}
+.about h3 {
+  color: var(--navy);
+  font-size: 13px;
+  margin-top: 22px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.about h3.cat-header {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  margin-top: 28px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 4px;
+}
+
+table.catalog {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+table.catalog th {
+  background: var(--navy);
+  color: white;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+table.catalog td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+table.catalog tr:nth-child(even) td { background: var(--alt); }
+table.catalog a { color: var(--navy); text-decoration: none; }
+table.catalog a:hover { color: var(--accent); text-decoration: underline; }
+
+.kind-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.kind-ai { background: #fde7e2; color: #8a2010; }
+.kind-dyn { background: #fbe9d8; color: #8a4a10; }
+.kind-static { background: var(--takeaway); color: var(--navy); }
+.kind-policy { background: #eee; color: #555; }
+
+.result-counts {
+  display: flex;
+  gap: 36px;
+  margin: 12px 0 22px;
+}
+.rc-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+.rc-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-top: 4px;
+}
+.rc-high .rc-num { color: var(--accent); }
+
+.meta-links ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 13px;
+}
+.meta-links li { margin-bottom: 4px; }
+.meta-links a { color: var(--navy); }
+.meta-links a:hover { color: var(--accent); }

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}About · ai-protect{% endblock %}
+{% block autorefresh %}{% endblock %}{# don't auto-refresh — this is a reference page #}
+
+{% block content %}
+  <article class="about">
+    <header class="about-hero">
+      <span class="eyebrow">ABOUT</span>
+      <h1>The empirical truth function for AI risk.</h1>
+      <p class="lede">
+        ai-protect is the runnable counterpart to the v2.1 operating model. An AI app or agent registers a manifest, the pipeline tier-classifies it, and routes to the right tools at the right tier × stage. Every adapter normalizes output to the same finding schema and auto-tags HIPAA / HITRUST / NIST AI RMF / MITRE ATLAS controls.
+      </p>
+    </header>
+
+    <section class="results-summary">
+      <h2>Current scan results</h2>
+      <p class="muted">Live counts from the active findings store. Filter the dashboard by adapter to drill in.</p>
+      <div class="result-counts">
+        <div class="rc">
+          <div class="rc-num">{{ total }}</div>
+          <div class="rc-label">findings</div>
+        </div>
+        <div class="rc rc-high">
+          <div class="rc-num">{{ high_or_above }}</div>
+          <div class="rc-label">HIGH or CRITICAL</div>
+        </div>
+      </div>
+
+      {% if results.found %}
+        <h3>Tools that produced findings</h3>
+        <table class="catalog">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Findings</th>
+              <th>Category</th>
+              <th>Stages</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in results.found %}
+              <tr>
+                <td><a href="{{ url_for('index', adapter=r.name) }}" class="mono">{{ r.name }}</a></td>
+                <td><strong>{{ r.count }}</strong></td>
+                <td>{{ r.category }}</td>
+                <td class="mono small">{{ r.stages }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      {% if results.clean %}
+        <h3>Tools that ran clean (or weren't applicable to the current manifest)</h3>
+        <p class="muted small">Zero findings can mean the tool ran and found nothing (good), the target had nothing for it to scan (e.g., no IaC files for Checkov), or the tool's preflight refused (e.g., garak with no model declared in the manifest). Per-run status is in the orchestrator output.</p>
+        <table class="catalog">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Category</th>
+              <th>Stages</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in results.clean %}
+              <tr>
+                <td class="mono">{{ r.name }}</td>
+                <td>{{ r.category }}</td>
+                <td class="mono small">{{ r.stages }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </section>
+
+    <section class="catalog-section">
+      <h2>Tool catalog</h2>
+      <p class="muted">Every adapter wired into the pipeline, grouped by category. Click a source link for upstream documentation. Stage column is the v2.1 stage(s) where the adapter typically runs per the policy table.</p>
+
+      {% for category in category_order %}
+        {% set rows = by_category.get(category, []) %}
+        {% if rows %}
+          <h3 class="cat-header">{{ category }}</h3>
+          <table class="catalog">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Description</th>
+                <th>Stages</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+                <tr>
+                  <td>
+                    <span class="mono"><strong>{{ r.name }}</strong></span>
+                    {% if r.kind == "ai" %}<span class="kind-pill kind-ai">AI</span>
+                    {% elif r.kind == "dynamic" %}<span class="kind-pill kind-dyn">DAST</span>
+                    {% elif r.kind == "static" %}<span class="kind-pill kind-static">SAST</span>
+                    {% else %}<span class="kind-pill kind-policy">policy</span>{% endif %}
+                  </td>
+                  <td>{{ r.description }}</td>
+                  <td class="mono small">{{ r.stages }}</td>
+                  <td>
+                    {% if r.source_url %}
+                      <a href="{{ r.source_url }}" target="_blank" rel="noopener" class="mono small">
+                        {{ r.source_url | replace("https://", "") | replace("http://", "") }}
+                      </a>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      {% endfor %}
+    </section>
+
+    <section class="meta-links">
+      <h2>References</h2>
+      <ul>
+        <li>Strategic doc — <a href="https://github.com/n08976/ai-protect/blob/main/docs/operating_model_v2_1.docx" target="_blank">Operating Model v2.1</a></li>
+        <li>Executive brief — <a href="https://github.com/n08976/ai-protect/blob/main/docs/exec_brief_v1.pdf" target="_blank">exec_brief_v1.pdf</a></li>
+        <li>One-pager — <a href="https://github.com/n08976/ai-protect/blob/main/docs/one_pager_v1.pdf" target="_blank">one_pager_v1.pdf</a></li>
+        <li>Technical companion — <a href="https://github.com/n08976/ai-protect/blob/main/docs/pipeline_companion_v1.pdf" target="_blank">pipeline_companion_v1.pdf</a></li>
+        <li>Pipeline source — <a href="https://github.com/n08976/ai-protect" target="_blank">github.com/n08976/ai-protect</a></li>
+      </ul>
+    </section>
+  </article>
+{% endblock %}
