@@ -470,6 +470,29 @@ Useful for the v2.1 Phase 1 demonstration red team exercise. Not wiring as adapt
 
 ---
 
+## Resuming a Claude Code session in this project
+
+This project's Claude Code config lives under `/home/user/.claude/projects/ai-protect` (not the default `~/.claude`). To resume a prior session in a new terminal:
+
+```bash
+cd /home/user/.claude/projects/ai-protect && export CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect PATH=$HOME/bin:$HOME/.local/bin:$PATH && claude --resume --dangerously-skip-permissions --add-dir /home/user/ai-protect --add-dir /opt/app
+```
+
+What each flag does:
+- `CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect` — points Claude at the project-scoped config + session storage (where conversations for this project actually live).
+- `PATH=$HOME/bin:$HOME/.local/bin:$PATH` — makes the installed pipeline tools (nuclei, trufflehog, gitleaks, trivy, syft, grype, bearer, hadolint, dockle, ProjectDiscovery binaries, plus pip-installed garak / bandit / semgrep / sqlmap / njsscan / detect-secrets) available immediately.
+- `claude --resume` — interactive picker over saved conversations; pick the one you want.
+- `--dangerously-skip-permissions` — bypasses tool permission prompts (one-time confirmation at startup).
+- `--add-dir /home/user/ai-protect --add-dir /opt/app` — grants tool access to the repo and the scan target without per-file prompts.
+
+Optional: persist the config-dir for any future shell:
+
+```bash
+echo 'export CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect' >> ~/.bashrc
+```
+
+---
+
 ## License and distribution
 
 Internal — Offensive Security. Prepared by the Office of the Director, Offensive Security. Not for external distribution without explicit approval from the CISO.
