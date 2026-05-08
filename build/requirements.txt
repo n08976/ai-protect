@@ -1,0 +1,2 @@
+python-docx>=1.0
+cairosvg>=2.7

@@ -1,0 +1,236 @@
+# ai-protect
+
+Offensive security operating model for the enterprise AI transformation in a major healthcare organization. This repository contains the strategic proposal, two single-page distribution variants, the technical companion that operationalizes the proposal, the seven SVG diagrams that appear inside them, and the build scripts that generate every document deterministically from source.
+
+The work is anchored on a single strategic reframe: offensive security as the **empirical truth function for AI risk** — the team that proves what does and does not work, while every other voice in the AI conversation (vendors, sponsors, even AI governance) has incentives to be optimistic.
+
+---
+
+## Why this exists
+
+The organization is in the middle of a "fast and furious" AI transformation. IT is leading the initial rollout; business departments are next. Within twelve months, hundreds of AI-enabled and self-developed applications will exist across the enterprise, many handling PHI, many deploying outside the formal SDLC. Citizen developers — non-developer employees building AI agents and tools through low-code platforms and AI assistants — are the dominant developer population.
+
+Pre-deployment human review cannot scale to that surface area. If offensive security continues to operate as a gatekeeper, it will be routed around. The alternative posture this body of work proposes:
+
+- **Paved road over policed road.** Build the secure path so it is the easy path. Sanctioned LLM gateway, vetted MCP server registry, managed agent runtime, secure-by-default templates. Adoption is the enforcement mechanism.
+- **Risk-tiered engagement.** Four tiers anchored on data sensitivity (PHI, PII, financial, public), decision impact (advisory, automated action, clinical influence), integration footprint (read-only, write-back, agent tool use), and user population (single user, team, enterprise, external). Human depth concentrates on Tier 1–2; Tier 3–4 ride automated assurance.
+- **Continuous validation.** Replace point-in-time pre-deploy review with continuous post-deployment validation, threat hunting, and control testing across the five offensive security functions.
+
+In healthcare, an AI-mediated PHI exposure or a manipulated clinical-adjacent system carries breach-notification, HIPAA, FDA-adjacent (SaMD reclassification), and patient-safety consequences. The window to shape the operating model is now, while AI governance patterns are still being set.
+
+---
+
+## Audience and how to use the artifacts
+
+| Artifact | Audience | When to use it |
+| --- | --- | --- |
+| **`docs/operating_model_v2_1.docx`** | CISO, cyber executive leadership | The strategic anchor. Read this first. ~25 pages with embedded diagrams, executive summary, current state, proposed model, risk-tiering, AI infrastructure control plan, RACI, phased roadmap, asks. |
+| **`docs/exec_brief_v1.{docx,pdf}`** | Board, risk committee, peer execs (CISO uses upward) | Single-page executive brief. Leads with the thesis, "what we will do" vs. "what we need from the executive team," twelve-month success criteria, and why-now closing. |
+| **`docs/one_pager_v1.{docx,pdf}`** | AI governance, privacy, platform engineering, compliance — wider distribution | Single-page summary of v2.1. The shift, three operating principles, four-tier risk model, six-layer sanctioned AI infrastructure, four-phase roadmap, the seven asks. |
+| **`docs/pipeline_companion_v1.{docx,pdf}`** | Offensive security leads (the five vertical owners) | The technical companion to v2.1. Eight-stage AI assurance pipeline, per-vertical capability builds across the five functions, eighteen-row RACI extension, dashboard surfaces, phased tooling rollout. |
+| **`diagrams/*.svg` + `*.png`** | Reused inside companion + slide decks | Seven diagrams: pipeline overview, v2.1 mapping, AI red-team kill chain, vertical ownership, technical dashboard, executive dashboard, phased rollout. SVG for editing; PNG (1800px wide) for embedding. |
+
+> **Reading order for someone new:** `exec_brief_v1.pdf` → `one_pager_v1.pdf` → `operating_model_v2_1.docx` → `pipeline_companion_v1.pdf`.
+
+---
+
+## The five offensive security verticals
+
+Every artifact in this repo addresses each of these explicitly — the operating model is not an AppSec or Red Team plan in disguise.
+
+- **Application Security (AppSec)** — accountable for the AI security discipline as a whole: tiering, threat modeling, citizen developer enablement, prompt-injection scanning, model-SBOM checks, the operating model itself.
+- **Threat Intelligence** — vendor and model risk surveillance, jailbreak/prompt-injection technique tracking, MCP supply-chain provenance, sector-specific AI threat reporting.
+- **Threat Hunt** — hunting hypotheses driven by unified AI telemetry: prompt anomalies, tool-call drift, retrieval poisoning, agent decision divergence, shadow-AI surfacing in egress logs.
+- **Red Team** — adversarial validation across all tiers, with depth scaled to tier. Manual red team for Tier 1–2; automated red team (garak, PyRIT) for Tier 3; demonstration red team exercise as the highest-leverage Phase 1 deliverable.
+- **Security Control Validation (SCV)** — continuous control validation for AI: gateway policy enforcement, MCP scope enforcement, agent quotas and kill-switches, eval-suite regression, network egress allow-list completeness.
+
+---
+
+## Sanctioned AI infrastructure (six layers)
+
+The technical commitments inside v2.1 that the companion engineers against. Platform Engineering operates the controls; offensive security defines policy.
+
+1. **AI gateway** — the only sanctioned path to Claude and approved foundation models. Authentication and authorization, data-classification routing (PHI may only be sent to BAA-covered endpoints), prompt-side DLP and PHI redaction, output filtering, per-workload quotas, comprehensive logging. Direct API access from applications, scripts, notebooks, or developer endpoints is prohibited.
+2. **MCP server farm** — curated registry, no bring-your-own. Each MCP carries a tier and data label; tier inheritance flows from MCP to any agent that uses it (a clinical-data MCP makes the calling agent Tier 1). Scoped, short-lived tokens. Action enumeration with side-effect classification.
+3. **Agent runtime farm** — managed workloads with workload identity (SPIFFE-style), tool allow-list (default deny), validated eval suite, sandboxed execution, runtime quotas, kill-switch, annual recertification. Agents outside this farm cannot reach the gateway, MCP farm, or data plane. **The Stage-2 Scope step in agent registration is the single highest-leverage control in the entire infrastructure.**
+4. **AI-aware SDLC** — five stages (Intake → Design → Build → Pre-Production → Production) with automated checks at every tier and gates calibrated to tier. Tier 1–2 require AI governance and privacy review at intake, signed-off threat model at design, manual red team at pre-prod.
+5. **Network provisioning** — per-tier subnets, mTLS east-west via service mesh, TLS-inspecting egress to model APIs, default-deny allow-list, end-user shadow-AI block at corporate proxy. Cross-tier lateral movement and bypass paths are validated quarterly by SCV.
+6. **Unified AI telemetry** — prompts, completions, tool calls, retrieval queries, agent decisions, policy events with identity context. Flows to SIEM, hunt platform, control validation platform, and application-owner dashboards. Without this layer, hunt and IR are blind.
+
+The sanctioned model stack assumes **Claude (Anthropic)** as the primary sanctioned foundation model family, with private-deploy or BAA-covered endpoints used for any PHI handling. Multi-vendor is not ruled out, but Claude is the default.
+
+---
+
+## Risk-tiering framework
+
+Applications classified by data sensitivity, decision impact, integration footprint, and user population. The intake form scores all four; an AppSec partner confirms or escalates.
+
+| Tier | Profile | Engagement |
+| --- | --- | --- |
+| **Tier 1** | PHI / clinical / external-facing | Embedded AppSec partner from design, manual threat model, manual red team, continuous control validation |
+| **Tier 2** | Sensitive internal action / write-back to systems of record | Embedded review, manual red team for material changes, continuous monitoring |
+| **Tier 3** | Internal advisory with broad reach | Async checklist review, automated red team (garak, PyRIT), continuous monitoring |
+| **Tier 4** | Low-impact assistive | Paved-road template, automated scanning, baseline logging, no human review unless flags fire |
+
+Re-tier on material change, incident or near-miss, regulatory change, or annual recertification.
+
+---
+
+## Phased capability roadmap (18 months)
+
+| Phase | Focus | Notes |
+| --- | --- | --- |
+| **Phase 1 — Demonstrate** | Existing headcount, reprioritized toward AI. Tooling proof-of-concept (open-source: garak, PyRIT, Semgrep, Trivy, ModelScan). Operating-model and demonstration red team exercise. | Phase 1 is intentionally executable inside existing headcount and operating budget — endorsement, not funding, is the unblocking decision. The demonstration red team is the single highest-leverage move; it reframes every later budget conversation in terms of avoided harm rather than abstract risk. |
+| **Phase 2 — Build the paved road** | AI gateway, MCP farm, agent runtime, AI-aware SDLC integration. Selective specialist hiring. Paved-road UX as a first-class concern. | Interlocking — none works well alone, and collectively they make the operating model enforceable. |
+| **Phase 3 — Measure** | Continuous control validation for AI; metrics for board and risk-committee reporting; sharpened ask informed by data. | This is where the quarterly state-of-AI-security report becomes data-rich. |
+| **Phase 4 — Institutionalize** | Quarterly state-of-AI-security cadence; durable RACI; the seat at the table outlives organizational change. | About durability — making sure the seat survives org changes. |
+
+---
+
+## What we are asking for
+
+The seven asks in v2.1, restated tersely. Same wording carried into the one-pager and exec brief.
+
+1. **Operating model approval** — endorsement of the shift from gatekeeper to embedded advisor and continuous validator, with risk-tiered engagement as the standard.
+2. **Risk-tiering framework adoption** — endorsement of the four-tier classification, socialized with AI governance, privacy, and compliance.
+3. **AI infrastructure control plan endorsement** — sponsorship of the gateway, MCP farm, agent runtime, AI-aware SDLC, and network provisioning approach in cross-functional conversations with platform engineering and AI governance.
+4. **RACI ratification** — offensive security accountable for AI security discipline; platform engineering accountable for control operations.
+5. **Phase 1 authorization** — authorization to proceed within existing headcount and operating budget, with funded training and tooling proof-of-concepts.
+6. **Executive air cover** — active sponsorship in AI transformation forums, AI governance committee meetings, and conversations with business unit leaders.
+7. **Reporting cadence commitment** — quarterly state-of-AI-security report to the cyber executive team and risk committee, beginning end of Phase 1.
+
+---
+
+## Healthcare regulatory considerations
+
+Every recommendation in this repo assumes the healthcare context. These constraints raise the floor on "acceptable risk" significantly compared to a general enterprise.
+
+- **HIPAA / HITECH** — PHI handling, breach notification, minimum-necessary access. PHI may only be sent to BAA-covered model endpoints; the gateway enforces this at the data-classification layer.
+- **HITRUST** — control coverage and audit evidence expected. Findings schema maps controls to HIPAA/HITRUST so audit evidence is queryable.
+- **FDA SaMD** — clinical decision support tools may be regulated as Software as a Medical Device. Citizen-developer agents that touch clinical data or workflows trigger SaMD reclassification review with Regulatory Affairs.
+- **BAA inventory** — third-party AI services touching PHI need executed Business Associate Agreements; gateway enforces routing.
+- **Patient safety** — clinical hallucination, off-label drug recommendations, biased clinical decisioning are real harms, not theoretical. Default to Presidio + clinical NER for output scrubbing.
+
+---
+
+## Repository layout
+
+```
+ai-protect/
+├── README.md                       # This file
+├── .gitignore
+├── docs/                           # Generated artifacts (committed for distribution)
+│   ├── operating_model_v2_1.docx
+│   ├── one_pager_v1.docx
+│   ├── one_pager_v1.pdf
+│   ├── exec_brief_v1.docx
+│   ├── exec_brief_v1.pdf
+│   ├── pipeline_companion_v1.docx
+│   └── pipeline_companion_v1.pdf
+├── build/                          # Deterministic build scripts
+│   ├── build_diagrams.py           # Builds the 7 SVGs + PNGs in diagrams/
+│   ├── build_doc.py                # Builds pipeline_companion_v1.docx
+│   ├── build_onepagers.py          # Builds one_pager_v1.docx + exec_brief_v1.docx
+│   └── requirements.txt            # python-docx, cairosvg
+└── diagrams/                       # 7 SVG diagrams + PNG renders (1800px wide)
+    ├── 01_pipeline_overview.{svg,png}
+    ├── 02_v21_mapping.{svg,png}
+    ├── 03_ai_redteam_killchain.{svg,png}
+    ├── 04_vertical_ownership.{svg,png}
+    ├── 05_dashboard_technical.{svg,png}
+    ├── 06_dashboard_executive.{svg,png}
+    └── 07_phase_rollout.{svg,png}
+```
+
+---
+
+## Building from source
+
+All artifacts can be regenerated deterministically. The build scripts use repo-relative paths via `__file__` resolution, so you can run them from anywhere.
+
+### Prerequisites
+
+```bash
+# Python deps for docx + svg rendering
+pip install -r build/requirements.txt
+
+# LibreOffice for converting docx to pdf (optional — only needed for PDF output)
+sudo apt-get install -y libreoffice
+```
+
+### Build the one-pager and executive brief
+
+```bash
+python3 build/build_onepagers.py
+```
+
+Outputs:
+- `docs/one_pager_v1.docx` — full distribution one-pager
+- `docs/exec_brief_v1.docx` — board / risk-committee executive brief
+
+### Build the technical companion
+
+Diagrams must exist before the companion is built (it embeds PNG renders).
+
+```bash
+python3 build/build_diagrams.py     # writes diagrams/*.svg + diagrams/*.png
+python3 build/build_doc.py          # writes docs/pipeline_companion_v1.docx
+```
+
+### Convert any docx to pdf
+
+```bash
+libreoffice --headless --convert-to pdf docs/one_pager_v1.docx --outdir docs/
+libreoffice --headless --convert-to pdf docs/exec_brief_v1.docx --outdir docs/
+libreoffice --headless --convert-to pdf docs/pipeline_companion_v1.docx --outdir docs/
+```
+
+### Rebuild everything
+
+```bash
+python3 build/build_diagrams.py
+python3 build/build_onepagers.py
+python3 build/build_doc.py
+libreoffice --headless --convert-to pdf docs/one_pager_v1.docx docs/exec_brief_v1.docx docs/pipeline_companion_v1.docx --outdir docs/
+```
+
+> The v2.1 operating model itself (`docs/operating_model_v2_1.docx`) is the strategic anchor and is committed as a binary; it is not regenerated by the build scripts here. The companion, one-pager, and exec brief all derive from and are consistent with v2.1.
+
+---
+
+## Visual style guide
+
+Every artifact mirrors the same palette and typography so the family of documents is visually coherent.
+
+| Element | Value |
+| --- | --- |
+| Body font | Calibri |
+| Navy (headings, table headers) | `#1F3A5F` |
+| Accent (rules, bullets, eyebrows) | `#C04A2B` |
+| Takeaway box (light blue) | `#EAF3FA` |
+| Callout box (warm orange) | `#FFF4E5` |
+| Alt row shading | `#F2F5F9` |
+| Body text | `#222222` |
+| Muted text | `#555555` |
+
+Conventions:
+- **Takeaway boxes** (light blue) hold the strategic frame or distilled point.
+- **Callout boxes** (warm orange) hold the ask, risks, or "why now" rationale.
+- **Navy-banded data tables** with alternating row shading carry structured content (tiering, RACI, roadmap).
+- Bullets use the accent-colored `•` glyph rather than Word's default.
+- Bold leads (e.g., **"Paved road over gates** —") on bulleted definitions; running text after the em-dash.
+
+---
+
+## Versioning
+
+- `operating_model_v2_1.docx` is the strategic proposal at v2.1 (current).
+- `one_pager_v1.docx`, `exec_brief_v1.docx`, `pipeline_companion_v1.docx` are v1 distillations that derive from v2.1.
+
+When v2.1 changes, the v1 distillations should be regenerated (and their version bumped). Do not let the family drift out of sync.
+
+---
+
+## License and distribution
+
+Internal — Offensive Security. Prepared by the Office of the Director, Offensive Security. Not for external distribution without explicit approval from the CISO.

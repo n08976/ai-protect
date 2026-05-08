@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" font-family="Arial, Helvetica, sans-serif">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/></marker>
+<marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#8A95A8"/></marker>
+<marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#C04A2B"/></marker>
+</defs>
+<rect x="0" y="0" width="1100" height="42" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
+<text x="550.0" y="27" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Where this Companion fits with the v2.1 Operating Model</text>
+<rect x="40" y="75" width="1020" height="180" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="2" rx="8" ry="8"/>
+<text x="60" y="103" font-size="14" fill="#15293F" text-anchor="start" font-weight="bold">v2.1 — STRATEGIC OPERATING MODEL  (already approved deliverable)</text>
+<rect x="60.0" y="125" width="194.4" height="110" fill="#FFFFFF" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="157.2" y="153" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Operating Principles</text>
+<text x="157.2" y="177" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Paved road &gt; gates ·</text>
+<text x="157.2" y="192" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Risk-tiered · Continuous</text>
+<text x="157.2" y="207" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">validation</text>
+<rect x="266.4" y="125" width="194.4" height="110" fill="#FFFFFF" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="363.59999999999997" y="153" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Risk Tiering Framework</text>
+<text x="363.59999999999997" y="177" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Tier 1–4 by data sensitivity,</text>
+<text x="363.59999999999997" y="192" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">decision impact, integration,</text>
+<text x="363.59999999999997" y="207" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">users</text>
+<rect x="472.8" y="125" width="194.4" height="110" fill="#FFFFFF" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="570.0" y="153" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Engagement Model</text>
+<text x="570.0" y="177" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Single intake · Self-service</text>
+<text x="570.0" y="192" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">T4 · Embedded T1–T2 ·</text>
+<text x="570.0" y="207" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Discovery</text>
+<rect x="679.2" y="125" width="194.4" height="110" fill="#FFFFFF" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="776.4000000000001" y="153" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">RACI (9 owners)</text>
+<text x="776.4000000000001" y="177" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">AppSec · TI · TH · RT · SCV ·</text>
+<text x="776.4000000000001" y="192" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">AI Gov · Privacy · PlatEng ·</text>
+<text x="776.4000000000001" y="207" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Biz Owner</text>
+<rect x="885.6" y="125" width="194.4" height="110" fill="#FFFFFF" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="982.8000000000001" y="153" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Phased Roadmap</text>
+<text x="982.8000000000001" y="177" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Phase 1 modest · Phase 2</text>
+<text x="982.8000000000001" y="192" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">tooling+hire · Phase 3</text>
+<text x="982.8000000000001" y="207" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">platform</text>
+<line x1="330.0" y1="255" x2="330.0" y2="320" stroke="#1F3A5F" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arr)"/>
+<line x1="550.0" y1="255" x2="550.0" y2="320" stroke="#1F3A5F" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arr)"/>
+<line x1="770.0" y1="255" x2="770.0" y2="320" stroke="#1F3A5F" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arr)"/>
+<text x="550.0" y="283.5" font-size="12" fill="#15293F" text-anchor="middle" font-weight="italic">operationalized by</text>
+<rect x="40" y="320" width="1020" height="250" fill="#FFF4E5" stroke="#E0A555" stroke-width="2" rx="8" ry="8"/>
+<text x="60" y="348" font-size="14" fill="#15293F" text-anchor="start" font-weight="bold">THIS COMPANION — TECHNICAL PIPELINE  (for the offensive security leads)</text>
+<rect x="60.0" y="375" width="332.0" height="80" fill="#FFFFFF" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="226.0" y="399" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">8-Stage Pipeline</text>
+<text x="226.0" y="419" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Discovery → Intake → Static → Dynamic → AI Red Team</text>
+<text x="226.0" y="434" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">→ Remed → Monitor → Report</text>
+<rect x="404.0" y="375" width="332.0" height="80" fill="#FFFFFF" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="570.0" y="399" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Tooling Per Stage</text>
+<text x="570.0" y="419" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Semgrep, CodeQL, Burp, garak, PyRIT, ART,</text>
+<text x="570.0" y="434" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">ModelScan, Llama Guard, Presidio…</text>
+<rect x="748.0" y="375" width="332.0" height="80" fill="#FFFFFF" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="914.0" y="399" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Per-Vertical Builds</text>
+<text x="914.0" y="419" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">AppSec · Threat Intel · Threat Hunt · Red Team ·</text>
+<text x="914.0" y="434" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">SCV — capability deltas</text>
+<rect x="60.0" y="470" width="332.0" height="80" fill="#FFFFFF" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="226.0" y="494" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Dashboards</text>
+<text x="226.0" y="514" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Technical (Grafana) · Executive (Superset/Power BI)</text>
+<text x="226.0" y="529" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">— mockups inside</text>
+<rect x="404.0" y="470" width="332.0" height="80" fill="#FFFFFF" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="570.0" y="494" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Phased Tool Rollout</text>
+<text x="570.0" y="514" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Honors v2.1 Phase 1 modesty: PoC tooling + existing</text>
+<text x="570.0" y="529" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">headcount only</text>
+<rect x="748.0" y="470" width="332.0" height="80" fill="#FFFFFF" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="914.0" y="494" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Pipeline RACI Extension</text>
+<text x="914.0" y="514" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Adds 18 pipeline-specific activities to v2.1's</text>
+<text x="914.0" y="529" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">9-column RACI</text>
+</svg>

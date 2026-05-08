@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" font-family="Arial, Helvetica, sans-serif">
+<rect x="0" y="0" width="1200" height="42" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
+<text x="600.0" y="27" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Phased Tool &amp; Capability Rollout — five verticals × three phases</text>
+<rect x="176.0" y="80" width="318.0" height="50" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="335.0" y="102" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Phase 1 (M0–3)</text>
+<text x="335.0" y="120" font-size="11" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Modest — existing headcount + PoC tooling</text>
+<rect x="506.0" y="80" width="318.0" height="50" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="665.0" y="102" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Phase 2 (M3–9)</text>
+<text x="665.0" y="120" font-size="11" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Tooling scale-up + selective specialist hire</text>
+<rect x="836.0" y="80" width="318.0" height="50" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="995.0" y="102" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Phase 3 (M9–18)</text>
+<text x="995.0" y="120" font-size="11" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Platform-grade, automated, paved-road default</text>
+<rect x="40" y="138" width="124" height="50" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="6" ry="6"/>
+<text x="102.0" y="158" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">Vertical</text>
+<text x="102.0" y="175" font-size="14" fill="#15293F" text-anchor="middle" font-weight="normal">↓</text>
+<rect x="40" y="190" width="124" height="110" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="102.0" y="250.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AppSec</text>
+<rect x="176.0" y="190" width="318.0" height="110" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="186.0" y="208" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Prompt-injection Semgrep ruleset</text>
+<text x="186.0" y="226" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Llama Guard PoC at gateway</text>
+<text x="186.0" y="244" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Paved-road template v0</text>
+<text x="186.0" y="262" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• ModelScan in CI</text>
+<rect x="506.0" y="190" width="318.0" height="110" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="516.0" y="208" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Burp Enterprise API integration</text>
+<text x="516.0" y="226" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Custom RAG threat-modeling guide</text>
+<text x="516.0" y="244" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Auto-PR remediation for deps</text>
+<text x="516.0" y="262" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Healthcare prompt linter v1</text>
+<rect x="836.0" y="190" width="318.0" height="110" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1" rx="6" ry="6"/>
+<text x="846.0" y="208" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Self-service threat-modeling assistant</text>
+<text x="846.0" y="226" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Inherited-controls report card</text>
+<text x="846.0" y="244" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Continuous SBOM + attestation</text>
+<rect x="40" y="308" width="124" height="110" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="102.0" y="368.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Threat Intel</text>
+<rect x="176.0" y="308" width="318.0" height="110" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="186.0" y="326" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• AI threat feed taxonomy</text>
+<text x="186.0" y="344" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Jailbreak intel weekly report</text>
+<text x="186.0" y="362" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• BAA inventory baseline</text>
+<rect x="506.0" y="308" width="318.0" height="110" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="516.0" y="326" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Adversarial-ML research stream</text>
+<text x="516.0" y="344" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Provider-incident watch (Claude, MCP)</text>
+<text x="516.0" y="362" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Healthcare-AI TTP catalog</text>
+<rect x="836.0" y="308" width="318.0" height="110" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1" rx="6" ry="6"/>
+<text x="846.0" y="326" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Threat-informed scan tuning loop</text>
+<text x="846.0" y="344" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Auto-replay of new jailbreaks against assets</text>
+<rect x="40" y="426" width="124" height="110" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="102.0" y="486.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Threat Hunt</text>
+<rect x="176.0" y="426" width="318.0" height="110" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="186.0" y="444" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Telemetry gap analysis</text>
+<text x="186.0" y="462" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• First 3 hunt hypotheses (prompt, tool-call, egress)</text>
+<text x="186.0" y="480" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Hunt notebook templates</text>
+<rect x="506.0" y="426" width="318.0" height="110" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="516.0" y="444" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Live agent-action analytics</text>
+<text x="516.0" y="462" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Drift detection on jailbreak rate</text>
+<text x="516.0" y="480" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Hunt against shadow-AI signals</text>
+<rect x="836.0" y="426" width="318.0" height="110" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1" rx="6" ry="6"/>
+<text x="846.0" y="444" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Continuous hunting on prompt corpus</text>
+<text x="846.0" y="462" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Detection-as-code for AI patterns</text>
+<rect x="40" y="544" width="124" height="110" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="102.0" y="604.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Red Team</text>
+<rect x="176.0" y="544" width="318.0" height="110" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="186.0" y="562" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• garak baseline scans</text>
+<text x="186.0" y="580" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• PyRIT PoC orchestrator</text>
+<text x="186.0" y="598" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• 1 demo red team on a Tier-1 app</text>
+<text x="186.0" y="616" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• MCP onboarding red-team v0</text>
+<rect x="506.0" y="544" width="318.0" height="110" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="516.0" y="562" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Healthcare custom probes</text>
+<text x="516.0" y="580" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Indirect-injection corpus</text>
+<text x="516.0" y="598" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• ATLAS coverage tracking</text>
+<text x="516.0" y="616" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Tool-abuse fuzz harness</text>
+<rect x="836.0" y="544" width="318.0" height="110" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1" rx="6" ry="6"/>
+<text x="846.0" y="562" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Continuous AI red team campaigns</text>
+<text x="846.0" y="580" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Automated re-test on regression</text>
+<text x="846.0" y="598" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Adversarial-ML platform (ART)</text>
+<rect x="40" y="662" width="124" height="110" fill="#1F3A5F" stroke="#15293F" stroke-width="1" rx="6" ry="6"/>
+<text x="102.0" y="722.0" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">SCV</text>
+<rect x="176.0" y="662" width="318.0" height="110" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="6" ry="6"/>
+<text x="186.0" y="680" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Catalog v2.1 controls vs. AI threat model</text>
+<text x="186.0" y="698" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Egress-control validation playbook</text>
+<text x="186.0" y="716" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Gateway bypass detection</text>
+<rect x="506.0" y="662" width="318.0" height="110" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="516.0" y="680" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Continuous control validation runner</text>
+<text x="516.0" y="698" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Guardrail effectiveness measurement</text>
+<text x="516.0" y="716" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Identity &amp; scope validation per agent</text>
+<rect x="836.0" y="662" width="318.0" height="110" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1" rx="6" ry="6"/>
+<text x="846.0" y="680" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Self-service control attestation</text>
+<text x="846.0" y="698" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Real-time control drift alerts</text>
+<rect x="40" y="710" width="1120" height="32" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
+<text x="60" y="730" font-size="12" fill="#15293F" text-anchor="start" font-weight="italic">Phase 1 honors v2.1's modesty constraint: no new headcount; demo red team is the asset that earns the Phase 2 ask.</text>
+</svg>

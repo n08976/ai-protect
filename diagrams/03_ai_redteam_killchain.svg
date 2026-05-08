@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="580" viewBox="0 0 1200 580" font-family="Arial, Helvetica, sans-serif">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/></marker>
+<marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#8A95A8"/></marker>
+<marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#C04A2B"/></marker>
+</defs>
+<rect x="0" y="0" width="1200" height="42" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
+<text x="600.0" y="27" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Red Team Kill Chain — tools, probes, and ATLAS coverage</text>
+<rect x="40" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="115.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Recon</text>
+<line x1="191" y1="115.0" x2="201" y2="115.0" stroke="#C04A2B" stroke-width="2.5" marker-end="url(#arrA)"/>
+<rect x="202" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="277.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Single-turn</text>
+<text x="277.0" y="126" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Jailbreak</text>
+<line x1="353" y1="115.0" x2="363" y2="115.0" stroke="#C04A2B" stroke-width="2.5" marker-end="url(#arrA)"/>
+<rect x="364" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="439.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Multi-turn</text>
+<text x="439.0" y="126" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Attack</text>
+<line x1="515" y1="115.0" x2="525" y2="115.0" stroke="#C04A2B" stroke-width="2.5" marker-end="url(#arrA)"/>
+<rect x="526" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="601.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Indirect</text>
+<text x="601.0" y="126" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Injection</text>
+<line x1="677" y1="115.0" x2="687" y2="115.0" stroke="#C04A2B" stroke-width="2.5" marker-end="url(#arrA)"/>
+<rect x="688" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="763.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Tool / Agent</text>
+<text x="763.0" y="126" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Abuse</text>
+<line x1="839" y1="115.0" x2="849" y2="115.0" stroke="#C04A2B" stroke-width="2.5" marker-end="url(#arrA)"/>
+<rect x="850" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="925.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Adversarial</text>
+<text x="925.0" y="126" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ML</text>
+<line x1="1001" y1="115.0" x2="1011" y2="115.0" stroke="#C04A2B" stroke-width="2.5" marker-end="url(#arrA)"/>
+<rect x="1012" y="80" width="150" height="70" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="1087.0" y="110" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Persistence /</text>
+<text x="1087.0" y="126" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Exfiltration</text>
+<text x="40" y="167" font-size="12" fill="#15293F" text-anchor="start" font-weight="bold">Probes / Tests</text>
+<rect x="40" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="115.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Model fingerprint</text>
+<text x="115.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">System prompt leak</text>
+<text x="115.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Endpoint mapping</text>
+<rect x="202" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="277.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">DAN, payload encoding</text>
+<text x="277.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">role-play, prompt inject</text>
+<text x="277.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">encoding/obfuscation</text>
+<rect x="364" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="439.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Crescendo, drift</text>
+<text x="439.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">red-team-bot orchestrators</text>
+<text x="439.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">context exhaustion</text>
+<rect x="526" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="601.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Poisoned RAG corpus</text>
+<text x="601.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">email/doc payloads</text>
+<text x="601.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">tool-result hijack</text>
+<rect x="688" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="763.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Tool-call fuzzing</text>
+<text x="763.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">confused deputy</text>
+<text x="763.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">excessive agency</text>
+<rect x="850" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="925.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Embedding attacks</text>
+<text x="925.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">classifier evasion</text>
+<text x="925.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">model inversion</text>
+<rect x="1012" y="175" width="150" height="90" fill="#F2F5F9" stroke="#8A95A8" stroke-width="1" rx="5" ry="5"/>
+<text x="1087.0" y="195" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">Memory poisoning</text>
+<text x="1087.0" y="211" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">PHI extraction</text>
+<text x="1087.0" y="227" font-size="10" fill="#222222" text-anchor="middle" font-weight="normal">off-pipeline pivot</text>
+<text x="40" y="277" font-size="12" fill="#15293F" text-anchor="start" font-weight="bold">Tooling</text>
+<rect x="40" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="115.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">garak</text>
+<text x="115.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">PromptFoo</text>
+<rect x="202" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="277.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">garak probes</text>
+<text x="277.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">(promptinject,</text>
+<text x="277.0" y="337" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">dan, encoding,</text>
+<text x="277.0" y="353" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">leakreplay)</text>
+<rect x="364" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="439.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">PyRIT</text>
+<text x="439.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">orchestrators</text>
+<text x="439.0" y="337" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">+ converters</text>
+<rect x="526" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="601.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Custom</text>
+<text x="601.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">corpus +</text>
+<text x="601.0" y="337" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">run via gateway</text>
+<rect x="688" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="763.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">PyRIT +</text>
+<text x="763.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">custom</text>
+<text x="763.0" y="337" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">harness</text>
+<rect x="850" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="925.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">ART</text>
+<text x="925.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Counterfit</text>
+<text x="925.0" y="337" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">TextAttack</text>
+<rect x="1012" y="285" width="150" height="90" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="5" ry="5"/>
+<text x="1087.0" y="305" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Custom probes</text>
+<text x="1087.0" y="321" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">+ telemetry</text>
+<text x="1087.0" y="337" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">replay</text>
+<text x="40" y="387" font-size="12" fill="#15293F" text-anchor="start" font-weight="bold">MITRE ATLAS technique coverage</text>
+<rect x="40" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="115.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0006</text>
+<text x="115.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0040</text>
+<rect x="202" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="277.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0051</text>
+<text x="277.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0054</text>
+<rect x="364" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="439.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0051</text>
+<text x="439.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0048</text>
+<rect x="526" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="601.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0051.001</text>
+<text x="601.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0070</text>
+<rect x="688" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="763.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0053</text>
+<text x="763.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0048</text>
+<rect x="850" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="925.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0015</text>
+<text x="925.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0024</text>
+<rect x="1012" y="395" width="150" height="70" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1" rx="5" ry="5"/>
+<text x="1087.0" y="420" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0010</text>
+<text x="1087.0" y="436" font-size="11" fill="#15293F" text-anchor="middle" font-weight="normal">AML.T0024</text>
+<rect x="40" y="490" width="1120" height="60" fill="#C04A2B" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="60" y="514" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">HEALTHCARE-SPECIFIC PROBE SET (custom)</text>
+<text x="60" y="534" font-size="11" fill="#FFFFFF" text-anchor="start" font-weight="normal">PHI elicitation  •  Clinical hallucination  •  Off-label drug recs  •  Minimum-necessary violation  •  HIPAA-condition leak  •  BAA-bypass tool calls</text>
+</svg>

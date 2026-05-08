@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" font-family="Arial, Helvetica, sans-serif">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/></marker>
+<marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#8A95A8"/></marker>
+<marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#C04A2B"/></marker>
+</defs>
+<rect x="0" y="0" width="1200" height="44" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
+<text x="600.0" y="28" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Security Assurance Pipeline — End-to-End</text>
+<rect x="40" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="105.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 0</text>
+<text x="105.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Discovery &amp;</text>
+<text x="105.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Intake</text>
+<line x1="171" y1="125.0" x2="181" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="182" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="247.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 1</text>
+<text x="247.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Triage &amp;</text>
+<text x="247.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Tiering</text>
+<line x1="313" y1="125.0" x2="323" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="324" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="389.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 2</text>
+<text x="389.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Static /</text>
+<text x="389.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod</text>
+<line x1="455" y1="125.0" x2="465" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="466" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="531.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 3</text>
+<text x="531.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Dynamic</text>
+<text x="531.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">AppSec</text>
+<line x1="597" y1="125.0" x2="607" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="608" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="673.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 4</text>
+<text x="673.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">AI</text>
+<text x="673.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Red Team</text>
+<line x1="739" y1="125.0" x2="749" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="750" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="815.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 5</text>
+<text x="815.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Remed-</text>
+<text x="815.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">iation</text>
+<line x1="881" y1="125.0" x2="891" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="892" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="957.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 6</text>
+<text x="957.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Continuous</text>
+<text x="957.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Monitoring</text>
+<line x1="1023" y1="125.0" x2="1033" y2="125.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="1034" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="1099.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 7</text>
+<text x="1099.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Reporting &amp;</text>
+<text x="1099.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Notification</text>
+<rect x="40" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="105.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ServiceNow</text>
+<text x="105.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CASB egress</text>
+<text x="105.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">GitHub scan</text>
+<rect x="182" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="247.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">OPA policy</text>
+<text x="247.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
+<text x="247.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Tier scoring</text>
+<rect x="324" y="195" width="130" height="124" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="389.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Semgrep</text>
+<text x="389.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CodeQL</text>
+<text x="389.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Trivy</text>
+<text x="389.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ModelScan</text>
+<text x="389.0" y="301" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">TruffleHog</text>
+<rect x="466" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="531.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Burp Suite</text>
+<text x="531.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Nuclei</text>
+<text x="531.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ZAP</text>
+<text x="531.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Schemathesis</text>
+<rect x="608" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="673.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">garak</text>
+<text x="673.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">PyRIT</text>
+<text x="673.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ART</text>
+<text x="673.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">PromptFoo</text>
+<rect x="750" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="815.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Auto-PR</text>
+<text x="815.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">WAF push</text>
+<text x="815.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Llama Guard</text>
+<text x="815.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">NeMo Guard</text>
+<rect x="892" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="957.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Telemetry</text>
+<text x="957.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Drift det.</text>
+<text x="957.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Re-scan cron</text>
+<rect x="1034" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="1099.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Slack/Teams</text>
+<text x="1099.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Jira</text>
+<text x="1099.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Report card</text>
+<rect x="40" y="430" width="1120" height="70" fill="#FFF4E5" stroke="#E0A555" stroke-width="1.5" rx="8" ry="8"/>
+<text x="60" y="455" font-size="12" fill="#15293F" text-anchor="start" font-weight="bold">ORCHESTRATION &amp; DATA PLANE</text>
+<text x="60" y="480" font-size="12" fill="#222222" text-anchor="start" font-weight="normal">Argo Workflows (or Tekton)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault (secrets)  •  OPA (deploy gates)</text>
+<rect x="40" y="530" width="1120" height="90" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="8" ry="8"/>
+<text x="60" y="554" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)</text>
+<rect x="65.0" y="568" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="168.0" y="587" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">LLM Gateway</text>
+<text x="168.0" y="602" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Claude primary</text>
+<rect x="281.0" y="568" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="384.0" y="587" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">MCP Farm</text>
+<text x="384.0" y="602" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">curated registry</text>
+<rect x="497.0" y="568" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="600.0" y="587" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Agent Runtime</text>
+<text x="600.0" y="602" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">SPIFFE ID, scoped</text>
+<rect x="713.0" y="568" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="816.0" y="587" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Data Plane</text>
+<text x="816.0" y="602" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">FHIR / vector / RAG</text>
+<rect x="929.0" y="568" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="1032.0" y="587" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Telemetry Mesh</text>
+<text x="1032.0" y="602" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">prompts • tools • completions</text>
+<rect x="40.0" y="645" width="363.3333333333333" height="80" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1.5" rx="6" ry="6"/>
+<text x="221.66666666666666" y="669" font-size="13" fill="#15293F" text-anchor="middle" font-weight="bold">Technical Dashboard</text>
+<text x="221.66666666666666" y="695" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap</text>
+<rect x="418.3333333333333" y="645" width="363.3333333333333" height="80" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1.5" rx="6" ry="6"/>
+<text x="600.0" y="669" font-size="13" fill="#15293F" text-anchor="middle" font-weight="bold">Executive Dashboard</text>
+<text x="600.0" y="695" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Superset/Power BI — risk heatmap, portfolio KPIs, compliance</text>
+<rect x="796.6666666666666" y="645" width="363.3333333333333" height="80" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1.5" rx="6" ry="6"/>
+<text x="978.3333333333333" y="669" font-size="13" fill="#15293F" text-anchor="middle" font-weight="bold">Compliance Evidence</text>
+<text x="978.3333333333333" y="695" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">HIPAA / HITRUST control mapping, audit query</text>
+<line x1="105.0" y1="275" x2="105.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="247.0" y1="275" x2="247.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="389.0" y1="319" x2="389.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="531.0" y1="297" x2="531.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="673.0" y1="297" x2="673.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="815.0" y1="297" x2="815.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="957.0" y1="275" x2="957.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="1099.0" y1="275" x2="1099.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="168.0" y1="500" x2="168.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="384.0" y1="500" x2="384.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="600.0" y1="500" x2="600.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="816.0" y1="500" x2="816.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="1032.0" y1="500" x2="1032.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="221.66666666666666" y1="620" x2="221.66666666666666" y2="645" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="600.0" y1="620" x2="600.0" y2="645" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="978.3333333333333" y1="620" x2="978.3333333333333" y2="645" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+</svg>
