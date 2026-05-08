@@ -4,6 +4,16 @@ Complements Semgrep with a different (more Python-aware) ruleset. Bandit
 catches a different slice of issues — exec/eval, weak crypto, weak SSL,
 hardcoded passwords, subprocess shell=True, etc.
 
+Default skip-list:
+    B113 (request_without_timeout) — fires on every requests.get/post without
+        an explicit timeout. Reliability anti-pattern, not a security issue,
+        and bandit's own confidence tag is LOW. Without this skip, B113 alone
+        produces ~70% of bandit's volume on real Python code, drowning the
+        signal-rich findings (B324 weak crypto, B105/B106/B107 hardcoded
+        passwords, B602/B604 shell=True, B301 pickle).
+
+    Override via config: pass skip_tests=[] or a different list to keep B113.
+
 Repo: https://github.com/PyCQA/bandit
 """
 from __future__ import annotations
@@ -51,7 +61,10 @@ class BanditAdapter(Adapter):
     def run(self):
         self.preflight()
         path = self.config.get("path", self.manifest.raw.get("source_path", "."))
+        skip_tests = self.config.get("skip_tests", ["B113"])
         cmd = ["bandit", "-r", "-f", "json", "-q", path]
+        if skip_tests:
+            cmd += ["-s", ",".join(skip_tests)]
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=False)
         except subprocess.TimeoutExpired:

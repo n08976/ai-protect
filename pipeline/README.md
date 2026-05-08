@@ -106,13 +106,30 @@ Every adapter implements the same interface (`pipeline/adapters/base.py`): prefl
 | `threat_model_check` | (built-in) | design | Tier 1-2 require a signed-off threat model artifact. |
 | `trufflehog` | [TruffleHog](https://github.com/trufflesecurity/trufflehog) | build | Source-tree secret scanning. CRITICAL on verified hits. |
 | `gitleaks` | [Gitleaks](https://github.com/gitleaks/gitleaks) | build | Second secret scanner with a different ruleset (catches what TruffleHog misses). |
+| `detect_secrets` | [Yelp detect-secrets](https://github.com/Yelp/detect-secrets) | build | Entropy + pattern secret scanning. Third opinion alongside TruffleHog and Gitleaks. |
 | `semgrep` | [Semgrep](https://github.com/semgrep/semgrep) | build | SAST patterns — Python + security-audit + secrets registries by default. |
 | `bandit` | [Bandit](https://github.com/PyCQA/bandit) | build | Python-native SAST, complements Semgrep. |
+| `gosec` | [gosec](https://github.com/securego/gosec) | build | Go-native SAST. G101/G201/G304/G4xx/G5xx rule families. Graceful degrade when no Go files in tree. |
+| `bearer` | [Bearer](https://github.com/Bearer/bearer) | build | Privacy-flow SAST — tracks how PHI/PII flows through code paths. Healthcare-fit. |
+| `codeql` | [GitHub CodeQL](https://github.com/github/codeql-cli-binaries) | build | Semantic SAST with full taint / data-flow analysis. Different class than Semgrep. |
+| `njsscan` | [njsscan](https://github.com/ajinabraham/njsscan) | build | Node.js-specific SAST — Express, prototype pollution, JWT misconfig, eval. |
+| `owasp_noir` | [OWASP Noir](https://github.com/owasp-noir/noir) | intake | Attack surface enumeration via static analysis — produces an authoritative endpoint list for downstream DAST. |
+| `agentic_radar` | [SplxAI Agentic Radar](https://github.com/splx-ai/agentic-radar) | build | SAST for agentic AI workflows. LangChain / LlamaIndex / CrewAI / Claude Agent SDK / OpenAI Assistants. Surfaces tool over-grants, A2A privilege escalation, PHI flow into prompts. |
+| `ride` | [Adobe Ride](https://github.com/adobe/ride) | preprod | REST/JSON API test runner hook. Runs a configured Maven Ride suite, converts failures to Findings. Mutation-required. |
 | `pip_audit` | [pip-audit](https://github.com/pypa/pip-audit) | build | Python dep CVE scanner (PyPA Advisory DB + OSV). |
+| `dependency_check` | [OWASP Dependency-Check](https://github.com/dependency-check/DependencyCheck) | build | Multi-language CVE scanner (Maven / NPM / Gradle / .NET / Ruby / PHP / Python) against NIST NVD. **Requires `NVD_API_KEY` env var on v9+.** Current stable: v12.2.0. |
+| `osv_scanner` | [OSV-Scanner](https://github.com/google/osv-scanner) | build | Google OSV.dev multi-language vuln scanner — broader language coverage than pip-audit. |
+| `syft` | [Syft](https://github.com/anchore/syft) | build | Anchore SBOM generator (CycloneDX / SPDX). Compliance evidence for HITRUST. |
+| `grype` | [Grype](https://github.com/anchore/grype) | build | Anchore SBOM-aware vulnerability scanner. Pairs with Syft. |
 | `trivy` | [Trivy](https://github.com/aquasecurity/trivy) | build / preprod | Filesystem / image / IaC / secret scan in one binary; multi-mode. |
 | `checkov` | [Checkov](https://github.com/bridgecrewio/checkov) | design / build | IaC specialist (Terraform / K8s / Helm / Dockerfile). |
+| `hadolint` | [hadolint](https://github.com/hadolint/hadolint) | build | Dockerfile linter — build-time best practices, CIS-aligned rules. |
+| `modelscan` | [Protect AI ModelScan](https://github.com/protectai/modelscan) | build | Malicious model file detection (pickle, h5, pt, safetensors, onnx). v2.1 names this at build. |
+| `presidio` | [Microsoft Presidio](https://github.com/microsoft/presidio) | build | PHI/PII detection in text and source files. v2.1 default scrubber. |
 | `nuclei` | [Nuclei](https://github.com/projectdiscovery/nuclei) | build / preprod | Template-driven web vuln scan. |
-| `zap` | [OWASP ZAP](https://github.com/zaproxy/zaproxy) | preprod | Free Burp Pro substitute via REST API; spider + active scan. |
+| `zap` | [OWASP ZAP](https://github.com/zaproxy/zaproxy) | preprod | Free Burp Pro substitute via REST API. Modes: `spider`, `baseline` (1-min + passive), `active`, `full`, `api` (OpenAPI/SOAP/GraphQL spec-driven). The `api` mode imports a spec then drives the scan, ideal for AI gateway and MCP server surfaces. |
+| `sqlmap` | [sqlmap](https://github.com/sqlmapproject/sqlmap) | preprod | SQL injection confirmation + characterization. Confirms what Nuclei/ZAP detect. |
+| `dockle` | [dockle](https://github.com/goodwithtech/dockle) | preprod | Container image hygiene scanner — different focus than Trivy (image best practices). |
 | `recon` | [subfinder](https://github.com/projectdiscovery/subfinder) + [httpx](https://github.com/projectdiscovery/httpx) + [naabu](https://github.com/projectdiscovery/naabu) + [katana](https://github.com/projectdiscovery/katana) | intake (Tier 1) | Shadow-AI discovery chain — subdomains → HTTP services → ports → URLs. |
 | `promptfoo` | [promptfoo](https://github.com/promptfoo/promptfoo) / [DeepEval](https://github.com/confident-ai/deepeval) | preprod | AI eval frameworks complementary to PyRIT (correctness, safety, refusal). |
 | `guardrails` | [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) | design / preprod | Runtime input/output filter validation + smoke against the guarded endpoint. |
@@ -122,6 +139,7 @@ Every adapter implements the same interface (`pipeline/adapters/base.py`): prefl
 | `burp` | [PortSwigger Burp Suite](https://portswigger.net/burp) | preprod | REST API client for passive/active scans of the surrounding app. |
 | `metasploit` | [Rapid7 Metasploit](https://github.com/rapid7/metasploit-framework) | preprod | Auxiliary scanners by default; exploits require Tier 1 + explicit `authorized_exploits` list. |
 | `atomic` | [Red Canary Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) | preprod | MITRE ATT&CK technique emulation against the agent runtime host. Validates EDR detection coverage. |
+| `caldera` | [MITRE Caldera](https://github.com/mitre/caldera) | preprod | Autonomous adversary emulation — chained ATT&CK abilities run via Caldera REST API. Complements Atomic (per-technique) with end-to-end campaigns. Mutation-required; `adversary_id` config required. |
 | `eval_suite` | (built-in hooks) | preprod blocking | Hallucination / bias / jailbreak thresholds. Plug TruthfulQA / MedQA / custom QA harness. |
 | `telemetry_drift` | SCV correlation API | production | Drift across prompts, tool calls, policy events, token velocity. |
 | `anomaly_detector` | (alias) | production | Lighter-weight production-stage check. |

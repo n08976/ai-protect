@@ -26,6 +26,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
     1: {
         "intake":     [
             AdapterCall("manifest_validator", blocking=True),
+            AdapterCall("owasp_noir"),
             AdapterCall("recon"),
         ],
         "design":     [
@@ -39,6 +40,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("detect_secrets"),
             AdapterCall("semgrep"),
             AdapterCall("bandit"),
+            AdapterCall("gosec"),
             AdapterCall("bearer"),
             AdapterCall("codeql"),
             AdapterCall("njsscan"),
@@ -55,16 +57,21 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "all"}),
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection"]}),
+            AdapterCall("agentic_radar"),
         ],
         "preprod": [
             AdapterCall("garak", config={"probes": "all"}, blocking=True),
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection", "crescendo"]}, blocking=True),
             AdapterCall("mcp_scope", blocking=True),
             AdapterCall("burp", config={"scan": "active"}),
-            AdapterCall("zap", config={"mode": "active"}),
+            AdapterCall("zap", config={"mode": "full"}),
+            AdapterCall("zap", config={"mode": "api"}),
             AdapterCall("sqlmap"),
             AdapterCall("dockle"),
+            AdapterCall("metasploit"),  # auxiliary scanners by default; exploits opt-in per adapter config
+            AdapterCall("ride"),  # configurable Ride suite hook
             AdapterCall("atomic", config={"techniques": ["T1059", "T1567", "T1071"]}),
+            AdapterCall("caldera"),  # config.adversary_id required at orchestrator dispatch
             AdapterCall("guardrails", blocking=True),
             AdapterCall("promptfoo"),
             AdapterCall("eval_suite", config={"hallucination": True, "bias": True, "jailbreak": True}, blocking=True),
@@ -76,7 +83,10 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
     },
     # Tier 2: Sensitive internal action / write-back
     2: {
-        "intake":     [AdapterCall("manifest_validator", blocking=True)],
+        "intake":     [
+            AdapterCall("manifest_validator", blocking=True),
+            AdapterCall("owasp_noir"),
+        ],
         "design":     [
             AdapterCall("threat_model_check"),
             AdapterCall("guardrails"),
@@ -88,6 +98,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("detect_secrets"),
             AdapterCall("semgrep"),
             AdapterCall("bandit"),
+            AdapterCall("gosec"),
             AdapterCall("bearer"),
             AdapterCall("codeql"),
             AdapterCall("njsscan"),
@@ -104,11 +115,14 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}),
             AdapterCall("pyrit", config={"strategies": ["injection"]}),
+            AdapterCall("agentic_radar"),
         ],
         "preprod": [
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}, blocking=True),
             AdapterCall("mcp_scope", blocking=True),
-            AdapterCall("zap", config={"mode": "spider"}),
+            AdapterCall("zap", config={"mode": "baseline"}),
+            AdapterCall("ride"),  # configurable Ride suite hook
+            AdapterCall("caldera"),  # config.adversary_id required at orchestrator dispatch
             AdapterCall("guardrails"),
             AdapterCall("promptfoo"),
             AdapterCall("eval_suite", config={"jailbreak": True}),
@@ -119,7 +133,10 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
     },
     # Tier 3: Internal advisory with broad reach — automated only
     3: {
-        "intake":     [AdapterCall("manifest_validator", blocking=True)],
+        "intake":     [
+            AdapterCall("manifest_validator", blocking=True),
+            AdapterCall("owasp_noir"),
+        ],
         "design":     [],
         "build": [
             AdapterCall("trufflehog", blocking=True),
@@ -127,6 +144,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("detect_secrets"),
             AdapterCall("semgrep"),
             AdapterCall("bandit"),
+            AdapterCall("gosec"),
             AdapterCall("bearer"),
             AdapterCall("codeql"),
             AdapterCall("njsscan"),
@@ -141,10 +159,11 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("checkov"),
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "promptinject,leakage"}),
+            AdapterCall("agentic_radar"),
         ],
         "preprod": [
             AdapterCall("nuclei"),
-            AdapterCall("zap", config={"mode": "spider"}),
+            AdapterCall("zap", config={"mode": "baseline"}),
             AdapterCall("garak", config={"probes": "promptinject,leakage"}),
             AdapterCall("mcp_scope"),
         ],
@@ -162,6 +181,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("detect_secrets"),
             AdapterCall("semgrep"),
             AdapterCall("bandit"),
+            AdapterCall("gosec"),
             AdapterCall("bearer"),
             AdapterCall("codeql"),
             AdapterCall("njsscan"),

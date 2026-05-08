@@ -6,14 +6,21 @@ different (NIST NVD-anchored) database.
 
 Install:
     Download the CLI ZIP from https://github.com/dependency-check/DependencyCheck/releases
-    Extract somewhere; symlink /home/user/bin/dependency-check.sh to the script.
-    First run downloads the NVD feed (~250MB).
+    (current stable: v12.2.0 — direct link in repo README). Extract somewhere;
+    symlink ~/bin/dependency-check.sh to the script. First run downloads the
+    NVD feed (~250MB+).
+
+NVD API key (required for v9+):
+    NIST throttles unauthenticated NVD pulls. Set NVD_API_KEY to a key issued
+    at https://nvd.nist.gov/developers/request-an-api-key. Without it, runs
+    will time out on the feed sync.
 
 Repo: https://github.com/dependency-check/DependencyCheck
 """
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -64,6 +71,9 @@ class DependencyCheckAdapter(Adapter):
                 "--out", str(out_dir),
                 "--noupdate",  # rely on cached feed; first run requires --update
             ]
+            api_key = os.environ.get("NVD_API_KEY")
+            if api_key:
+                cmd += ["--nvdApiKey", api_key]
             try:
                 subprocess.run(cmd, capture_output=True, text=True, timeout=1800, check=False)
             except subprocess.TimeoutExpired:

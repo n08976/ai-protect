@@ -181,6 +181,8 @@ ai-protect/
 │   ├── build_doc.py                # Builds pipeline_companion_v1.docx
 │   ├── build_onepagers.py          # Builds one_pager_v1.docx + exec_brief_v1.docx
 │   └── requirements.txt            # python-docx, cairosvg
+├── .github/workflows/
+│   └── ai-protect.yml              # CI: tier-classify + scan every example manifest, upload findings, gate on blocking failures
 └── diagrams/                       # 7 SVG diagrams + PNG renders (1800px wide)
     ├── 01_pipeline_overview.{svg,png}
     ├── 02_v21_mapping.{svg,png}
@@ -311,6 +313,7 @@ Curated awesome-list / red-team-tradecraft repositories the user referenced. Pic
 | redTeaming | https://github.com/idchoppers/redTeaming |
 | irredteam.github.io | https://github.com/irredteam/irredteam.github.io |
 | RedTeam-Tools | https://github.com/A-poc/RedTeam-Tools |
+| Red-Teaming-Toolkit (infosecn1nja) | https://github.com/infosecn1nja/Red-Teaming-Toolkit |
 
 ### Wired-in adapters (current state)
 
@@ -334,6 +337,9 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 | `detect_secrets` | https://github.com/Yelp/detect-secrets |
 | `semgrep` | https://github.com/semgrep/semgrep |
 | `bandit` | https://github.com/PyCQA/bandit |
+| `gosec` | https://github.com/securego/gosec |
+| `owasp_noir` | https://github.com/owasp-noir/noir |
+| `agentic_radar` | https://github.com/splx-ai/agentic-radar |
 | `bearer` | https://github.com/Bearer/bearer |
 | `codeql` | https://github.com/github/codeql-cli-binaries |
 | `njsscan` | https://github.com/ajinabraham/njsscan |
@@ -357,6 +363,8 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 | `zap` (OWASP ZAP) | https://github.com/zaproxy/zaproxy |
 | `metasploit` | https://github.com/rapid7/metasploit-framework |
 | `atomic` (Atomic Red Team) | https://github.com/redcanaryco/atomic-red-team |
+| `caldera` (MITRE) | https://github.com/mitre/caldera |
+| `ride` (Adobe) | https://github.com/adobe/ride |
 | `recon` chain | https://github.com/projectdiscovery/subfinder · https://github.com/projectdiscovery/httpx · https://github.com/projectdiscovery/naabu · https://github.com/projectdiscovery/katana |
 | `sqlmap` | https://github.com/sqlmapproject/sqlmap |
 | `dockle` | https://github.com/goodwithtech/dockle |
@@ -410,6 +418,7 @@ Tools that have been evaluated and are documented for future wiring. Each line i
 | kube-bench | https://github.com/aquasecurity/kube-bench |
 | kube-hunter | https://github.com/aquasecurity/kube-hunter |
 | Falco (runtime) | https://github.com/falcosecurity/falco |
+| Deepfence ThreatMapper | https://github.com/deepfence/ThreatMapper |
 
 #### Recon depth (complement existing `recon` adapter)
 
@@ -422,6 +431,38 @@ Tools that have been evaluated and are documented for future wiring. Each line i
 | kiterunner (API discovery) | https://github.com/assetnote/kiterunner |
 | subzy (subdomain takeover) | https://github.com/PentestPad/subzy |
 | reconftw | https://github.com/six2dez/reconftw |
+| BBOT | https://github.com/blacklanternsecurity/bbot |
+| Amass (OWASP) | https://github.com/OWASP/Amass |
+| Gato (GitHub enumeration — supply-chain) | https://github.com/praetorian-inc/gato |
+| AttackSurfaceMapper | https://github.com/superhedgy/AttackSurfaceMapper |
+| theHarvester | https://github.com/laramies/theHarvester |
+
+#### Web / API DAST (alternates and complements to wired Nuclei + ZAP + Burp)
+
+Pipeline-shape: scan a URL or API surface, return structured findings. Already-wired Nuclei + ZAP + Burp + sqlmap cover most of the surface; these are alternates worth knowing about for second-opinion runs or where one of the wired tools doesn't fit (e.g., REST/JSON-only fuzzing).
+
+| Tool | Source | Note |
+| --- | --- | --- |
+| Nikto | https://github.com/sullo/nikto | Long-standing web server scanner; pairs with Nuclei. |
+| OpenVAS / Greenbone Community Edition (GVM) | https://github.com/greenbone/openvas-scanner | Heavyweight network vuln scanner; fit for infra-side DAST around the agent runtime. |
+| Wapiti | https://github.com/wapiti-scanner/wapiti | Actively maintained CLI web DAST; ZAP/Nuclei complement. |
+| Ride (Adobe REST/JSON fuzzer) | https://github.com/adobe/ride | Apache 2; payload fuzzing for REST APIs — relevant for AI gateway and MCP server surfaces. |
+| purpleteam (OWASP) | https://github.com/purpleteam-labs/purpleteam | Modern OWASP DAST orchestrator (CLI + SaaS); AGPLv3. |
+
+> **Catalogue source — Lalatenduswain/Dynamic-Application-Security-Testing-DAST-Tools** (https://github.com/Lalatenduswain/Dynamic-Application-Security-Testing-DAST-Tools-Cybersec-Tools-and-scanner). Already-wired from that list: Nuclei, ZAP. **Reviewed and skipped (abandoned upstream):** Arachni (last release 2017), GoLismero (2014), Grabber (2007), Grendel-Scan (~2012), Vega (2014). **Marginal vs. wired stack and not pursued:** w3af (low activity, redundant with ZAP/Burp/Nuclei), Sec-helpers (script grab-bag, not a DAST tool). Commercial-only entries (Burp Pro/Enterprise, Rapid7 Nexpose, etc.) are out of catalogue scope here.
+
+#### Adversary emulation frameworks (SCV-shape candidates)
+
+Pipeline-shape: declare a TTP / playbook, run autonomously, emit a structured result. Complement Atomic Red Team (which is technique-by-technique) by chaining techniques into autonomous campaigns. Strong fit for the Security Control Validation vertical and for the v2.1 Phase 1 demonstration red team scaffolding. (Caldera was promoted from this list to wired-in.)
+
+| Tool | Source |
+| --- | --- |
+| Stratus Red Team (DataDog, cloud-native) | https://github.com/DataDog/stratus-red-team |
+| Network Flight Simulator (alphasoc) | https://github.com/alphasoc/flightsim |
+| TTPForge (Meta) | https://github.com/facebookincubator/TTPForge |
+| APTSimulator | https://github.com/NextronSystems/APTSimulator |
+| RTA (Endgame) | https://github.com/endgameinc/RTA |
+| Metta (Uber) | https://github.com/uber-common/metta |
 
 #### C2 frameworks (operator engagement, not pipeline-shaped)
 
@@ -447,6 +488,80 @@ Useful for the v2.1 Phase 1 demonstration red team exercise. Not wiring as adapt
 | Adversarial Robustness Toolbox (ART) | https://github.com/Trusted-AI/adversarial-robustness-toolbox | Adversarial example generation |
 | AdvBox | https://github.com/advboxes/AdvBox | Adversarial attack toolbox |
 | Inspect (UK AISI) | https://github.com/UKGovernmentBEIS/inspect_ai | Newer eval framework |
+| FuzzyAI | https://github.com/cyberark/FuzzyAI | CyberArk; genetic-algorithm + mutation fuzzing for novel LLM vulnerabilities (ASCII-art prompts, Unicode smuggling). Discovery shape, not known-attack regression. |
+| promptmap2 | https://github.com/utkusen/promptmap | Utku Şen; specialized prompt-injection scanner with dual-AI architecture; single- and multi-turn testing against system prompts. |
+
+#### Offensive AI agents (dual-use research / Tier 3 candidates)
+
+Autonomous LLM agents that perform pentesting tasks end-to-end. Strategically interesting for two reasons: (1) candidates for **Tier 3 automated red team** if quality validates against garak/PyRIT baselines; (2) exemplars of the citizen-developer-built agent class the offensive security team will need to evaluate as parallels emerge inside the org. Treat with the same scrutiny v2.1 applies to internal AI agents — scoped identity, gateway routing, kill-switch, eval suite. Several are Claude-targeted, which aligns with the sanctioned model stack.
+
+| Tool | Source | Note |
+| --- | --- | --- |
+| PentAGI | https://github.com/vxcontrol/pentagi | Autonomous penetration testing LLM agent |
+| HexStrike AI | https://github.com/0x4m4/hexstrike-ai | Automated pentesting agent |
+| CAI (Cybersecurity AI) | https://github.com/aliasrobotics/CAI | AI security framework |
+| RedAmon | https://github.com/samugit83/redamon | AI red team automation |
+| raptor | https://github.com/gadievron/raptor | Claude-based offensive agent |
+
+> **Catalogue source — promptfoo, "Top 5 open-source AI red-teaming tools (2025)"** — https://www.promptfoo.dev/blog/top-5-open-source-ai-red-teaming-tools-2025/. Three of its picks (Promptfoo, PyRIT, Garak) are already wired in adapters above. **FuzzyAI** and **promptmap2** are added here as reviewed-not-wired. **Honorable mentions** worth future evaluation: **Viper** (general adversarial simulation platform with visual UI and AI-augmented operations) and **Woodpecker** by Operant AI (unified Kubernetes red-team + AI model-testing engine) — verify upstream URLs before wiring.
+
+#### Static analysis additions (language- or platform-specific, defer until in scope)
+
+Reviewed from the OWASP Source Code Analysis Tools community page. Deferred because the language or framework isn't currently inside the AI workload surface — pull in if/when MCP servers, agent tooling, or business apps land in these stacks.
+
+| Tool | Source | Languages / Note |
+| --- | --- | --- |
+| Brakeman | https://github.com/presidentbeef/brakeman | Ruby on Rails |
+| Dawnscanner | https://rubygems.org/gems/dawnscanner | Ruby / Sinatra / Padrino |
+| sobelow | https://github.com/nccgroup/sobelow | Phoenix (Elixir) |
+| clj-holmes | https://github.com/clj-holmes/clj-holmes | Clojure |
+| Psalm (security) | https://psalm.dev/docs/security_analysis/ | PHP — Vimeo's Psalm with security mode |
+| Progpilot | https://github.com/designsecurity/progpilot | PHP — XSS / SQLi taint analysis |
+| PHPStan | https://phpstan.org/ | PHP static analysis |
+| phpcs-security-audit | https://github.com/FloeDesignTechnologies/phpcs-security-audit | PHP_CodeSniffer security ruleset |
+| parse | https://github.com/psecio/parse | PHP |
+| OWASP ASST | https://github.com/OWASP/ASST | PHP + MySQL OWASP Top 10 |
+| L3X | https://github.com/VulnPlanet/l3x | Rust + Solidity (pattern + AI) |
+| Flawfinder | https://www.dwheeler.com/flawfinder/ | C / C++ |
+| Splint | https://www.splint.org/ | C |
+| FindSecBugs (SpotBugs plugin) | https://find-sec-bugs.github.io/ | Java — secondary opinion to Semgrep + CodeQL |
+| SpotBugs | https://spotbugs.github.io/ | Java — host for FindSecBugs |
+| MobSF | https://github.com/MobSF/Mobile-Security-Framework-MobSF | Mobile (Android/iOS) — already in Mobile bucket |
+| mobsfscan | https://github.com/MobSF/mobsfscan | Mobile (Java/Kotlin/Swift/Obj-C) |
+| binskim (Microsoft) | https://github.com/Microsoft/binskim | Windows PE / ELF binary SAST |
+| NaiveSystems Analyze | https://github.com/naivesystems/analyze | C / C++ / Java functional safety |
+| Pyre (Meta) | https://pyre-check.org/ | Python type-check + limited security taint |
+
+#### Heavyweight / orchestration SAST platforms (defer)
+
+Org-scale platforms that overlap or wrap what's already wired (Semgrep, CodeQL, Bandit, Bearer, Trivy). Worth knowing about for second-opinion deployments or when the org standardizes on a single SAST platform.
+
+| Tool | Source | Note |
+| --- | --- | --- |
+| joern (code property graph) | https://joern.io/ | Multi-lang CPG (C/C++/Java/JS/Python/Kotlin/PHP/Go/Ruby/Swift/C#); heavyweight but powerful. |
+| SonarQube Community Edition | https://www.sonarsource.com/products/sonarqube/downloads/success-download-community-edition/ | LGPLv3, the free/OSS edition. 15+ languages (Java, JS/TS, Python, C#, PHP, Kotlin, Go, Ruby, Scala, etc.). Server platform — Java + Postgres; results consumed via REST API. Org-scale SAST candidate. |
+| Fluid Attack's Scanner | https://github.com/fluidattacks/scanner | SAST + DAST + SCA combo; claims perfect OWASP Benchmark. |
+| HuskyCI | https://github.com/globocom/huskyCI | Orchestrates other security scanners; meta-tool overlapping with this pipeline's role. |
+| ShiftLeft Scan (sast-scan) | https://github.com/ShiftLeftSecurity/sast-scan | DevSecOps platform bundling open scanners. |
+| AWS Automated Security Helper | https://github.com/aws-samples/automated-security-helper | Multi-tool AWS wrapper (CFN/Terraform/Python/JS). |
+| HefestoAI | https://github.com/artvepa80/Agents-Hefesto | AI-powered code-quality guardian for AI-generated code; emerging category. |
+| Graudit | https://github.com/wireghoul/graudit/ | Lightweight grep-based; superseded by Semgrep for pipeline use. |
+| nodejsscan | https://github.com/ajinabraham/nodejsscan | Web UI version of njsscan (already wired); use the wired one. |
+| nancy | https://github.com/sonatype-nexus-community/nancy | Go dependency CVE; covered by Grype + OSV-Scanner already. |
+| talisman (Thoughtworks) | https://thoughtworks.github.io/talisman/ | Pre-commit secret scanner; covered by TruffleHog + Gitleaks + detect-secrets. |
+| LunaTrace | https://www.lunasec.io/ | SBOM/SCA; overlap with Syft + Grype. |
+| GolangCI-Lint (gosec aggregator) | https://golangci-lint.run/ | Go linter aggregator embedding gosec — wired via gosec adapter directly. |
+
+#### OpenAPI / API-spec security (defer)
+
+OpenAPI/Swagger contract auditing — relevant for AI gateway and MCP server specs once the org standardizes on the contract-first approach.
+
+| Tool | Source | Note |
+| --- | --- | --- |
+| APIsecurity.io Security Audit | https://apisecurity.io | Online OpenAPI/Swagger static analysis. |
+| 42Crunch VS Code OpenAPI Editor | https://marketplace.visualstudio.com/items?itemName=42Crunch.vscode-openapi | IDE-side spec linting + security audit. |
+
+> **Catalogue source — OWASP Source Code Analysis Tools community page** (https://owasp.org/www-community/Source_Code_Analysis_Tools). Already-wired matches: Bandit, Bearer, Grype, Semgrep, Syft. **Wired this round:** gosec, OWASP Noir, SplxAI Agentic Radar, Adobe Ride. **Reviewed and skipped (abandoned upstream):** FindBugs (legacy, replaced by SpotBugs), Microsoft PREFast (last update 2006), VisualCodeGrepper (SourceForge, abandoned), Google CodeSearchDiggity (depends on retired Google Code Search). **Reviewed and skipped (commercial-leaning despite list inclusion):** PVS-Studio, ParaSoft, Spectral / SpectralOps, HCL AppScan CodeSweep family, Puma Scan Professional, .NET Code Analysis (FxCop successor), GitHub Advanced Security (uses CodeQL — already wired directly).
 
 #### Mobile / wireless / specialty (out of scope today)
 
@@ -457,6 +572,38 @@ Useful for the v2.1 Phase 1 demonstration red team exercise. Not wiring as adapt
 | Kismet | https://github.com/kismetwireless/kismet |
 | Hashcat | https://github.com/hashcat/hashcat |
 | John the Ripper | https://github.com/openwall/john |
+
+### Methodology references (reviewed, no tool additions)
+
+External writeups reviewed for tool ideas. These sources are about *integration patterns* (CI/CD, GitHub Actions, shift-left workflows) rather than tool catalogues. Recording the URL so the catalogue is auditable.
+
+| Source | URL | Outcome |
+| --- | --- | --- |
+| johal.in — "CI/CD Pipeline Security: Integrating SAST and DAST Tools in GitHub Actions Workflows (2025)" | https://johal.in/ci-cd-pipeline-security-integrating-sast-and-dast-tools-in-github-actions-workflows-2025/ | Site blocks bot fetch (403); content extracted from search snippets only. Free/OSS tools mentioned: ZAP, CodeQL — both already wired. Commercial tools mentioned (out of catalogue scope): Fortify, Veracode, Checkmarx, WebInspect, Acunetix, Snyk. **Net adapter additions: zero.** Article *did* prompt the GitHub Actions wiring at `.github/workflows/ai-protect.yml`. |
+| primeop/Secure-SDLC-DevSecOps-Pipeline — runnable GHA reference for containerized SAST + DAST + SCA | https://github.com/primeop/Secure-SDLC-DevSecOps-Pipeline | Tools integrated: Semgrep, SonarQube, ZAP, Burp, Trivy, Syft — **all already wired or catalogued**. Pattern of interest: tool-specific Docker images invoked from GHA jobs (rather than `pip install` of the scanner). 26 commits, 0 stars, no license declared, early-stage. **Net adapter additions: zero. Net pattern takeaway: candidate Docker shape for the daemon-style adapters (ZAP, Burp, Caldera, Metasploit, Sonar) — see "Containerization plan" below.** |
+
+### Containerization plan (deferred)
+
+The pipeline itself is `pip install` + CLI today, which is the right default — most wired adapters are CLI tools that work fine off `$PATH`. But a handful of adapters are **daemon-shape** services that benefit materially from containerization, both for reproducibility and for CI ephemerality:
+
+- **ZAP** — `ghcr.io/zaproxy/zaproxy:stable` is the canonical distribution; we already document `docker run` in the adapter docstring.
+- **Burp Suite Enterprise** — vendor ships an image; the REST API the adapter uses is the same.
+- **Caldera (MITRE)** — runs as a server (`mitre/caldera` Docker image); operations are submitted via REST.
+- **Metasploit** — daemon mode behind RPC; metasploit-framework image exists.
+- **SonarQube** — when wired, will run as a containerized server.
+- **Sandboxed mutation tools** (atomic, sqlmap exploit modules) — strong fit for ephemeral container hosts so the agent runtime doesn't accumulate state.
+
+The realistic minimum viable container story is therefore a `docker-compose.yml` that brings up the daemon services (ZAP + Caldera + Sonar + maybe Burp) and a thin `Dockerfile` that pins the pipeline runner Python environment. CLI scanners (semgrep, bandit, trufflehog, gosec, etc.) keep being installed into the runner image rather than getting their own containers — the per-tool-image pattern primeop uses adds operational cost without much benefit for those.
+
+This is recorded as deferred — pull in when the team actually wants ephemeral CI scans or when Platform Engineering asks for a containerized deployment artifact.
+
+### Tools reviewed and not pursued
+
+Single-tool repositories evaluated and explicitly skipped. Recorded so the catalogue stays auditable and so the same source isn't re-evaluated.
+
+| Source | URL | Reason skipped |
+| --- | --- | --- |
+| alekzandren/Automated_Vulnerability_Scanner (PySec-Hybrid) | https://github.com/alekzandren/Automated_Vulnerability_Scanner | Educational-grade Python-only AST scanner (`eval`/`exec`/`os.system` detection). 2 stars, 11 commits, 0 forks. Strict subset of what wired-in `bandit` already covers, with much smaller community validation. MIT licensed; not maintained at production grade. |
 
 ### How to add a new tool
 

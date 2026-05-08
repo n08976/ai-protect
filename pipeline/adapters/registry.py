@@ -1,11 +1,13 @@
 """Adapter registry — name → class. Used by the orchestrator to dispatch."""
 from __future__ import annotations
 
+from .agentic_radar import AgenticRadarAdapter
 from .atomic import AtomicRedTeamAdapter
 from .bandit import BanditAdapter
 from .base import Adapter
 from .bearer import BearerAdapter
 from .burp import BurpAdapter
+from .caldera import CalderaAdapter
 from .checkov import CheckovAdapter
 from .codeql import CodeQLAdapter
 from .dependency_check import DependencyCheckAdapter
@@ -14,6 +16,7 @@ from .dockle import DockleAdapter
 from .eval_suite import EvalSuiteAdapter
 from .garak import GarakAdapter
 from .gitleaks import GitleaksAdapter
+from .gosec import GosecAdapter
 from .grype import GrypeAdapter
 from .guardrails import GuardrailsAdapter
 from .hadolint import HadolintAdapter
@@ -24,11 +27,13 @@ from .modelscan import ModelScanAdapter
 from .njsscan import NjsscanAdapter
 from .nuclei import NucleiAdapter
 from .osv_scanner import OSVScannerAdapter
+from .owasp_noir import OWASPNoirAdapter
 from .pip_audit import PipAuditAdapter
 from .presidio import PresidioAdapter
 from .promptfoo import PromptfooAdapter
 from .pyrit import PyRITAdapter
 from .recon import ReconAdapter
+from .ride import RideAdapter
 from .semgrep import SemgrepAdapter
 from .sqlmap import SqlmapAdapter
 from .syft import SyftAdapter
@@ -45,6 +50,7 @@ REGISTRY: dict[str, type[Adapter]] = {
     "garak": GarakAdapter,
     "pyrit": PyRITAdapter,
     "atomic": AtomicRedTeamAdapter,
+    "caldera": CalderaAdapter,
     "burp": BurpAdapter,
     "metasploit": MetasploitAdapter,
     "mcp_scope": MCPScopeAdapter,
@@ -54,6 +60,7 @@ REGISTRY: dict[str, type[Adapter]] = {
     "detect_secrets": DetectSecretsAdapter,
     "semgrep": SemgrepAdapter,
     "bandit": BanditAdapter,
+    "gosec": GosecAdapter,
     "bearer": BearerAdapter,
     "codeql": CodeQLAdapter,
     "njsscan": NjsscanAdapter,
@@ -72,6 +79,9 @@ REGISTRY: dict[str, type[Adapter]] = {
     "zap": ZAPAdapter,
     "recon": ReconAdapter,
     "promptfoo": PromptfooAdapter,
+    "agentic_radar": AgenticRadarAdapter,
+    "owasp_noir": OWASPNoirAdapter,
+    "ride": RideAdapter,
     "guardrails": GuardrailsAdapter,
     "eval_suite": EvalSuiteAdapter,
     "telemetry_drift": TelemetryDriftAdapter,

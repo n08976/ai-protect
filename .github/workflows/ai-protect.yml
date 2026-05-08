@@ -1,0 +1,167 @@
+name: ai-protect pipeline
+
+# Runs the ai-protect AI assurance pipeline against every example manifest in
+# pipeline/manifests/. Adapters that need an external tool (garak, gosec,
+# nuclei, etc.) raise AdapterUnavailable and are skipped non-fatally — the
+# pipeline still gates on what *is* installed plus the built-in policy gates
+# (manifest_validator, threat_model_check, mcp_scope, eval_suite).
+#
+# To wire CI/CD coverage for a real AI workload:
+#   1. Drop a manifest into pipeline/manifests/ describing the app/agent.
+#   2. The matrix below picks it up automatically.
+#   3. Install the additional adapter binaries you actually want enforced
+#      (semgrep, bandit, trufflehog, gitleaks, gosec, etc.) in the
+#      "Install pipeline tooling" step before `python -m pipeline.cli run`.
+#   4. Configure secrets for credentialed adapters (NVD_API_KEY for
+#      dependency_check; CALDERA_API_URL/KEY; ZAP_API_URL; etc.) as needed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Pipeline stage to run'
+        required: true
+        default: preprod
+        type: choice
+        options: [intake, design, build, preprod, production]
+
+permissions:
+  contents: read
+
+jobs:
+  tier-classify:
+    name: Tier-classify manifests
+    runs-on: ubuntu-latest
+    outputs:
+      manifests: ${{ steps.discover.outputs.manifests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install pipeline
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r pipeline/requirements.txt
+
+      - name: Discover manifests
+        id: discover
+        run: |
+          manifests=$(ls pipeline/manifests/example_*.yml | jq -R -s -c 'split("\n")[:-1]')
+          echo "manifests=$manifests" >> "$GITHUB_OUTPUT"
+
+      - name: Print tier for each manifest
+        run: |
+          for m in pipeline/manifests/example_*.yml; do
+            echo "::group::Tier classification — $m"
+            python -m pipeline.cli tier "$m"
+            echo "::endgroup::"
+          done
+
+  scan:
+    name: Scan ${{ matrix.manifest }}
+    needs: tier-classify
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        manifest: ${{ fromJson(needs.tier-classify.outputs.manifests) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install pipeline
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r pipeline/requirements.txt
+
+      # The built-in adapters (manifest_validator, threat_model_check,
+      # mcp_scope, eval_suite, telemetry_drift) need no extra tooling.
+      # Install whichever external scanners you want CI to enforce.
+      - name: Install pipeline tooling (SAST + secret scanners)
+        run: |
+          pip install bandit semgrep detect-secrets pip-audit
+          # Add others here as the team standardizes on them:
+          #   - trufflehog (binary release)
+          #   - gitleaks (binary release)
+          #   - gosec (go install)
+          #   - dependency-check.sh (binary release; requires NVD_API_KEY)
+
+      - name: Run pipeline (preprod by default; manual dispatch can override)
+        id: run
+        env:
+          # Wire credentials for credentialed adapters when in scope:
+          #   NVD_API_KEY:        ${{ secrets.NVD_API_KEY }}
+          #   ZAP_API_URL:        ${{ secrets.ZAP_API_URL }}
+          #   ZAP_API_KEY:        ${{ secrets.ZAP_API_KEY }}
+          #   BURP_API_URL:       ${{ secrets.BURP_API_URL }}
+          #   BURP_API_KEY:       ${{ secrets.BURP_API_KEY }}
+          #   CALDERA_API_URL:    ${{ secrets.CALDERA_API_URL }}
+          #   CALDERA_API_KEY:    ${{ secrets.CALDERA_API_KEY }}
+          STAGE: ${{ github.event.inputs.stage || 'preprod' }}
+        run: |
+          mkdir -p findings
+          slug=$(basename "${{ matrix.manifest }}" .yml)
+          out="findings/$slug.jsonl"
+          echo "Running pipeline stage=$STAGE for ${{ matrix.manifest }}"
+          # Exit code 2 = a blocking gate failed. We surface that to the job.
+          set +e
+          python -m pipeline.cli --findings "$out" run "${{ matrix.manifest }}" --stage "$STAGE"
+          ec=$?
+          set -e
+          echo "rc=$ec" >> "$GITHUB_OUTPUT"
+          echo "out=$out" >> "$GITHUB_OUTPUT"
+          if [ "$ec" -ne 0 ] && [ "$ec" -ne 2 ]; then
+            echo "::error::pipeline exited with unexpected code $ec"
+            exit "$ec"
+          fi
+
+      - name: Generate executive + technical reports
+        if: always()
+        run: |
+          out="${{ steps.run.outputs.out }}"
+          if [ -s "$out" ]; then
+            python -m pipeline.cli --findings "$out" report --kind technical --format text > "${out%.jsonl}.technical.txt" || true
+            python -m pipeline.cli --findings "$out" report --kind executive --format text > "${out%.jsonl}.executive.txt" || true
+          fi
+
+      - name: Upload findings + reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-protect-${{ github.run_id }}-${{ strategy.job-index }}
+          path: findings/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Fail on blocking gate failure
+        if: steps.run.outputs.rc == '2'
+        run: |
+          echo "::error file=${{ matrix.manifest }}::ai-protect blocking gate failed for this manifest. See findings artifact and the run log group above."
+          exit 1
+
+  tests:
+    name: pipeline unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r pipeline/requirements.txt
+          pip install pytest
+      - name: Test
+        run: python -m pytest pipeline/tests/ -q

@@ -1,7 +1,7 @@
 """OWASP ZAP adapter — free Burp Pro substitute.
 
 ZAP exposes a REST API on its admin port. We drive it the same way the burp
-adapter drives Burp Enterprise — start a scan, poll for completion, pull
+adapter drives Burp Enterprise — kick a scan, poll for completion, pull
 alerts. Designed for orgs without Burp Pro/Enterprise licensed.
 
 Run ZAP first (pick one):
@@ -17,6 +17,17 @@ Then point this adapter at it via env:
     ZAP_API_KEY=<key from ZAP UI or empty if api.disablekey=true>
 
 Repo: https://github.com/zaproxy/zaproxy
+
+Supported modes (via config.mode):
+
+    spider    — URL discovery only (fastest; no vulnerabilities)
+    baseline  — 1-minute spider + passive rules; safe for live targets and Tier 3/4
+    active    — spider + active scan; mutating
+    full      — spider + active scan + extended passive rules; longest run
+    api       — import OpenAPI / SOAP / GraphQL spec, then spider + active;
+                strong fit for AI gateway and MCP server surfaces. Provide
+                config.api_spec_url, or the adapter will try
+                <target.api_url>/openapi.json as a fallback.
 """
 from __future__ import annotations
 
@@ -42,7 +53,10 @@ SEVERITY_MAP = {
 }
 
 
-# Risk + alert name → category, best-effort
+SUPPORTED_MODES = ("spider", "baseline", "active", "ascan", "full", "api")
+MUTATING_MODES = ("active", "ascan", "full", "api")
+
+
 def _categorize(name: str) -> Category:
     n = (name or "").lower()
     if "xss" in n: return Category.HARMFUL_CONTENT
@@ -56,11 +70,11 @@ def _categorize(name: str) -> Category:
 
 class ZAPAdapter(Adapter):
     name = "zap"
-    description = "OWASP ZAP — free DAST scanner via REST API (Burp Pro substitute)"
+    description = "OWASP ZAP — free DAST scanner via REST API (modes: spider, baseline, active, full, api)"
 
     @property
     def requires_mutation(self) -> bool:
-        return self.config.get("mode", "spider").lower() in ("active", "ascan")
+        return self.config.get("mode", "spider").lower() in MUTATING_MODES
 
     def preflight(self) -> None:
         super().preflight()
@@ -69,6 +83,11 @@ class ZAPAdapter(Adapter):
         if not os.environ.get("ZAP_API_URL"):
             raise AdapterUnavailable(
                 "ZAP_API_URL not set. Start ZAP daemon and export the URL."
+            )
+        mode = self.config.get("mode", "spider").lower()
+        if mode not in SUPPORTED_MODES:
+            raise AdapterUnavailable(
+                f"Unknown ZAP mode {mode!r}. Supported: {', '.join(SUPPORTED_MODES)}"
             )
 
     def _api(self) -> str:
@@ -85,35 +104,142 @@ class ZAPAdapter(Adapter):
     def run(self):
         self.preflight()
         target = self.manifest.target.base_url
-        mode = self.config.get("mode", "spider")  # spider | active | passive
+        mode = self.config.get("mode", "spider").lower()
         timeout_s = self.config.get("timeout_s", 1200)
         deadline = time.time() + timeout_s
         tier = classify(self.manifest).tier
 
-        # Always start with a spider so ZAP knows the URL tree.
+        if mode == "api":
+            self._import_api_spec()
+
+        # Every mode kicks off with a spider so ZAP knows the URL tree. Baseline
+        # caps the spider at ~1 minute to stay quick for low-tier scans.
+        spider_deadline = min(deadline, time.time() + 60) if mode == "baseline" else deadline
+        self._spider(target, spider_deadline)
+
+        if mode in ("active", "ascan", "full", "api"):
+            self._active_scan(target, deadline)
+
+        if mode in ("baseline", "full"):
+            self._wait_passive(deadline)
+
+        return self._collect_alerts(target, tier)
+
+    def _spider(self, target: str, deadline: float) -> None:
         log.info("ZAP spider %s", target)
-        r = requests.get(f"{self._api()}/JSON/spider/action/scan/", params=self._params(url=target), timeout=15)
+        r = requests.get(
+            f"{self._api()}/JSON/spider/action/scan/",
+            params=self._params(url=target),
+            timeout=15,
+        )
         r.raise_for_status()
         scan_id = r.json().get("scan")
         while time.time() < deadline:
-            r = requests.get(f"{self._api()}/JSON/spider/view/status/", params=self._params(scanId=scan_id), timeout=15)
+            r = requests.get(
+                f"{self._api()}/JSON/spider/view/status/",
+                params=self._params(scanId=scan_id),
+                timeout=15,
+            )
             if r.json().get("status") == "100":
                 break
             time.sleep(5)
 
-        if mode in ("active", "ascan"):
-            log.info("ZAP active scan %s", target)
-            r = requests.get(f"{self._api()}/JSON/ascan/action/scan/", params=self._params(url=target), timeout=15)
-            r.raise_for_status()
-            scan_id = r.json().get("scan")
-            while time.time() < deadline:
-                r = requests.get(f"{self._api()}/JSON/ascan/view/status/", params=self._params(scanId=scan_id), timeout=15)
-                if r.json().get("status") == "100":
-                    break
-                time.sleep(10)
+    def _active_scan(self, target: str, deadline: float) -> None:
+        log.info("ZAP active scan %s", target)
+        r = requests.get(
+            f"{self._api()}/JSON/ascan/action/scan/",
+            params=self._params(url=target),
+            timeout=15,
+        )
+        r.raise_for_status()
+        scan_id = r.json().get("scan")
+        while time.time() < deadline:
+            r = requests.get(
+                f"{self._api()}/JSON/ascan/view/status/",
+                params=self._params(scanId=scan_id),
+                timeout=15,
+            )
+            if r.json().get("status") == "100":
+                break
+            time.sleep(10)
 
-        # Pull all alerts for this baseurl.
-        r = requests.get(f"{self._api()}/JSON/core/view/alerts/", params=self._params(baseurl=target), timeout=30)
+    def _wait_passive(self, deadline: float) -> None:
+        """Wait for passive scan queue to drain."""
+        while time.time() < deadline:
+            r = requests.get(
+                f"{self._api()}/JSON/pscan/view/recordsToScan/",
+                params=self._params(),
+                timeout=15,
+            )
+            try:
+                remaining = int(r.json().get("recordsToScan", "0"))
+            except (ValueError, TypeError):
+                break
+            if remaining == 0:
+                break
+            time.sleep(5)
+
+    def _import_api_spec(self) -> None:
+        """Import an OpenAPI / SOAP / GraphQL spec into ZAP before spidering."""
+        spec_url = self._resolve_api_spec_url()
+        if not spec_url:
+            log.warning("ZAP api mode: no spec URL provided or inferable; falling back to URL spider only")
+            return
+
+        api_url = self.manifest.target.api_url or self.manifest.target.base_url
+
+        # OpenAPI / Swagger
+        if any(spec_url.lower().endswith(ext) for ext in (".json", ".yaml", ".yml")) or "openapi" in spec_url.lower() or "swagger" in spec_url.lower():
+            log.info("ZAP importing OpenAPI/Swagger spec %s", spec_url)
+            r = requests.get(
+                f"{self._api()}/JSON/openapi/action/importUrl/",
+                params=self._params(url=spec_url, hostOverride=api_url or ""),
+                timeout=60,
+            )
+            r.raise_for_status()
+            return
+
+        # SOAP / WSDL
+        if spec_url.lower().endswith(".wsdl") or "wsdl" in spec_url.lower():
+            log.info("ZAP importing SOAP WSDL %s", spec_url)
+            r = requests.get(
+                f"{self._api()}/JSON/soap/action/importUrl/",
+                params=self._params(url=spec_url),
+                timeout=60,
+            )
+            r.raise_for_status()
+            return
+
+        # GraphQL — endpoint URL with introspection (ZAP graphql add-on)
+        if "graphql" in spec_url.lower():
+            log.info("ZAP importing GraphQL endpoint %s", spec_url)
+            r = requests.get(
+                f"{self._api()}/JSON/graphql/action/importUrl/",
+                params=self._params(endurl=spec_url),
+                timeout=60,
+            )
+            # GraphQL add-on may not be installed; treat as soft-fail
+            if r.status_code >= 400:
+                log.warning("ZAP graphql import failed (add-on not installed?); continuing without spec")
+            return
+
+        log.warning("ZAP api mode: unrecognized spec format at %s; continuing without import", spec_url)
+
+    def _resolve_api_spec_url(self) -> str | None:
+        spec = self.config.get("api_spec_url")
+        if spec:
+            return spec
+        api_url = self.manifest.target.api_url
+        if api_url:
+            return api_url.rstrip("/") + "/openapi.json"
+        return None
+
+    def _collect_alerts(self, target: str, tier: int):
+        r = requests.get(
+            f"{self._api()}/JSON/core/view/alerts/",
+            params=self._params(baseurl=target),
+            timeout=30,
+        )
         r.raise_for_status()
         alerts = r.json().get("alerts", [])
 
