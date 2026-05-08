@@ -37,11 +37,10 @@ class GitleaksAdapter(Adapter):
         with tempfile.TemporaryDirectory() as td:
             report = Path(td) / "gitleaks.json"
             cmd = [
-                "gitleaks", "directory", path,
+                "gitleaks", "dir", path,
                 "--report-format", "json",
                 "--report-path", str(report),
-                "--no-git",
-                "--exit-code", "0",  # don't fail; we'll surface findings via the schema
+                "--exit-code", "0",
             ]
             try:
                 subprocess.run(cmd, capture_output=True, text=True, timeout=600, check=False)

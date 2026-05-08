@@ -105,8 +105,17 @@ Every adapter implements the same interface (`pipeline/adapters/base.py`): prefl
 | `manifest_validator` | (built-in) | intake | Schema + sanctioned-infra policy. PHI without BAA fails immediately. |
 | `threat_model_check` | (built-in) | design | Tier 1-2 require a signed-off threat model artifact. |
 | `trufflehog` | [TruffleHog](https://github.com/trufflesecurity/trufflehog) | build | Source-tree secret scanning. CRITICAL on verified hits. |
+| `gitleaks` | [Gitleaks](https://github.com/gitleaks/gitleaks) | build | Second secret scanner with a different ruleset (catches what TruffleHog misses). |
 | `semgrep` | [Semgrep](https://github.com/semgrep/semgrep) | build | SAST patterns — Python + security-audit + secrets registries by default. |
-| `nuclei` | [Nuclei](https://github.com/projectdiscovery/nuclei) | build | Template-driven web vuln scan. |
+| `bandit` | [Bandit](https://github.com/PyCQA/bandit) | build | Python-native SAST, complements Semgrep. |
+| `pip_audit` | [pip-audit](https://github.com/pypa/pip-audit) | build | Python dep CVE scanner (PyPA Advisory DB + OSV). |
+| `trivy` | [Trivy](https://github.com/aquasecurity/trivy) | build / preprod | Filesystem / image / IaC / secret scan in one binary; multi-mode. |
+| `checkov` | [Checkov](https://github.com/bridgecrewio/checkov) | design / build | IaC specialist (Terraform / K8s / Helm / Dockerfile). |
+| `nuclei` | [Nuclei](https://github.com/projectdiscovery/nuclei) | build / preprod | Template-driven web vuln scan. |
+| `zap` | [OWASP ZAP](https://github.com/zaproxy/zaproxy) | preprod | Free Burp Pro substitute via REST API; spider + active scan. |
+| `recon` | [subfinder](https://github.com/projectdiscovery/subfinder) + [httpx](https://github.com/projectdiscovery/httpx) + [naabu](https://github.com/projectdiscovery/naabu) + [katana](https://github.com/projectdiscovery/katana) | intake (Tier 1) | Shadow-AI discovery chain — subdomains → HTTP services → ports → URLs. |
+| `promptfoo` | [promptfoo](https://github.com/promptfoo/promptfoo) / [DeepEval](https://github.com/confident-ai/deepeval) | preprod | AI eval frameworks complementary to PyRIT (correctness, safety, refusal). |
+| `guardrails` | [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) | design / preprod | Runtime input/output filter validation + smoke against the guarded endpoint. |
 | `garak` | [NVIDIA garak](https://github.com/NVIDIA/garak) | build + preprod | LLM probes (prompt injection, leakage, jailbreak, encoding). |
 | `pyrit` | [Microsoft PyRIT](https://github.com/Azure/PyRIT) | build + preprod | Multi-turn orchestrators (injection, encoding, multiturn, crescendo, leakage). |
 | `mcp_scope` | (built-in) | preprod blocking | **Highest-leverage control.** Tier inheritance, action allow-list, side-effect, live token-scope probe. |
