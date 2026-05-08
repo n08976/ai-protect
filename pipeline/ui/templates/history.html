@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}History · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1 style="margin-bottom:6px">History</h1>
+    <p class="muted">Append-only timeline of every scan, finding, change, approval, apply, rollback, and re-scan. 365-day retention.</p>
+    <div class="severity-row">
+      {% for f in [('scan', 'scans'), ('change', 'changes'), ('finding', 'findings')] %}
+        <a class="severity-pill state-applied{% if event_filter == f[0] %} active{% endif %}"
+           href="{% if event_filter == f[0] %}{{ url_for('history') }}{% else %}{{ url_for('history', event=f[0]) }}{% endif %}">
+          {{ f[1] }}
+        </a>
+      {% endfor %}
+      {% if event_filter or app_filter %}
+        <a class="clear-filters" href="{{ url_for('history') }}">clear filters</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="findings-list">
+    {% if events %}
+      <table class="findings">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Event</th>
+            <th>Actor</th>
+            <th>App / Change</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in events %}
+            <tr>
+              <td class="mono small">{{ e.ts }}</td>
+              <td><span class="sev-badge sev-info">{{ e.event }}</span></td>
+              <td class="small">{{ e.actor or "—" }}</td>
+              <td class="mono small">
+                {% if e.change_id %}
+                  <a href="{{ url_for('change_detail', change_id=e.change_id) }}">{{ e.change_id }}</a>
+                {% elif e.app_name %}{{ e.app_name }}
+                {% elif e.app %}{{ e.app }}
+                {% endif %}
+              </td>
+              <td class="small">
+                {% set extras = [] %}
+                {% if e.from_state and e.to_state %}{% set _ = extras.append(e.from_state ~ " → " ~ e.to_state) %}{% endif %}
+                {% if e.strategy %}{% set _ = extras.append("strategy: " ~ e.strategy) %}{% endif %}
+                {% if e.confidence is defined %}{% set _ = extras.append("conf: " ~ ("%.0f" % (e.confidence * 100)) ~ "%") %}{% endif %}
+                {% if e.test_count is defined %}{% set _ = extras.append("tests: " ~ e.test_count) %}{% endif %}
+                {% if e.test_status %}{% set _ = extras.append("test_status: " ~ e.test_status) %}{% endif %}
+                {% if e.scope %}{% set _ = extras.append("scope: " ~ e.scope) %}{% endif %}
+                {% if e.kind %}{% set _ = extras.append("kind: " ~ e.kind) %}{% endif %}
+                {% if e.findings is defined %}{% set _ = extras.append("findings: " ~ e.findings) %}{% endif %}
+                {% if e.new_high_or_above is defined %}{% set _ = extras.append("HIGH+: " ~ e.new_high_or_above) %}{% endif %}
+                {% if e.original_cleared is defined %}{% set _ = extras.append("cleared: " ~ e.original_cleared) %}{% endif %}
+                {% if e.reason %}{% set _ = extras.append("reason: " ~ e.reason) %}{% endif %}
+                {% if e.actions %}{% set _ = extras.append("actions: " ~ (e.actions|length) ~ " files") %}{% endif %}
+                {{ extras|join(' · ') }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">No history yet.</div>
+    {% endif %}
+  </section>
+{% endblock %}

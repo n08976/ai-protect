@@ -69,5 +69,14 @@
       </ul>
     </section>
     {% endif %}
+
+    <section>
+      <h2>Remediation</h2>
+      <p class="muted">Auto-fix is available for some categories. Proposed changes are reviewable before any file is touched; backups are taken automatically.</p>
+      <form method="POST" action="{{ url_for('propose_change', finding_id=finding.finding_id) }}" style="display:inline">
+        <button type="submit" class="btn btn-primary">Propose remediation</button>
+      </form>
+      <a href="{{ url_for('remediations_queue') }}" class="btn btn-secondary" style="margin-left:8px">View remediation queue</a>
+    </section>
   </article>
 {% endblock %}

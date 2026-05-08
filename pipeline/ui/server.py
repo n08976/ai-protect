@@ -13,13 +13,18 @@ import os
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 
 from ..adapters.registry import REGISTRY
 from ..core.findings import FindingStore, Severity
 from ..core.tiering import classify
 from ..core.manifest import Manifest
+from ..remediate.engine import Engine, EngineError
+from ..remediate.registry import remediators_for
+from ..remediate.state import ChangeState, ChangeStore, EventStore
 from .catalog import CATALOG, CATEGORY_ORDER
+
+DEFAULT_ACTOR = "operator@example.com"
 
 
 def create_app(findings_path: str, manifests_dir: str) -> Flask:
@@ -30,6 +35,20 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     )
     app.config["FINDINGS_PATH"] = findings_path
     app.config["MANIFESTS_DIR"] = manifests_dir
+
+    def _engine_for(app_name: str) -> Engine | None:
+        """Build an Engine for the manifest matching this app."""
+        md = Path(app.config["MANIFESTS_DIR"])
+        if not md.is_dir():
+            return None
+        for p in md.glob("*.yml"):
+            try:
+                m = Manifest.from_yaml(p)
+                if m.name == app_name:
+                    return Engine(m, FindingStore(app.config["FINDINGS_PATH"]))
+            except Exception:
+                continue
+        return None
 
     @app.route("/")
     def index():
@@ -177,7 +196,102 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                     items.append({"name": p.name, "error": str(e), "path": str(p)})
         return render_template("manifests.html", manifests=items)
 
+    # ============================================================
+    # Remediation routes
+    # ============================================================
+
+    @app.route("/remediations")
+    def remediations_queue():
+        store = ChangeStore()
+        changes = store.all()
+        state_filter = request.args.get("state")
+        if state_filter:
+            changes = [c for c in changes if c.state.value == state_filter]
+        from collections import Counter
+        by_state = Counter(c.state.value for c in store.all())
+        return render_template(
+            "remediations.html", changes=changes, by_state=by_state,
+            state_filter=state_filter, all_states=[s.value for s in ChangeState],
+        )
+
+    @app.route("/change/<change_id>")
+    def change_detail(change_id):
+        store = ChangeStore()
+        change = store.get(change_id)
+        if not change:
+            return "Change not found", 404
+        events = EventStore().all()
+        change_events = [e for e in events if e.get("change_id") == change_id]
+        return render_template(
+            "change_detail.html", change=change, events=change_events,
+            allowed_next=_allowed_next(change.state),
+        )
+
+    @app.route("/finding/<finding_id>/propose", methods=["POST"])
+    def propose_change(finding_id):
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        finding = next((f for f in store.all() if f.finding_id == finding_id), None)
+        if not finding:
+            return "Finding not found", 404
+        eng = _engine_for(finding.app_name)
+        if not eng:
+            return f"No manifest for app {finding.app_name!r}", 400
+        try:
+            change = eng.propose(finding_id, actor=DEFAULT_ACTOR)
+        except EngineError as e:
+            return f"Cannot propose: {e}", 400
+        return redirect(url_for("change_detail", change_id=change.change_id))
+
+    @app.route("/change/<change_id>/<action>", methods=["POST"])
+    def change_action(change_id, action):
+        store = ChangeStore()
+        change = store.get(change_id)
+        if not change:
+            return "Change not found", 404
+        eng = _engine_for(change.app_name)
+        if not eng:
+            return f"No manifest for {change.app_name!r}", 400
+        try:
+            if action == "approve":
+                eng.approve(change_id, actor=DEFAULT_ACTOR)
+            elif action == "reject":
+                eng.reject(change_id, actor=DEFAULT_ACTOR, reason=request.form.get("reason", ""))
+            elif action == "apply":
+                if request.form.get("confirm") != "yes":
+                    return "Confirmation required", 400
+                eng.apply(change_id, actor=DEFAULT_ACTOR)
+            elif action == "rollback":
+                eng.rollback(change_id, actor=DEFAULT_ACTOR)
+            elif action == "rescan":
+                eng.rescan(change_id, actor=DEFAULT_ACTOR)
+            elif action == "deploy":
+                eng.deploy(change_id, actor=DEFAULT_ACTOR)
+            else:
+                return f"Unknown action {action!r}", 400
+        except EngineError as e:
+            return f"Cannot {action}: {e}", 400
+        return redirect(url_for("change_detail", change_id=change_id))
+
+    @app.route("/history")
+    def history():
+        events = EventStore().all()
+        events.reverse()  # newest first
+        event_filter = request.args.get("event")
+        app_filter = request.args.get("app")
+        if event_filter:
+            events = [e for e in events if e.get("event", "").startswith(event_filter)]
+        if app_filter:
+            events = [e for e in events if e.get("app") == app_filter or e.get("app_name") == app_filter]
+        return render_template("history.html", events=events,
+                               event_filter=event_filter, app_filter=app_filter)
+
     return app
+
+
+def _allowed_next(state: ChangeState) -> list[str]:
+    from ..remediate.state import ALLOWED
+    return [s.value for s in ALLOWED.get(state, set())]
 
 
 def _stats(findings) -> dict:

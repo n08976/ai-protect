@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Change {{ change.change_id }} · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <a class="back" href="{{ url_for('remediations_queue') }}">← back to queue</a>
+
+  <article class="change-detail">
+    <header>
+      <span class="state-badge state-{{ change.state.value }}">{{ change.state.value }}</span>
+      <span class="tier-badge tier-{{ change.tier }}">Tier {{ change.tier }}</span>
+      <span class="cat">{{ change.strategy }}</span>
+      <h1>{{ change.summary }}</h1>
+      <div class="meta">
+        <span><strong>change:</strong> <code>{{ change.change_id }}</code></span>
+        <span><strong>app:</strong> {{ change.app_name }}</span>
+        <span><strong>finding:</strong> <a href="{{ url_for('finding_detail', finding_id=change.finding_id) }}"><code>{{ change.finding_id[:8] }}…</code></a></span>
+        <span><strong>confidence:</strong> {{ '%.0f' % (change.confidence * 100) }}%</span>
+      </div>
+    </header>
+
+    {% if change.notes %}
+      <section>
+        <h2>Notes</h2>
+        <pre class="notes">{{ change.notes }}</pre>
+      </section>
+    {% endif %}
+
+    <section>
+      <h2>Proposed diff</h2>
+      {% if change.diff %}
+        <pre class="diff">{{ change.diff }}</pre>
+      {% else %}
+        <p class="muted">No file changes — this remediation surfaces a snippet for manual application (see Notes).</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Tests</h2>
+      {% if change.tests %}
+        <table class="kv">
+          <tr><th>Test</th><th>Path</th><th>Pre-apply (expect FAIL)</th><th>Post-apply (expect PASS)</th></tr>
+          {% for t in change.tests %}
+            <tr>
+              <td class="mono">{{ t.name }}</td>
+              <td class="mono small">{{ t.path }}</td>
+              <td>
+                {% if t.pre_apply_passed is none %}—
+                {% elif t.pre_apply_passed %}<span class="sev-badge sev-medium">passed (unexpected)</span>
+                {% else %}<span class="sev-badge sev-info">failed (correct)</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if t.post_apply_passed is none %}—
+                {% elif t.post_apply_passed %}<span class="sev-badge sev-info">passed</span>
+                {% else %}<span class="sev-badge sev-high">failed</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% elif change.test_status == 'not_generatable' %}
+        <div class="warn-banner">
+          <strong>No unit test could be generated.</strong>
+          <p>{{ change.test_status_reason or "This category does not produce a testable artifact." }} The change can still be applied — validation will rely on the post-apply re-scan.</p>
+        </div>
+      {% else %}
+        <p class="muted">No tests yet.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Files affected</h2>
+      {% if change.files %}
+        <table class="kv">
+          <tr><th>File</th><th>Status</th><th>Backup</th><th>SHA before → after</th></tr>
+          {% for f in change.files %}
+            <tr>
+              <td class="mono small">{{ f.path }}</td>
+              <td>{% if f.created %}created{% else %}modified{% endif %}</td>
+              <td class="mono small">{{ f.backup_path or "—" }}</td>
+              <td class="mono small">{{ (f.sha_before or '∅')[:10] }} → {{ (f.sha_after or '∅')[:10] }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p class="muted">No files declared yet (proposed but not applied).</p>
+      {% endif %}
+    </section>
+
+    <section class="action-bar">
+      <h2>Actions</h2>
+      {% set s = change.state.value %}
+
+      {% if s in ('proposed','tests_generated','no_test_possible') %}
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='approve') }}" style="display:inline">
+          <button type="submit" class="btn btn-primary">Approve</button>
+        </form>
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='reject') }}" style="display:inline">
+          <button type="submit" class="btn btn-secondary">Reject</button>
+        </form>
+      {% endif %}
+
+      {% if s == 'approved' %}
+        <button id="apply-trigger" class="btn btn-primary">Apply</button>
+      {% endif %}
+
+      {% if s == 'applied' %}
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='rescan') }}" style="display:inline">
+          <button type="submit" class="btn btn-primary">Re-scan with {{ change.rescan_adapter }}</button>
+        </form>
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='rollback') }}" style="display:inline">
+          <button type="submit" class="btn btn-warn" onclick="return confirm('Roll back this change? Backups will be restored.')">Roll back</button>
+        </form>
+      {% endif %}
+
+      {% if s == 'validated' %}
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='deploy') }}" style="display:inline">
+          <button type="submit" class="btn btn-primary">Mark deployed</button>
+        </form>
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='rollback') }}" style="display:inline">
+          <button type="submit" class="btn btn-warn" onclick="return confirm('Roll back this validated change?')">Roll back</button>
+        </form>
+      {% endif %}
+
+      {% if s == 'deployed' %}
+        <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='rollback') }}" style="display:inline">
+          <button type="submit" class="btn btn-warn" onclick="return confirm('Roll back this deployed change?')">Roll back</button>
+        </form>
+      {% endif %}
+
+      {% if s in ('rejected','reverted','accepted') %}
+        <p class="muted">Terminal state. No further actions.</p>
+      {% endif %}
+    </section>
+
+    {% if events %}
+    <section>
+      <h2>This change's history</h2>
+      <table class="findings">
+        <thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Detail</th></tr></thead>
+        <tbody>
+          {% for e in events|reverse %}
+            <tr>
+              <td class="mono small">{{ e.ts }}</td>
+              <td class="mono"><span class="sev-badge sev-info">{{ e.event }}</span></td>
+              <td class="mono small">{{ e.actor or "—" }}</td>
+              <td class="small">
+                {% set extras = [] %}
+                {% if e.from_state and e.to_state %}{% set _ = extras.append(e.from_state ~ " → " ~ e.to_state) %}{% endif %}
+                {% if e.test_status %}{% set _ = extras.append("tests: " ~ e.test_status) %}{% endif %}
+                {% if e.original_cleared is defined %}{% set _ = extras.append("cleared: " ~ e.original_cleared) %}{% endif %}
+                {% if e.new_high_or_above is defined %}{% set _ = extras.append("new HIGH+: " ~ e.new_high_or_above) %}{% endif %}
+                {% if e.reason %}{% set _ = extras.append("reason: " ~ e.reason) %}{% endif %}
+                {{ extras|join(' · ') }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+  </article>
+
+  {% if change.state.value == 'approved' %}
+    <div id="apply-modal" class="modal hidden">
+      <div class="modal-card">
+        <h3>Confirm apply</h3>
+        <p>This will modify <strong>{{ change.files|length }}</strong> file(s) under {{ change.app_name }}.</p>
+        <p>Backups will be created at:</p>
+        <pre class="small mono">~/.ai-protect/backups/{{ change.change_id }}/files/</pre>
+        <p>{% if change.tests %}Generated tests will run before and after the patch.{% else %}<em>No unit tests for this change. Validation will be by post-apply re-scan only.</em>{% endif %}</p>
+        <div class="modal-actions">
+          <button id="apply-cancel" class="btn btn-secondary" type="button">Cancel</button>
+          <form method="POST" action="{{ url_for('change_action', change_id=change.change_id, action='apply') }}" style="display:inline">
+            <input type="hidden" name="confirm" value="yes" />
+            <button type="submit" class="btn btn-primary">Confirm and apply</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function() {
+        const trigger = document.getElementById('apply-trigger');
+        const modal = document.getElementById('apply-modal');
+        const cancel = document.getElementById('apply-cancel');
+        if (trigger) trigger.addEventListener('click', () => modal.classList.remove('hidden'));
+        if (cancel) cancel.addEventListener('click', () => modal.classList.add('hidden'));
+      })();
+    </script>
+  {% endif %}
+{% endblock %}

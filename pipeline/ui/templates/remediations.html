@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Remediations · ai-protect{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1 style="margin-bottom:6px">Remediation queue</h1>
+    <p class="muted">Every proposed change, with state and confidence. Click a row for review and approval.</p>
+    <div class="severity-row">
+      {% for s in all_states %}
+        {% set cnt = by_state.get(s, 0) %}
+        <a class="severity-pill state-{{ s }}{% if state_filter == s %} active{% endif %}"
+           href="{% if state_filter == s %}{{ url_for('remediations_queue') }}{% else %}{{ url_for('remediations_queue', state=s) }}{% endif %}">
+          {{ s }} <strong>{{ cnt }}</strong>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="findings-list">
+    {% if changes %}
+      <table class="findings">
+        <thead>
+          <tr>
+            <th>State</th>
+            <th>App</th>
+            <th>Tier</th>
+            <th>Strategy</th>
+            <th>Summary</th>
+            <th>Confidence</th>
+            <th>Tests</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in changes %}
+            <tr class="finding-row">
+              <td><span class="state-badge state-{{ c.state.value }}">{{ c.state.value }}</span></td>
+              <td class="mono">{{ c.app_name }}</td>
+              <td><span class="tier-badge tier-{{ c.tier }}">T{{ c.tier }}</span></td>
+              <td class="mono">{{ c.strategy }}</td>
+              <td><a href="{{ url_for('change_detail', change_id=c.change_id) }}">{{ c.summary }}</a></td>
+              <td>{{ '%.0f' % (c.confidence * 100) }}%</td>
+              <td class="small">
+                {% if c.test_status == 'not_generatable' %}<span class="sev-badge sev-medium">no test</span>
+                {% elif c.test_status == 'passed' %}<span class="sev-badge sev-info">passed</span>
+                {% elif c.test_status == 'failed' %}<span class="sev-badge sev-high">failed</span>
+                {% elif c.test_status == 'generated' %}<span class="sev-badge sev-low">{{ c.tests|length }} gen</span>
+                {% else %}—
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">
+        No remediations yet. Open a finding and click <strong>Propose remediation</strong>.
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
