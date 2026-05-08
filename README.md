@@ -280,6 +280,196 @@ When v2.1 changes, the v1 distillations should be regenerated (and their version
 
 ---
 
+## Software sources catalogue
+
+Single reference for every tool source that has been raised, reviewed, or wired into this project. Use this section as the canonical list when adding, removing, or replacing software in the pipeline.
+
+### Initial seed list (provided by the offensive security director)
+
+The starting tool set named at project kickoff. These were the foundation for the pipeline build.
+
+| Tool | Source |
+| --- | --- |
+| Burp Suite | https://portswigger.net/burp |
+| Metasploit Framework | https://github.com/rapid7/metasploit-framework |
+| NVIDIA garak | https://github.com/NVIDIA/garak |
+| Microsoft PyRIT | https://github.com/Azure/PyRIT |
+| Red Canary Atomic Red Team | https://github.com/redcanaryco/atomic-red-team |
+| RedTeam-Tools (catalog) | https://github.com/A-poc/RedTeam-Tools |
+| Automated Red Team lab (training) | https://redteams.ai/topics/labs/intermediate/lab-automated-red-team |
+
+### Red-team catalog repositories (reviewed for picks)
+
+Curated awesome-list / red-team-tradecraft repositories the user referenced. Picks from these were evaluated against pipeline-fit (SAST / DAST / autonomous scanner shape) and the local-vulnerabilities scope. Use these as future browse points when looking for additions.
+
+| Catalog | Source |
+| --- | --- |
+| Awesome-Red-Teaming | https://github.com/0xMrNiko/Awesome-Red-Teaming |
+| RedTeam-Resources | https://github.com/J0hnbX/RedTeam-Resources |
+| RedTeamTools | https://github.com/MantisSTS/RedTeamTools |
+| Red-Blueteam-party | https://github.com/A0RX/Red-Blueteam-party |
+| redTeaming | https://github.com/idchoppers/redTeaming |
+| irredteam.github.io | https://github.com/irredteam/irredteam.github.io |
+| RedTeam-Tools | https://github.com/A-poc/RedTeam-Tools |
+
+### Wired-in adapters (current state)
+
+Adapters present in `pipeline/adapters/` and live in the policy table. Group by category matches the `/about` page in the live UI.
+
+#### Policy gates (built-in and runtime)
+
+| Adapter | Source |
+| --- | --- |
+| `manifest_validator` | (built-in) — `pipeline/adapters/manifest_validator.py` |
+| `threat_model_check` | (built-in) — `pipeline/adapters/threat_model_check.py` |
+| `mcp_scope` | (built-in) — `pipeline/adapters/mcp_scope.py` |
+| `guardrails` (NeMo) | https://github.com/NVIDIA/NeMo-Guardrails |
+
+#### Static analysis · secrets · dependencies
+
+| Adapter | Source |
+| --- | --- |
+| `trufflehog` | https://github.com/trufflesecurity/trufflehog |
+| `gitleaks` | https://github.com/gitleaks/gitleaks |
+| `detect_secrets` | https://github.com/Yelp/detect-secrets |
+| `semgrep` | https://github.com/semgrep/semgrep |
+| `bandit` | https://github.com/PyCQA/bandit |
+| `bearer` | https://github.com/Bearer/bearer |
+| `codeql` | https://github.com/github/codeql-cli-binaries |
+| `njsscan` | https://github.com/ajinabraham/njsscan |
+| `pip_audit` | https://github.com/pypa/pip-audit |
+| `dependency_check` (OWASP) | https://github.com/dependency-check/DependencyCheck |
+| `trivy` | https://github.com/aquasecurity/trivy |
+| `checkov` | https://github.com/bridgecrewio/checkov |
+| `syft` | https://github.com/anchore/syft |
+| `grype` | https://github.com/anchore/grype |
+| `osv_scanner` | https://github.com/google/osv-scanner |
+| `modelscan` | https://github.com/protectai/modelscan |
+| `presidio` | https://github.com/microsoft/presidio |
+| `hadolint` | https://github.com/hadolint/hadolint |
+
+#### Dynamic · web · network
+
+| Adapter | Source |
+| --- | --- |
+| `nuclei` | https://github.com/projectdiscovery/nuclei |
+| `burp` | https://portswigger.net/burp |
+| `zap` (OWASP ZAP) | https://github.com/zaproxy/zaproxy |
+| `metasploit` | https://github.com/rapid7/metasploit-framework |
+| `atomic` (Atomic Red Team) | https://github.com/redcanaryco/atomic-red-team |
+| `recon` chain | https://github.com/projectdiscovery/subfinder · https://github.com/projectdiscovery/httpx · https://github.com/projectdiscovery/naabu · https://github.com/projectdiscovery/katana |
+| `sqlmap` | https://github.com/sqlmapproject/sqlmap |
+| `dockle` | https://github.com/goodwithtech/dockle |
+
+#### AI red team · eval
+
+| Adapter | Source |
+| --- | --- |
+| `garak` | https://github.com/NVIDIA/garak |
+| `pyrit` | https://github.com/Azure/PyRIT |
+| `promptfoo` | https://github.com/promptfoo/promptfoo |
+| `deepeval` (fallback for promptfoo adapter) | https://github.com/confident-ai/deepeval |
+| `eval_suite` | (built-in) — `pipeline/adapters/eval_suite.py` |
+
+#### Production · telemetry
+
+| Adapter | Source |
+| --- | --- |
+| `telemetry_drift` | (built-in) — `pipeline/adapters/telemetry_drift.py` |
+| `anomaly_detector` (alias) | (built-in) — `pipeline/adapters/telemetry_drift.py` |
+
+### Reviewed but not yet wired
+
+Tools that have been evaluated and are documented for future wiring. Each line is a pre-baked candidate — when scope changes (cloud presence, AD-integrated workloads, K8s deployment, mobile surface), add them as adapters under `pipeline/adapters/` and register in `pipeline/adapters/registry.py` + `pipeline/core/policy.py`.
+
+#### AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated)
+
+| Tool | Source |
+| --- | --- |
+| BloodHound + SharpHound | https://github.com/SpecterOps/BloodHound |
+| Impacket | https://github.com/fortra/impacket |
+| NetExec (nxc) | https://github.com/Pennyw0rth/NetExec |
+| kerbrute | https://github.com/ropnop/kerbrute |
+| Responder | https://github.com/lgandx/Responder |
+| RustHound (faster BloodHound collector) | https://github.com/g0h4n/RustHound |
+
+#### Phishing / Threat Hunt vertical
+
+| Tool | Source |
+| --- | --- |
+| Gophish | https://github.com/gophish/gophish |
+| Evilginx2 | https://github.com/kgretzky/evilginx2 |
+| SpiderFoot | https://github.com/smicallef/spiderfoot |
+
+#### Cloud / Kubernetes (pull in once Platform Engineering deploys to cloud)
+
+| Tool | Source |
+| --- | --- |
+| Prowler | https://github.com/prowler-cloud/prowler |
+| ScoutSuite | https://github.com/nccgroup/ScoutSuite |
+| kube-bench | https://github.com/aquasecurity/kube-bench |
+| kube-hunter | https://github.com/aquasecurity/kube-hunter |
+| Falco (runtime) | https://github.com/falcosecurity/falco |
+
+#### Recon depth (complement existing `recon` adapter)
+
+| Tool | Source |
+| --- | --- |
+| ffuf | https://github.com/ffuf/ffuf |
+| feroxbuster | https://github.com/epi052/feroxbuster |
+| gobuster | https://github.com/OJ/gobuster |
+| dirsearch | https://github.com/maurosoria/dirsearch |
+| kiterunner (API discovery) | https://github.com/assetnote/kiterunner |
+| subzy (subdomain takeover) | https://github.com/PentestPad/subzy |
+| reconftw | https://github.com/six2dez/reconftw |
+
+#### C2 frameworks (operator engagement, not pipeline-shaped)
+
+Useful for the v2.1 Phase 1 demonstration red team exercise. Not wiring as adapters because they're interactive operator platforms.
+
+| Tool | Source |
+| --- | --- |
+| Sliver | https://github.com/BishopFox/sliver |
+| Mythic | https://github.com/its-a-feature/Mythic |
+| Havoc | https://github.com/HavocFramework/Havoc |
+| Empire | https://github.com/BC-SECURITY/Empire |
+| Cobalt Strike | https://www.cobaltstrike.com (commercial) |
+| Brute Ratel | https://bruteratel.com (commercial) |
+
+#### AI-specific (defer / niche)
+
+| Tool | Source | Note |
+| --- | --- | --- |
+| LLM Guard | https://github.com/protectai/llm-guard | Defensive runtime filter |
+| Rebuff | https://github.com/protectai/rebuff | Prompt-injection detection |
+| Plexiglass | https://github.com/Adversa-AI/plexiglass | LLM safety evaluation |
+| Counterfit | https://github.com/Azure/counterfit | Microsoft AI red team toolkit (older; PyRIT supersedes) |
+| Adversarial Robustness Toolbox (ART) | https://github.com/Trusted-AI/adversarial-robustness-toolbox | Adversarial example generation |
+| AdvBox | https://github.com/advboxes/AdvBox | Adversarial attack toolbox |
+| Inspect (UK AISI) | https://github.com/UKGovernmentBEIS/inspect_ai | Newer eval framework |
+
+#### Mobile / wireless / specialty (out of scope today)
+
+| Tool | Source |
+| --- | --- |
+| MobSF | https://github.com/MobSF/Mobile-Security-Framework-MobSF |
+| aircrack-ng | https://github.com/aircrack-ng/aircrack-ng |
+| Kismet | https://github.com/kismetwireless/kismet |
+| Hashcat | https://github.com/hashcat/hashcat |
+| John the Ripper | https://github.com/openwall/john |
+
+### How to add a new tool
+
+1. Pick the source from the catalogues above (or add a new one to the relevant table here first).
+2. Install the binary or pip package; add to `~/bin/` or `~/.local/bin/`.
+3. Create `pipeline/adapters/<name>.py` subclassing `Adapter`.
+4. Register in `pipeline/adapters/registry.py` and add a `pipeline/ui/catalog.py` entry.
+5. Add the call to the relevant `pipeline/core/policy.py` tier × stage.
+6. Add a test in `pipeline/tests/`.
+7. Update this section of the README so the source is recorded.
+
+---
+
 ## License and distribution
 
 Internal — Offensive Security. Prepared by the Office of the Director, Offensive Security. Not for external distribution without explicit approval from the CISO.
