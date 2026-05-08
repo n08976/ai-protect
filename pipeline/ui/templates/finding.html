@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ finding.title }} · ai-protect{% endblock %}
-{% block autorefresh %}{% endblock %}{# don't auto-refresh detail pages #}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
 
 {% block content %}
   <a class="back" href="{{ url_for('index') }}">← back to all findings</a>

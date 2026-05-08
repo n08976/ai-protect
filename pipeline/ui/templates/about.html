@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}About · ai-protect{% endblock %}
-{% block autorefresh %}{% endblock %}{# don't auto-refresh — this is a reference page #}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
 
 {% block content %}
   <article class="about">

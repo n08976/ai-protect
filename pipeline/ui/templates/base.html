@@ -25,13 +25,43 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="footer">
-    <span>v2.1 operating model · pipeline live · auto-refreshes every 5s</span>
+    <span>v2.1 operating model · pipeline live · <a href="#" id="refresh-toggle" class="footer-link">auto-refresh: <span id="refresh-state">on</span></a></span>
   </footer>
   <script>
-    // Auto-refresh — keeps the dashboard live during a scan run.
-    {% block autorefresh %}
-    setInterval(() => { window.location.reload(); }, 5000);
-    {% endblock %}
+    // Smart polling: only reload when the total finding count changes.
+    // Manual toggle persists in localStorage. Detail/about pages opt out
+    // by setting window.AI_PROTECT_NO_AUTOREFRESH.
+    (function() {
+      {% block autorefresh %}{% endblock %}
+      if (window.AI_PROTECT_NO_AUTOREFRESH) return;
+
+      const STORAGE_KEY = "ai-protect-autorefresh";
+      const stateEl = document.getElementById("refresh-state");
+      const toggle = document.getElementById("refresh-toggle");
+      let enabled = (localStorage.getItem(STORAGE_KEY) || "on") === "on";
+      if (stateEl) stateEl.textContent = enabled ? "on" : "off";
+      if (toggle) toggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        enabled = !enabled;
+        localStorage.setItem(STORAGE_KEY, enabled ? "on" : "off");
+        if (stateEl) stateEl.textContent = enabled ? "on" : "off";
+      });
+
+      let lastTotal = null;
+      async function tick() {
+        if (!enabled) return;
+        try {
+          const r = await fetch("/api/stats", { cache: "no-store" });
+          const j = await r.json();
+          if (lastTotal === null) { lastTotal = j.total; return; }
+          if (j.total !== lastTotal) {
+            window.location.reload();
+          }
+        } catch (e) { /* ignore transient errors */ }
+      }
+      // Poll every 10s — just reads the API, no full reload unless count changed.
+      setInterval(tick, 10000);
+    })();
   </script>
 </body>
 </html>
