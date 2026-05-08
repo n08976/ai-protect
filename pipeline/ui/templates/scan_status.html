@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Scan {{ job.scan_id }} · ai-protect{% endblock %}
+
+{% block autorefresh %}
+  // Status page polls itself every 3 seconds while the scan is running.
+  {% if job.status == 'running' %}
+    setTimeout(() => window.location.reload(), 3000);
+  {% endif %}
+  window.AI_PROTECT_NO_AUTOREFRESH = true;
+{% endblock %}
+
+{% block content %}
+  <a class="back" href="{{ url_for('scan_launcher') }}">← back to scan launcher</a>
+
+  <article class="change-detail">
+    <header>
+      {% if job.status == 'running' %}<span class="sev-badge sev-medium">running</span>
+      {% elif job.status == 'done' %}<span class="sev-badge sev-info">done</span>
+      {% elif job.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
+      {% else %}<span class="sev-badge sev-low">{{ job.status }}</span>
+      {% endif %}
+      <h1>Scan {{ job.scan_id }}</h1>
+      <div class="meta">
+        <span><strong>app:</strong> {{ job.app_name }}</span>
+        <span><strong>stage:</strong> {{ job.stage }}</span>
+        <span><strong>adapter:</strong> {{ job.adapter or "all" }}</span>
+        <span><strong>pid:</strong> <code>{{ job.pid }}</code></span>
+        {% if job.findings_after is not none %}
+          <span><strong>findings:</strong> {{ job.findings_before }} → {{ job.findings_after }}
+            (Δ {{ job.findings_after - job.findings_before }})</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <section>
+      <h2>Live log</h2>
+      <pre class="diff" style="max-height:520px">{{ log_tail }}</pre>
+    </section>
+
+    {% if job.status == 'done' %}
+      <section class="action-bar">
+        <h2>Done</h2>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">View findings</a>
+        <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Run another scan</a>
+      </section>
+    {% elif job.status == 'failed' %}
+      <section class="action-bar">
+        <h2>Failed</h2>
+        <p>Exit code {{ job.exit_code }}. Inspect the log above; common causes: missing tool on PATH, manifest validation error, adapter crash.</p>
+        <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Try again</a>
+      </section>
+    {% endif %}
+  </article>
+{% endblock %}

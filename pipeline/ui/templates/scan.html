@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Re-scan · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <article class="change-detail">
+    <header>
+      <h1>Re-scan</h1>
+      <p class="muted">Pick what to scan. "All adapters" runs every adapter the policy table assigns to this tier × stage; pick one adapter to scope it tight.</p>
+    </header>
+
+    <form method="POST" action="{{ url_for('scan_start') }}" class="scan-form">
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Manifest</label>
+        <select name="manifest" required>
+          {% for m in manifests %}
+            <option value="{{ m.path }}">{{ m.name }} — {{ m.path }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Stage</label>
+        <select name="stage" required>
+          {% for s in stages %}
+            <option value="{{ s }}" {% if s == 'build' %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-group" style="margin-bottom:18px">
+        <label>Adapter</label>
+        <select name="adapter">
+          <option value="all" selected>all adapters in this stage (full scan)</option>
+          {% for a in adapters %}
+            <option value="{{ a }}">{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Start scan</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-left:8px">Cancel</a>
+    </form>
+
+    {% if scans %}
+      <h2>Recent scans</h2>
+      <table class="findings">
+        <thead>
+          <tr><th>When</th><th>App</th><th>Stage</th><th>Adapter</th><th>Status</th><th>Findings before → after</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for s in scans %}
+            <tr>
+              <td class="mono small">{{ s.scan_id }}</td>
+              <td class="mono">{{ s.app_name }}</td>
+              <td class="mono">{{ s.stage }}</td>
+              <td class="mono">{{ s.adapter or "all" }}</td>
+              <td>
+                {% if s.status == 'running' %}<span class="sev-badge sev-medium">running</span>
+                {% elif s.status == 'done' %}<span class="sev-badge sev-info">done</span>
+                {% elif s.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
+                {% else %}<span class="sev-badge sev-low">{{ s.status }}</span>
+                {% endif %}
+              </td>
+              <td class="mono small">
+                {% if s.findings_after is none %}{{ s.findings_before }} → ?
+                {% else %}{{ s.findings_before }} → {{ s.findings_after }}
+                  ({{ s.findings_after - s.findings_before }})
+                {% endif %}
+              </td>
+              <td><a href="{{ url_for('scan_status', scan_id=s.scan_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">View</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </article>
+{% endblock %}

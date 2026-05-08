@@ -48,13 +48,28 @@ def cmd_run(args):
     m = Manifest.from_yaml(args.manifest)
     store = FindingStore(args.findings)
     orc = Orchestrator(m, store, dry_run=args.dry_run)
-    if args.all:
-        results = orc.run_all_stages(until_fail=not args.no_halt)
+    # Optional adapter filter — temporarily narrows the policy table to one adapter.
+    if args.adapter:
+        from .core import policy
+        original = policy.POLICY
+        narrowed = {tier: {stage: [c for c in calls if c.adapter == args.adapter]
+                           for stage, calls in stages.items()}
+                    for tier, stages in original.items()}
+        policy.POLICY = narrowed
+        try:
+            if args.all:
+                results = orc.run_all_stages(until_fail=not args.no_halt)
+            else:
+                results = [orc.run_stage(args.stage)]
+        finally:
+            policy.POLICY = original
     else:
-        results = [orc.run_stage(args.stage)]
+        if args.all:
+            results = orc.run_all_stages(until_fail=not args.no_halt)
+        else:
+            results = [orc.run_stage(args.stage)]
     for r in results:
         print(json.dumps(r.to_dict(), indent=2))
-    # Exit non-zero if any gate failed.
     if any(not r.gate_passed for r in results):
         sys.exit(2)
 
@@ -120,6 +135,8 @@ def main(argv: list[str] | None = None) -> int:
                        help="With --all, continue past failing gates")
     p_run.add_argument("--dry-run", action="store_true",
                        help="List what would run without invoking adapters")
+    p_run.add_argument("--adapter", default=None,
+                       help="Run only this adapter (filters the policy table)")
     p_run.set_defaults(func=cmd_run)
 
     p_rep = sub.add_parser("report", help="Generate a dashboard report from findings")

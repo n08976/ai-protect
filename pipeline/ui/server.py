@@ -21,6 +21,9 @@ from ..core.tiering import classify
 from ..core.manifest import Manifest
 from ..remediate.engine import Engine, EngineError
 from ..remediate.registry import remediators_for
+from ..remediate.scans import (
+    ScanJob, all_scans, get_scan, new_scan_id, update_status_from_pid, write_scan,
+)
 from ..remediate.state import ChangeState, ChangeStore, EventStore
 from .catalog import CATALOG, CATEGORY_ORDER
 
@@ -296,6 +299,91 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         except EngineError as e:
             return f"Cannot {action}: {e}", 400
         return redirect(url_for("change_detail", change_id=change_id))
+
+    # ============================================================
+    # Scan launcher + status
+    # ============================================================
+
+    @app.route("/scan")
+    def scan_launcher():
+        from ..adapters.registry import REGISTRY
+        md = Path(app.config["MANIFESTS_DIR"])
+        manifests = []
+        if md.is_dir():
+            for p in sorted(md.glob("*.yml")):
+                try:
+                    m = Manifest.from_yaml(p)
+                    manifests.append({"path": str(p), "name": m.name})
+                except Exception:
+                    continue
+        scans = all_scans()
+        for s in scans:
+            update_status_from_pid(s)
+        return render_template(
+            "scan.html",
+            manifests=manifests,
+            stages=["intake", "design", "build", "preprod", "production"],
+            adapters=sorted(REGISTRY.keys()),
+            scans=scans[:30],
+        )
+
+    @app.route("/scan/start", methods=["POST"])
+    def scan_start():
+        import subprocess as sp
+        manifest_path = request.form.get("manifest")
+        stage = request.form.get("stage", "build")
+        adapter = request.form.get("adapter") or None
+        if adapter in ("", "all"):
+            adapter = None
+        try:
+            m = Manifest.from_yaml(manifest_path)
+        except Exception as e:
+            return f"Cannot read manifest: {e}", 400
+        scan_id = new_scan_id()
+        job = ScanJob(
+            scan_id=scan_id,
+            manifest_path=manifest_path,
+            app_name=m.name,
+            stage=stage,
+            adapter=adapter,
+            status="pending",
+        )
+        write_scan(job)
+        from ..remediate.scans import SCAN_LOG_DIR
+        SCAN_LOG_DIR.mkdir(parents=True, exist_ok=True)
+        log_path = SCAN_LOG_DIR / f"{scan_id}.log"
+        # Spawn the runner detached.
+        cmd = [
+            "python3", "-m", "pipeline.remediate.scan_runner",
+            scan_id, manifest_path, stage, adapter or "-",
+            app.config["FINDINGS_PATH"],
+        ]
+        env = os.environ.copy()
+        env["PATH"] = "/home/user/bin:/home/user/.local/bin:" + env.get("PATH", "")
+        proc = sp.Popen(
+            cmd, env=env, stdout=open(log_path, "w"), stderr=sp.STDOUT,
+            cwd=str(Path(__file__).resolve().parent.parent.parent),
+            start_new_session=True,
+        )
+        job.pid = proc.pid
+        job.log_path = str(log_path)
+        job.status = "running"
+        write_scan(job)
+        return redirect(url_for("scan_status", scan_id=scan_id))
+
+    @app.route("/scan/<scan_id>")
+    def scan_status(scan_id):
+        job = get_scan(scan_id)
+        if not job:
+            return "Scan not found", 404
+        update_status_from_pid(job)
+        log_tail = ""
+        if job.log_path and Path(job.log_path).exists():
+            try:
+                log_tail = Path(job.log_path).read_text()[-4000:]
+            except Exception:
+                log_tail = ""
+        return render_template("scan_status.html", job=job, log_tail=log_tail)
 
     @app.route("/history")
     def history():
