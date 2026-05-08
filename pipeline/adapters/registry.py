@@ -2,19 +2,28 @@
 from __future__ import annotations
 
 from .atomic import AtomicRedTeamAdapter
+from .bandit import BanditAdapter
 from .base import Adapter
 from .burp import BurpAdapter
+from .checkov import CheckovAdapter
 from .eval_suite import EvalSuiteAdapter
 from .garak import GarakAdapter
+from .gitleaks import GitleaksAdapter
+from .guardrails import GuardrailsAdapter
 from .manifest_validator import ManifestValidatorAdapter
 from .mcp_scope import MCPScopeAdapter
 from .metasploit import MetasploitAdapter
 from .nuclei import NucleiAdapter
+from .pip_audit import PipAuditAdapter
+from .promptfoo import PromptfooAdapter
 from .pyrit import PyRITAdapter
+from .recon import ReconAdapter
 from .semgrep import SemgrepAdapter
 from .telemetry_drift import AnomalyDetectorAdapter, TelemetryDriftAdapter
 from .threat_model_check import ThreatModelCheckAdapter
+from .trivy import TrivyAdapter
 from .trufflehog import TruffleHogAdapter
+from .zap import ZAPAdapter
 
 
 REGISTRY: dict[str, type[Adapter]] = {
@@ -28,7 +37,16 @@ REGISTRY: dict[str, type[Adapter]] = {
     "mcp_scope": MCPScopeAdapter,
     "nuclei": NucleiAdapter,
     "trufflehog": TruffleHogAdapter,
+    "gitleaks": GitleaksAdapter,
     "semgrep": SemgrepAdapter,
+    "bandit": BanditAdapter,
+    "pip_audit": PipAuditAdapter,
+    "trivy": TrivyAdapter,
+    "checkov": CheckovAdapter,
+    "zap": ZAPAdapter,
+    "recon": ReconAdapter,
+    "promptfoo": PromptfooAdapter,
+    "guardrails": GuardrailsAdapter,
     "eval_suite": EvalSuiteAdapter,
     "telemetry_drift": TelemetryDriftAdapter,
     "anomaly_detector": AnomalyDetectorAdapter,

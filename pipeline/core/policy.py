@@ -24,11 +24,23 @@ class AdapterCall:
 POLICY: dict[int, dict[str, list[AdapterCall]]] = {
     # Tier 1: PHI / clinical / external-facing — full depth, manual red team also kicks in
     1: {
-        "intake":     [AdapterCall("manifest_validator", blocking=True)],
-        "design":     [AdapterCall("threat_model_check", blocking=True)],
+        "intake":     [
+            AdapterCall("manifest_validator", blocking=True),
+            AdapterCall("recon"),
+        ],
+        "design":     [
+            AdapterCall("threat_model_check", blocking=True),
+            AdapterCall("guardrails"),
+            AdapterCall("checkov"),
+        ],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("gitleaks", blocking=True),
             AdapterCall("semgrep"),
+            AdapterCall("bandit"),
+            AdapterCall("pip_audit"),
+            AdapterCall("trivy", config={"mode": "filesystem"}),
+            AdapterCall("checkov"),
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "all"}),
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection"]}),
@@ -38,7 +50,10 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection", "crescendo"]}, blocking=True),
             AdapterCall("mcp_scope", blocking=True),
             AdapterCall("burp", config={"scan": "active"}),
+            AdapterCall("zap", config={"mode": "active"}),
             AdapterCall("atomic", config={"techniques": ["T1059", "T1567", "T1071"]}),
+            AdapterCall("guardrails", blocking=True),
+            AdapterCall("promptfoo"),
             AdapterCall("eval_suite", config={"hallucination": True, "bias": True, "jailbreak": True}, blocking=True),
         ],
         "production": [
@@ -49,10 +64,19 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
     # Tier 2: Sensitive internal action / write-back
     2: {
         "intake":     [AdapterCall("manifest_validator", blocking=True)],
-        "design":     [AdapterCall("threat_model_check")],
+        "design":     [
+            AdapterCall("threat_model_check"),
+            AdapterCall("guardrails"),
+            AdapterCall("checkov"),
+        ],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("gitleaks", blocking=True),
             AdapterCall("semgrep"),
+            AdapterCall("bandit"),
+            AdapterCall("pip_audit"),
+            AdapterCall("trivy", config={"mode": "filesystem"}),
+            AdapterCall("checkov"),
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}),
             AdapterCall("pyrit", config={"strategies": ["injection"]}),
@@ -60,7 +84,9 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "preprod": [
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}, blocking=True),
             AdapterCall("mcp_scope", blocking=True),
-            AdapterCall("burp", config={"scan": "passive"}),
+            AdapterCall("zap", config={"mode": "spider"}),
+            AdapterCall("guardrails"),
+            AdapterCall("promptfoo"),
             AdapterCall("eval_suite", config={"jailbreak": True}),
         ],
         "production": [
@@ -73,10 +99,18 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "design":     [],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("gitleaks", blocking=True),
             AdapterCall("semgrep"),
+            AdapterCall("bandit"),
+            AdapterCall("pip_audit"),
+            AdapterCall("trivy", config={"mode": "filesystem"}),
+            AdapterCall("checkov"),
+            AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "promptinject,leakage"}),
         ],
         "preprod": [
+            AdapterCall("nuclei"),
+            AdapterCall("zap", config={"mode": "spider"}),
             AdapterCall("garak", config={"probes": "promptinject,leakage"}),
             AdapterCall("mcp_scope"),
         ],
@@ -90,7 +124,11 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
         "design":     [],
         "build": [
             AdapterCall("trufflehog", blocking=True),
+            AdapterCall("gitleaks", blocking=True),
             AdapterCall("semgrep"),
+            AdapterCall("bandit"),
+            AdapterCall("pip_audit"),
+            AdapterCall("trivy", config={"mode": "filesystem"}),
         ],
         "preprod":    [],
         "production": [
