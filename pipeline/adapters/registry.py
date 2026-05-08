@@ -9,16 +9,21 @@ from .checkov import CheckovAdapter
 from .eval_suite import EvalSuiteAdapter
 from .garak import GarakAdapter
 from .gitleaks import GitleaksAdapter
+from .grype import GrypeAdapter
 from .guardrails import GuardrailsAdapter
 from .manifest_validator import ManifestValidatorAdapter
 from .mcp_scope import MCPScopeAdapter
 from .metasploit import MetasploitAdapter
+from .modelscan import ModelScanAdapter
 from .nuclei import NucleiAdapter
+from .osv_scanner import OSVScannerAdapter
 from .pip_audit import PipAuditAdapter
+from .presidio import PresidioAdapter
 from .promptfoo import PromptfooAdapter
 from .pyrit import PyRITAdapter
 from .recon import ReconAdapter
 from .semgrep import SemgrepAdapter
+from .syft import SyftAdapter
 from .telemetry_drift import AnomalyDetectorAdapter, TelemetryDriftAdapter
 from .threat_model_check import ThreatModelCheckAdapter
 from .trivy import TrivyAdapter
@@ -43,6 +48,11 @@ REGISTRY: dict[str, type[Adapter]] = {
     "pip_audit": PipAuditAdapter,
     "trivy": TrivyAdapter,
     "checkov": CheckovAdapter,
+    "syft": SyftAdapter,
+    "grype": GrypeAdapter,
+    "osv_scanner": OSVScannerAdapter,
+    "modelscan": ModelScanAdapter,
+    "presidio": PresidioAdapter,
     "zap": ZAPAdapter,
     "recon": ReconAdapter,
     "promptfoo": PromptfooAdapter,

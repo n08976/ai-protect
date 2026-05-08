@@ -91,6 +91,41 @@ CATALOG: dict[str, dict] = {
         "category": "Static analysis · secrets · deps",
         "kind": "static",
     },
+    "syft": {
+        "description": "Anchore Syft — SBOM generator (CycloneDX / SPDX). Compliance evidence for HITRUST.",
+        "source_url": "https://github.com/anchore/syft",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "grype": {
+        "description": "Anchore Grype — SBOM-aware vulnerability scanner. Pairs with Syft; complements Trivy + pip-audit + OSV-Scanner.",
+        "source_url": "https://github.com/anchore/grype",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "osv_scanner": {
+        "description": "Google OSV-Scanner — multi-language vuln scanner against the OSV.dev database. Broader language coverage than pip-audit.",
+        "source_url": "https://github.com/google/osv-scanner",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "modelscan": {
+        "description": "Protect AI ModelScan — malicious model file detection (pickle, h5, pt, safetensors, onnx). v2.1 names this at build.",
+        "source_url": "https://github.com/protectai/modelscan",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
+    "presidio": {
+        "description": "Microsoft Presidio — PHI/PII detection in text and source files. v2.1 names this as the default scrubber.",
+        "source_url": "https://github.com/microsoft/presidio",
+        "stages": "build",
+        "category": "Static analysis · secrets · deps",
+        "kind": "static",
+    },
 
     # ---------- dynamic / web ----------
     "nuclei": {
