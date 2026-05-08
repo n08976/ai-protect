@@ -1,0 +1,17 @@
+# Core
+pyyaml>=6.0
+requests>=2.31
+
+# AI red-team adapters (install only the ones you'll exercise locally)
+# garak>=0.9
+# pyrit>=0.4
+
+# Classical pen test adapters (system tools — install separately)
+# nuclei via:    go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+# trufflehog via: curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh
+# atomic-red-team: clone https://github.com/redcanaryco/atomic-red-team and set ATOMIC_RED_TEAM_PATH
+# pymetasploit3>=1.0  # if Metasploit RPC is in use
+# burp REST API:   set BURP_API_URL + BURP_API_KEY
+
+# Test deps
+pytest>=8.0

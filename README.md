@@ -113,12 +113,61 @@ Every recommendation in this repo assumes the healthcare context. These constrai
 
 ---
 
+## The pipeline (`pipeline/`)
+
+The runnable counterpart to v2.1 and the technical companion. An AI app or agent registers a YAML manifest, the pipeline tier-classifies it, then routes it to the right tools at the right tier × stage. Every adapter normalizes output to the same finding schema; every finding auto-tags HIPAA / HITRUST / NIST AI RMF / MITRE ATLAS controls. See **[`pipeline/README.md`](pipeline/README.md)** for the full architecture and adapter catalog.
+
+**Tools wired in today** (`pipeline/adapters/`):
+
+- **AI-native:** [NVIDIA garak](https://github.com/NVIDIA/garak), [Microsoft PyRIT](https://github.com/Azure/PyRIT), built-in `mcp_scope` validator (the highest-leverage control in v2.1), built-in `eval_suite` (hallucination / bias / jailbreak gates).
+- **Classical pen test:** [PortSwigger Burp Suite](https://portswigger.net/burp) (REST), [Rapid7 Metasploit](https://github.com/rapid7/metasploit-framework) (RPC, auxiliary by default), [Red Canary Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) (MITRE ATT&CK technique emulation against the agent runtime host).
+- **From [RedTeam-Tools](https://github.com/A-poc/RedTeam-Tools):** [Nuclei](https://github.com/projectdiscovery/nuclei), [TruffleHog](https://github.com/trufflesecurity/trufflehog).
+- **Built-in policy gates:** `manifest_validator` (intake), `threat_model_check` (design, Tier 1-2), `telemetry_drift` (production).
+
+**Quickstart:**
+
+```bash
+pip install -r pipeline/requirements.txt
+
+# Tier-classify
+python -m pipeline.cli tier pipeline/manifests/example_clinical_assistant.yml
+
+# Run preprod gates end-to-end (degrades gracefully when external tools aren't installed)
+python -m pipeline.cli --findings /tmp/findings.jsonl run \
+    pipeline/manifests/example_clinical_assistant.yml --stage preprod
+
+# Dashboards
+python -m pipeline.cli --findings /tmp/findings.jsonl report --kind executive
+python -m pipeline.cli --findings /tmp/findings.jsonl report --kind technical
+
+# What runs where
+python -m pipeline.cli adapters
+python -m pipeline.cli policy --tier 1 --stage preprod
+
+# Tests
+python -m pytest pipeline/tests/ -q
+```
+
+The pipeline ships with three example manifests covering the spread: Tier 1 clinical assistant, Tier 3 HR-policy advisor, Tier 4 single-user code summarizer. Adapters that need an external tool (garak, nuclei, etc.) raise `AdapterUnavailable` and are skipped non-fatally — install the tools you actually plan to exercise.
+
+---
+
 ## Repository layout
 
 ```
 ai-protect/
 ├── README.md                       # This file
 ├── .gitignore
+├── pipeline/                       # The runnable AI assurance pipeline
+│   ├── README.md                   # Pipeline architecture, adapter catalog, extension guide
+│   ├── cli.py
+│   ├── requirements.txt
+│   ├── core/                       # manifest, tiering, findings, compliance, policy, orchestrator
+│   ├── adapters/                   # garak, pyrit, atomic, burp, metasploit, mcp_scope, nuclei, trufflehog, ...
+│   ├── reporting/                  # technical + executive dashboards
+│   ├── manifests/                  # example app declarations (Tier 1 / 3 / 4)
+│   ├── fixtures/                   # threat-model exemplars
+│   └── tests/
 ├── docs/                           # Generated artifacts (committed for distribution)
 │   ├── operating_model_v2_1.docx
 │   ├── one_pager_v1.docx

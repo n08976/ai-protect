@@ -1,0 +1,54 @@
+# Sample threat model artifact — referenced from example_clinical_assistant.yml.
+# Real threat models are authored by AppSec leads; this fixture demonstrates
+# the structure the threat_model_check adapter expects.
+assets:
+  - patient_chart_text
+  - clinician_session_token
+  - ehr_mcp_token
+  - generated_summary
+
+actors:
+  - name: authenticated_clinician
+    intent: legitimate use
+  - name: malicious_insider
+    intent: data exfil
+  - name: external_attacker_via_ehr
+    intent: lateral movement
+
+trust_boundaries:
+  - clinician_browser <-> assistant_api
+  - assistant_api <-> sanctioned_gateway
+  - sanctioned_gateway <-> claude_baa
+  - assistant_api <-> ehr_mcp
+  - ehr_mcp <-> ehr_database
+
+threats:
+  - id: T-001
+    description: Prompt-injection via patient note ingest causes summary tampering
+    affected_asset: generated_summary
+    actor: external_attacker_via_ehr
+    likelihood: medium
+    impact: clinical
+  - id: T-002
+    description: Token theft from logs replays clinician identity to EHR MCP
+    affected_asset: clinician_session_token
+    actor: malicious_insider
+    likelihood: low
+    impact: high
+  - id: T-003
+    description: PHI leakage through model completion to unsanctioned destination
+    affected_asset: patient_chart_text
+    actor: external_attacker_via_ehr
+    likelihood: medium
+    impact: high
+
+mitigations:
+  - threat: T-001
+    control: Gateway prompt-DLP + output filter; eval suite refusal threshold
+  - threat: T-002
+    control: Short-lived MCP tokens, no token in logs, rotation on anomaly
+  - threat: T-003
+    control: BAA-covered model only, output PHI scrubber, network egress allow-list
+
+approver: appsec-director@example.health
+approved_at: 2026-04-22

@@ -1,0 +1,155 @@
+"""Pipeline orchestrator — runs the right adapters at the right tier × stage.
+
+This is the heart of the paved-road pipeline. Reads the policy table, looks
+up the manifest's tier, instantiates each adapter, runs them in order, and
+streams findings into the FindingStore. Returns a RunResult summarizing the
+outcome (gate passed / gate failed and why).
+
+Adapters that are unavailable (tool not installed, target not reachable) log
+and are skipped — non-fatal. Adapters that produce blocking high-severity
+findings fail the gate per the policy table.
+"""
+from __future__ import annotations
+
+import logging
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from ..adapters.base import Adapter, AdapterAuthorizationRequired, AdapterUnavailable
+from ..adapters.registry import get_adapter_class
+from .findings import Finding, FindingStore, Severity
+from .manifest import Manifest
+from .policy import STAGES, AdapterCall, adapters_for
+from .tiering import TierDecision, classify
+
+log = logging.getLogger("ai-protect.orchestrator")
+
+
+@dataclass
+class AdapterResult:
+    adapter: str
+    blocking: bool
+    status: str                         # "ok" | "skipped" | "error" | "unavailable"
+    findings_count: int = 0
+    high_or_above: int = 0
+    error: str | None = None
+    duration_s: float = 0.0
+
+
+@dataclass
+class RunResult:
+    app_name: str
+    stage: str
+    tier_decision: TierDecision
+    adapter_results: list[AdapterResult] = field(default_factory=list)
+    gate_passed: bool = True
+    gate_reason: str | None = None
+    findings_path: str | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "app_name": self.app_name,
+            "stage": self.stage,
+            "tier": self.tier_decision.tier,
+            "tier_decision": self.tier_decision.to_dict(),
+            "gate_passed": self.gate_passed,
+            "gate_reason": self.gate_reason,
+            "findings_path": self.findings_path,
+            "adapter_results": [a.__dict__ for a in self.adapter_results],
+        }
+
+
+class Orchestrator:
+    def __init__(self, manifest: Manifest, store: FindingStore, dry_run: bool = False):
+        self.manifest = manifest
+        self.store = store
+        self.dry_run = dry_run
+
+    def run_stage(self, stage: str) -> RunResult:
+        if stage not in STAGES:
+            raise ValueError(f"Unknown stage {stage!r}; must be one of {STAGES}")
+        decision = classify(self.manifest)
+        result = RunResult(
+            app_name=self.manifest.name,
+            stage=stage,
+            tier_decision=decision,
+            findings_path=str(self.store.path),
+        )
+
+        log.info(
+            "run %s stage=%s tier=%d (score=%d)",
+            self.manifest.name, stage, decision.tier, decision.score,
+        )
+
+        for call in adapters_for(decision.tier, stage):
+            ar = self._run_adapter(call, stage, decision.tier)
+            result.adapter_results.append(ar)
+            if call.blocking and ar.high_or_above > 0:
+                result.gate_passed = False
+                result.gate_reason = (
+                    f"{ar.adapter} produced {ar.high_or_above} HIGH-or-above finding(s) and is "
+                    "marked blocking in the policy table."
+                )
+
+        log.info(
+            "stage %s complete: %d adapter(s); gate=%s",
+            stage,
+            len(result.adapter_results),
+            "PASS" if result.gate_passed else "FAIL",
+        )
+        return result
+
+    def run_all_stages(self, until_fail: bool = True) -> list[RunResult]:
+        results = []
+        for stage in STAGES:
+            r = self.run_stage(stage)
+            results.append(r)
+            if not r.gate_passed and until_fail:
+                log.warning("gate failed at stage=%s; halting subsequent stages", stage)
+                break
+        return results
+
+    def _run_adapter(self, call: AdapterCall, stage: str, tier: int) -> AdapterResult:
+        cls = get_adapter_class(call.adapter)
+        adapter = cls(self.manifest, stage=stage, config=call.config or {})
+        ar = AdapterResult(adapter=call.adapter, blocking=call.blocking, status="ok")
+        t0 = time.time()
+        if self.dry_run:
+            ar.status = "skipped"
+            ar.duration_s = time.time() - t0
+            return ar
+        try:
+            findings = adapter.run()
+        except AdapterUnavailable as e:
+            ar.status = "unavailable"
+            ar.error = str(e)
+            ar.duration_s = time.time() - t0
+            log.info("adapter %s unavailable: %s", call.adapter, e)
+            return ar
+        except AdapterAuthorizationRequired as e:
+            ar.status = "skipped"
+            ar.error = str(e)
+            ar.duration_s = time.time() - t0
+            log.info("adapter %s skipped (authorization): %s", call.adapter, e)
+            return ar
+        except Exception as e:
+            ar.status = "error"
+            ar.error = f"{type(e).__name__}: {e}"
+            ar.duration_s = time.time() - t0
+            log.exception("adapter %s raised", call.adapter)
+            return ar
+
+        ar.findings_count = len(findings)
+        ar.high_or_above = sum(
+            1 for f in findings
+            if f.severity in (Severity.HIGH, Severity.CRITICAL)
+        )
+        ar.duration_s = time.time() - t0
+        if findings:
+            self.store.append_many(findings)
+        log.info(
+            "adapter %s -> %d finding(s) (%d HIGH+) in %.1fs",
+            call.adapter, ar.findings_count, ar.high_or_above, ar.duration_s,
+        )
+        return ar
