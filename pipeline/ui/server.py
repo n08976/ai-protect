@@ -55,6 +55,19 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None  # always re-read
         findings = store.all()
+        # For the dashboard, mark each finding with whether a remediator exists.
+        # Cheap: group by app once, look up the manifest, run can_fix per finding.
+        engines: dict[str, Engine] = {}
+        fixable: dict[str, bool] = {}
+        for f in findings:
+            eng = engines.get(f.app_name)
+            if eng is None:
+                eng = _engine_for(f.app_name)
+                engines[f.app_name] = eng
+            try:
+                fixable[f.finding_id] = bool(eng and remediators_for(f, eng.manifest.raw))
+            except Exception:
+                fixable[f.finding_id] = False
         # Filters
         sev_filter = request.args.get("severity")
         cat_filter = request.args.get("category")
@@ -74,6 +87,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         return render_template(
             "index.html",
             findings=findings,
+            fixable=fixable,
             stats=_stats(all_findings),
             filter_severity=sev_filter,
             filter_category=cat_filter,
@@ -91,7 +105,17 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store._cache = None
         for f in store.all():
             if f.finding_id == finding_id:
-                return render_template("finding.html", finding=f)
+                # Look up applicable remediators given any matching manifest.
+                remediators = []
+                eng = _engine_for(f.app_name)
+                if eng is not None:
+                    remediators = [r.name for r in remediators_for(f, eng.manifest.raw)]
+                # Existing changes for this finding
+                changes = ChangeStore().for_finding(finding_id)
+                return render_template(
+                    "finding.html", finding=f,
+                    remediators=remediators, existing_changes=changes,
+                )
         return "Not found", 404
 
     @app.route("/api/findings")

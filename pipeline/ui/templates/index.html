@@ -78,6 +78,7 @@
             <th>Category</th>
             <th>Title</th>
             <th>Affected</th>
+            <th>Fix</th>
           </tr>
         </thead>
         <tbody>
@@ -96,6 +97,15 @@
               {% elif f.affected.get('file') %}{{ f.affected['file'] | replace('/opt/app/', '') }}
               {% elif f.affected.get('target') %}{{ f.affected['target'] }}
               {% elif f.affected.get('app') %}—
+              {% endif %}
+            </td>
+            <td>
+              {% if fixable.get(f.finding_id) %}
+                <form method="POST" action="{{ url_for('propose_change', finding_id=f.finding_id) }}" style="display:inline">
+                  <button type="submit" class="btn btn-primary" style="padding:3px 9px;font-size:11px">Fix</button>
+                </form>
+              {% else %}
+                <span class="small muted">—</span>
               {% endif %}
             </td>
           </tr>

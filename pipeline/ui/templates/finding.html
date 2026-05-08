@@ -72,10 +72,38 @@
 
     <section>
       <h2>Remediation</h2>
-      <p class="muted">Auto-fix is available for some categories. Proposed changes are reviewable before any file is touched; backups are taken automatically.</p>
-      <form method="POST" action="{{ url_for('propose_change', finding_id=finding.finding_id) }}" style="display:inline">
-        <button type="submit" class="btn btn-primary">Propose remediation</button>
-      </form>
+
+      {% if existing_changes %}
+        <p>This finding already has {{ existing_changes|length }} change(s):</p>
+        <ul>
+          {% for c in existing_changes %}
+            <li>
+              <a href="{{ url_for('change_detail', change_id=c.change_id) }}"><code>{{ c.change_id }}</code></a> —
+              <span class="state-badge state-{{ c.state.value }}">{{ c.state.value }}</span>
+              {{ c.summary }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if remediators %}
+        <p class="muted">Auto-fix available via <strong>{{ remediators|join(', ') }}</strong>. Proposed changes are reviewable before any file is touched; backups are taken automatically.</p>
+        <form method="POST" action="{{ url_for('propose_change', finding_id=finding.finding_id) }}" style="display:inline">
+          <button type="submit" class="btn btn-primary">Propose remediation</button>
+        </form>
+      {% else %}
+        <div class="warn-banner">
+          <strong>No automated remediator for this finding.</strong>
+          <p>
+            Phase 1 covers SUPPLY_CHAIN findings (pip_audit / grype / osv_scanner) and Nuclei
+            <em>missing security header</em> findings. Other categories — Bandit, Semgrep,
+            secrets, MCP scope, AI red-team — go on the human path. Open a ticket against
+            <code>{{ finding.adapter }}</code> + <code>{{ finding.category.value }}</code>
+            for AppSec triage.
+          </p>
+        </div>
+      {% endif %}
+
       <a href="{{ url_for('remediations_queue') }}" class="btn btn-secondary" style="margin-left:8px">View remediation queue</a>
     </section>
   </article>
