@@ -160,6 +160,139 @@ main {
   margin-left: auto;
   padding-bottom: 6px;
 }
+.download-csv {
+  font-size: 12px;
+  color: white;
+  background: var(--navy);
+  border: 1px solid var(--navy-dk);
+  border-radius: 4px;
+  padding: 6px 12px;
+  text-decoration: none;
+  margin-left: auto;
+  align-self: end;
+  white-space: nowrap;
+}
+.download-csv:hover { background: var(--navy-dk); }
+.clear-filters + .download-csv { margin-left: 12px; }
+
+/* Bulk fix action bar (sticky at top of findings table when items selected) */
+.bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--takeaway);
+  border: 1px solid var(--navy);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(31, 58, 95, 0.08);
+}
+.bulk-count { color: var(--navy); font-size: 13px; }
+.bulk-count strong { font-size: 16px; margin-right: 4px; }
+.bulk-progress {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin-left: 4px;
+}
+.bulk-bar .btn { padding: 5px 12px; font-size: 12px; }
+
+/* Checkbox column */
+table.findings th.col-check, table.findings td.col-check {
+  width: 32px;
+  text-align: center;
+  padding-left: 12px;
+  padding-right: 4px;
+}
+
+/* Bulk results panel — inline below the bar, above the table */
+.bulk-results {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.bulk-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--navy);
+  color: white;
+  padding: 10px 16px;
+}
+.bulk-results-header h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.bulk-results-summary { display: inline-flex; gap: 6px; margin-left: 14px; }
+.bulk-summary-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  text-transform: lowercase;
+}
+.bulk-summary-ok { background: rgba(61, 140, 92, 0.6); border-color: rgba(255,255,255,0.4); }
+.bulk-summary-warn { background: rgba(224, 165, 85, 0.7); border-color: rgba(255,255,255,0.4); color: var(--navy-dk); }
+.bulk-summary-fail { background: rgba(192, 74, 43, 0.7); border-color: rgba(255,255,255,0.4); }
+
+/* Per-finding result card */
+.bulk-result {
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+}
+.bulk-result:nth-child(even) { background: var(--alt); }
+.bulk-result-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.bulk-result-title { font-weight: 500; flex: 1 1 auto; }
+.bulk-result-meta { color: var(--muted); }
+.bulk-status {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.bulk-status-ok   { background: var(--green); color: white; }
+.bulk-status-fail { background: var(--red);   color: white; }
+.bulk-status-skip { background: var(--grey);  color: white; }
+.bulk-result-ok   { border-left: 3px solid var(--green); }
+.bulk-result-fail { border-left: 3px solid var(--red); }
+.bulk-result-skip { border-left: 3px solid var(--grey); }
+
+.bulk-error {
+  background: var(--callout);
+  border: 1px solid var(--orange);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  margin: 6px 0;
+  color: var(--navy-dk);
+}
+.bulk-log {
+  background: #1e2530;
+  color: #e0e6ee;
+  font-family: "SF Mono", "Monaco", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 4px 0 0 0;
+  overflow-x: auto;
+  max-height: 360px;
+  overflow-y: auto;
+}
 
 /* Findings table */
 .findings-list { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }

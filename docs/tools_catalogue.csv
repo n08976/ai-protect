@@ -1,0 +1,135 @@
+name,status,broad_category,subsection,source_url,notes
+agentic_radar,wired,AI red team · eval,Wired-in adapter (ai),https://github.com/splx-ai/agentic-radar,"SplxAI Agentic Radar — SAST for agentic AI workflows (LangChain, LlamaIndex, CrewAI, Claude Agent SDK, OpenAI Assistants). Surfaces over-broad tool grants, agent-to-agent privilege escalation, PHI flow into prompts, prompt-injection-prone i"
+eval_suite,wired,AI red team · eval,Wired-in adapter (ai),https://github.com/n08976/ai-protect/blob/main/pipeline/adapters/eval_suite.py,Pre-prod gate: hallucination / bias / jailbreak rate must pass thresholds before deploy. Plug TruthfulQA / MedQA / custom QA harness.
+garak,wired,AI red team · eval,Wired-in adapter (ai),https://github.com/NVIDIA/garak,"NVIDIA garak — LLM vulnerability scanner. Probes for prompt injection, encoding bypass, leakage, jailbreaks, toxicity."
+promptfoo,wired,AI red team · eval,Wired-in adapter (ai),https://github.com/promptfoo/promptfoo,"promptfoo / DeepEval — curated AI eval suites (correctness, safety, refusal). Complement to PyRIT."
+pyrit,wired,AI red team · eval,Wired-in adapter (ai),https://github.com/Azure/PyRIT,"Microsoft PyRIT — multi-turn AI red team orchestration. Strategies: injection, encoding, multiturn, crescendo, leakage."
+atomic,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/redcanaryco/atomic-red-team,Red Canary Atomic Red Team — MITRE ATT&CK technique emulation against the agent runtime host. Validates EDR detection coverage.
+burp,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://portswigger.net/burp,PortSwigger Burp Suite via REST API (Pro / Enterprise). Passive or active scan against the surrounding web app.
+caldera,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/mitre/caldera,MITRE Caldera — autonomous adversary emulation. Chained ATT&CK abilities (an adversary profile) run end-to-end via Caldera's REST API; complements Atomic (per-technique) with campaign-shaped coverage. Mutation-required.
+dockle,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/goodwithtech/dockle,dockle — container image hygiene scanner (different focus than Trivy: image best practices).
+metasploit,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/rapid7/metasploit-framework,Metasploit Framework via RPC. Auxiliary scanners by default; exploit modules require Tier 1 + explicit allow-list.
+nuclei,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/projectdiscovery/nuclei,Template-driven web vulnerability scanner. Runs the exposures/misconfiguration/vulnerabilities templates by default.
+recon,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/projectdiscovery,"ProjectDiscovery chain (subfinder → httpx → naabu → katana). Subdomain enumeration, HTTP probing, port scan, URL crawl. Drives shadow-AI discovery."
+ride,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/adobe/ride,Adobe Ride — REST/JSON API test suite runner (configurable hook). Runs an in-house Maven Ride suite that targets the AI gateway / MCP / agent runtime API surface; converts test failures to Findings. Mutation-required.
+sqlmap,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/sqlmapproject/sqlmap,sqlmap — SQL injection confirmation + characterization. Confirms what Nuclei/ZAP detect.
+zap,wired,Dynamic · web · network,Wired-in adapter (dynamic),https://github.com/zaproxy/zaproxy,"OWASP ZAP — free DAST scanner via REST API. Modes: spider (URL discovery), baseline (1-min spider + passive — Tier 3/4), active (spider + active scan), full (spider + active + extended passive), api (OpenAPI/SOAP/GraphQL spec-driven — stron"
+guardrails,wired,Policy gates,Wired-in adapter (policy),https://github.com/NVIDIA/NeMo-Guardrails,NeMo Guardrails — verify guardrails config + smoke a high-severity prompt-injection/PHI prompt through the guarded endpoint.
+manifest_validator,wired,Policy gates,Wired-in adapter (policy),https://github.com/n08976/ai-protect/blob/main/pipeline/adapters/manifest_validator.py,"Validates the manifest at intake — schema + sanctioned-infrastructure policy (PHI without BAA fails immediately, direct API access blocked)."
+mcp_scope,wired,Policy gates,Wired-in adapter (policy),https://github.com/n08976/ai-protect/blob/main/pipeline/adapters/mcp_scope.py,"MCP scope validator — tier inheritance, action allow-list, side-effect classification, and live token-scope probe. Highest-leverage single control in the v2.1 plan."
+threat_model_check,wired,Policy gates,Wired-in adapter (policy),https://github.com/n08976/ai-protect/blob/main/pipeline/adapters/threat_model_check.py,"At design stage, verifies a signed-off threat model artifact exists for Tier 1/2 apps (assets, actors, trust boundaries, threats, mitigations, approver)."
+anomaly_detector,wired,Production · telemetry,Wired-in adapter (policy),https://github.com/n08976/ai-protect/blob/main/pipeline/adapters/telemetry_drift.py,Lightweight anomaly detection over telemetry (alias of telemetry_drift with different defaults).
+telemetry_drift,wired,Production · telemetry,Wired-in adapter (policy),https://github.com/n08976/ai-protect/blob/main/pipeline/adapters/telemetry_drift.py,"Production-stage drift over unified AI telemetry (prompts, completions, tool calls, retrievals, agent decisions, policy events)."
+bandit,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/PyCQA/bandit,"Python-native SAST — exec/eval, weak crypto, hardcoded credentials, unsafe subprocess, weak SSL/TLS, deserialization risks."
+bearer,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/Bearer/bearer,Bearer — privacy-flow SAST. Tracks how PHI/PII flows through code paths; healthcare-fit.
+checkov,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/bridgecrewio/checkov,IaC specialist — Terraform / Kubernetes / Helm / CloudFormation / Dockerfile against a 1000+ rule catalog.
+codeql,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/github/codeql-cli-binaries,GitHub CodeQL — semantic SAST with full taint / data-flow analysis. Different class than Semgrep.
+dependency_check,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/dependency-check/DependencyCheck,OWASP Dependency-Check — multi-language CVE scanner against NIST NVD (Maven / NPM / Gradle / .NET / Ruby / PHP / Python). Broader language coverage than pip_audit. Requires NVD_API_KEY env var on v9+ (NIST throttles unauthenticated pulls). 
+detect_secrets,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/Yelp/detect-secrets,Yelp detect-secrets — entropy + pattern secret scanning. Third opinion alongside TruffleHog and Gitleaks.
+gitleaks,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/gitleaks/gitleaks,Pattern-based secret scanner with a different ruleset than TruffleHog — running both catches more than either alone.
+gosec,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/securego/gosec,"gosec — Go-native SAST (G101 hardcoded creds, G201/G202 SQL formatting, G304 path traversal, G4xx weak crypto, G5xx weak hashes). Graceful degrade when no Go files in source."
+grype,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/anchore/grype,Anchore Grype — SBOM-aware vulnerability scanner. Pairs with Syft; complements Trivy + pip-audit + OSV-Scanner.
+hadolint,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/hadolint/hadolint,"hadolint — Dockerfile linter (build-time best practices, CIS-aligned rules)."
+modelscan,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/protectai/modelscan,"Protect AI ModelScan — malicious model file detection (pickle, h5, pt, safetensors, onnx). v2.1 names this at build."
+njsscan,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/ajinabraham/njsscan,"njsscan — Node.js-specific SAST (Express, prototype pollution, JWT misconfig, eval)."
+osv_scanner,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/google/osv-scanner,Google OSV-Scanner — multi-language vuln scanner against the OSV.dev database. Broader language coverage than pip-audit.
+owasp_noir,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/owasp-noir/noir,OWASP Noir — attack surface enumeration via static analysis. Static counterpart to the runtime recon chain; produces an authoritative endpoint list for downstream DAST adapters.
+pip_audit,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/pypa/pip-audit,Python dependency CVE scanner — PyPA Advisory DB + OSV. Catches known-vulnerable transitive deps.
+presidio,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/microsoft/presidio,Microsoft Presidio — PHI/PII detection in text and source files. v2.1 names this as the default scrubber.
+semgrep,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/semgrep/semgrep,Multi-language SAST. Default ruleset: p/python + p/security-audit + p/secrets registries.
+syft,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/anchore/syft,Anchore Syft — SBOM generator (CycloneDX / SPDX). Compliance evidence for HITRUST.
+trivy,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/aquasecurity/trivy,"Filesystem / container image / IaC / secret scanner in one binary. Multi-mode: filesystem, image, config (IaC), k8s."
+trufflehog,wired,Static analysis · secrets · deps,Wired-in adapter (static),https://github.com/trufflesecurity/trufflehog,Live-verifying secret scanner across 700+ detectors. CRITICAL on verified hits; HIGH on unverified pattern matches.
+deepeval,wired,wired,AI red team · eval,https://github.com/confident-ai/deepeval,fallback for promptfoo adapter
+AdvBox,reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/advboxes/AdvBox,
+Adversarial Robustness Toolbox (ART),reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/Trusted-AI/adversarial-robustness-toolbox,
+Amass (OWASP),reviewed,reviewed (deferred),Recon depth (complement existing `recon` adapter),https://github.com/OWASP/Amass,
+APIsecurity.io Security Audit,reviewed,reviewed (deferred),OpenAPI / API-spec security (defer),https://apisecurity.io,
+APTSimulator,reviewed,reviewed (deferred),Adversary emulation frameworks (SCV-shape candidates),https://github.com/NextronSystems/APTSimulator,
+AttackSurfaceMapper,reviewed,reviewed (deferred),Recon depth (complement existing `recon` adapter),https://github.com/superhedgy/AttackSurfaceMapper,
+AWS Automated Security Helper,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://github.com/aws-samples/automated-security-helper,
+BBOT,reviewed,reviewed (deferred),Recon depth (complement existing `recon` adapter),https://github.com/blacklanternsecurity/bbot,
+BloodHound + SharpHound,reviewed,reviewed (deferred),AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated),https://github.com/SpecterOps/BloodHound,
+Brakeman,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://github.com/presidentbeef/brakeman,
+Brute Ratel,reviewed,reviewed (deferred),"C2 frameworks (operator engagement, not pipeline-shaped)",https://bruteratel.com,
+CAI (Cybersecurity AI),reviewed,reviewed (deferred),Offensive AI agents (dual-use research / Tier 3 candidates),https://github.com/aliasrobotics/CAI,
+Cobalt Strike,reviewed,reviewed (deferred),"C2 frameworks (operator engagement, not pipeline-shaped)",https://www.cobaltstrike.com,
+Counterfit,reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/Azure/counterfit,
+Dawnscanner,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://rubygems.org/gems/dawnscanner,
+Deepfence ThreatMapper,reviewed,reviewed (deferred),Cloud / Kubernetes (pull in once Platform Engineering deploys to cloud),https://github.com/deepfence/ThreatMapper,
+Empire,reviewed,reviewed (deferred),"C2 frameworks (operator engagement, not pipeline-shaped)",https://github.com/BC-SECURITY/Empire,
+Evilginx2,reviewed,reviewed (deferred),Phishing / Threat Hunt vertical,https://github.com/kgretzky/evilginx2,
+Falco (runtime),reviewed,reviewed (deferred),Cloud / Kubernetes (pull in once Platform Engineering deploys to cloud),https://github.com/falcosecurity/falco,
+FindSecBugs (SpotBugs plugin),reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://find-sec-bugs.github.io/,
+Flawfinder,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://www.dwheeler.com/flawfinder/,
+Fluid Attack's Scanner,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://github.com/fluidattacks/scanner,
+FuzzyAI,reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/cyberark/FuzzyAI,
+Gato (GitHub enumeration — supply-chain),reviewed,reviewed (deferred),Recon depth (complement existing `recon` adapter),https://github.com/praetorian-inc/gato,
+GolangCI-Lint (gosec aggregator),reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://golangci-lint.run/,
+Gophish,reviewed,reviewed (deferred),Phishing / Threat Hunt vertical,https://github.com/gophish/gophish,
+Graudit,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://github.com/wireghoul/graudit/,
+Hashcat,reviewed,reviewed (deferred),Mobile / wireless / specialty (out of scope today),https://github.com/hashcat/hashcat,
+Havoc,reviewed,reviewed (deferred),"C2 frameworks (operator engagement, not pipeline-shaped)",https://github.com/HavocFramework/Havoc,
+HefestoAI,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://github.com/artvepa80/Agents-Hefesto,
+HexStrike AI,reviewed,reviewed (deferred),Offensive AI agents (dual-use research / Tier 3 candidates),https://github.com/0x4m4/hexstrike-ai,
+HuskyCI,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://github.com/globocom/huskyCI,
+Impacket,reviewed,reviewed (deferred),AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated),https://github.com/fortra/impacket,
+Inspect (UK AISI),reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/UKGovernmentBEIS/inspect_ai,
+John the Ripper,reviewed,reviewed (deferred),Mobile / wireless / specialty (out of scope today),https://github.com/openwall/john,
+Kismet,reviewed,reviewed (deferred),Mobile / wireless / specialty (out of scope today),https://github.com/kismetwireless/kismet,
+L3X,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://github.com/VulnPlanet/l3x,
+LLM Guard,reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/protectai/llm-guard,
+LunaTrace,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://www.lunasec.io/,
+Metta (Uber),reviewed,reviewed (deferred),Adversary emulation frameworks (SCV-shape candidates),https://github.com/uber-common/metta,
+MobSF,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://github.com/MobSF/Mobile-Security-Framework-MobSF,
+MobSF,reviewed,reviewed (deferred),Mobile / wireless / specialty (out of scope today),https://github.com/MobSF/Mobile-Security-Framework-MobSF,
+Mythic,reviewed,reviewed (deferred),"C2 frameworks (operator engagement, not pipeline-shaped)",https://github.com/its-a-feature/Mythic,
+NaiveSystems Analyze,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://github.com/naivesystems/analyze,
+NetExec (nxc),reviewed,reviewed (deferred),AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated),https://github.com/Pennyw0rth/NetExec,
+Network Flight Simulator (alphasoc),reviewed,reviewed (deferred),Adversary emulation frameworks (SCV-shape candidates),https://github.com/alphasoc/flightsim,
+Nikto,reviewed,reviewed (deferred),Web / API DAST (alternates and complements to wired Nuclei + ZAP + Burp),https://github.com/sullo/nikto,
+OpenVAS / Greenbone Community Edition (GVM),reviewed,reviewed (deferred),Web / API DAST (alternates and complements to wired Nuclei + ZAP + Burp),https://github.com/greenbone/openvas-scanner,
+OWASP ASST,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://github.com/OWASP/ASST,
+PentAGI,reviewed,reviewed (deferred),Offensive AI agents (dual-use research / Tier 3 candidates),https://github.com/vxcontrol/pentagi,
+PHPStan,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://phpstan.org/,
+Plexiglass,reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/Adversa-AI/plexiglass,
+Progpilot,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://github.com/designsecurity/progpilot,
+Prowler,reviewed,reviewed (deferred),Cloud / Kubernetes (pull in once Platform Engineering deploys to cloud),https://github.com/prowler-cloud/prowler,
+Psalm (security),reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://psalm.dev/docs/security_analysis/,
+Pyre (Meta),reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://pyre-check.org/,
+Rebuff,reviewed,reviewed (deferred),AI-specific (defer / niche),https://github.com/protectai/rebuff,
+RedAmon,reviewed,reviewed (deferred),Offensive AI agents (dual-use research / Tier 3 candidates),https://github.com/samugit83/redamon,
+Responder,reviewed,reviewed (deferred),AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated),https://github.com/lgandx/Responder,
+Ride (Adobe REST/JSON fuzzer),reviewed,reviewed (deferred),Web / API DAST (alternates and complements to wired Nuclei + ZAP + Burp),https://github.com/adobe/ride,
+RTA (Endgame),reviewed,reviewed (deferred),Adversary emulation frameworks (SCV-shape candidates),https://github.com/endgameinc/RTA,
+RustHound (faster BloodHound collector),reviewed,reviewed (deferred),AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated),https://github.com/g0h4n/RustHound,
+ScoutSuite,reviewed,reviewed (deferred),Cloud / Kubernetes (pull in once Platform Engineering deploys to cloud),https://github.com/nccgroup/ScoutSuite,
+ShiftLeft Scan (sast-scan),reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://github.com/ShiftLeftSecurity/sast-scan,
+Sliver,reviewed,reviewed (deferred),"C2 frameworks (operator engagement, not pipeline-shaped)",https://github.com/BishopFox/sliver,
+SonarQube Community Edition,reviewed,reviewed (deferred),Heavyweight / orchestration SAST platforms (defer),https://www.sonarsource.com/products/sonarqube/downloads/success-download-community-edition/,
+SpiderFoot,reviewed,reviewed (deferred),Phishing / Threat Hunt vertical,https://github.com/smicallef/spiderfoot,
+Splint,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://www.splint.org/,
+SpotBugs,reviewed,reviewed (deferred),"Static analysis additions (language- or platform-specific, defer until in scope)",https://spotbugs.github.io/,
+"Stratus Red Team (DataDog, cloud-native)",reviewed,reviewed (deferred),Adversary emulation frameworks (SCV-shape candidates),https://github.com/DataDog/stratus-red-team,
+TTPForge (Meta),reviewed,reviewed (deferred),Adversary emulation frameworks (SCV-shape candidates),https://github.com/facebookincubator/TTPForge,
+Wapiti,reviewed,reviewed (deferred),Web / API DAST (alternates and complements to wired Nuclei + ZAP + Burp),https://github.com/wapiti-scanner/wapiti,
+Awesome-Red-Teaming,catalog,red-team catalogue repos (browse points),Red-team catalog repositories (reviewed for picks),https://github.com/0xMrNiko/Awesome-Red-Teaming,
+Red-Blueteam-party,catalog,red-team catalogue repos (browse points),Red-team catalog repositories (reviewed for picks),https://github.com/A0RX/Red-Blueteam-party,
+Red-Teaming-Toolkit (infosecn1nja),catalog,red-team catalogue repos (browse points),Red-team catalog repositories (reviewed for picks),https://github.com/infosecn1nja/Red-Teaming-Toolkit,
+RedTeam-Resources,catalog,red-team catalogue repos (browse points),Red-team catalog repositories (reviewed for picks),https://github.com/J0hnbX/RedTeam-Resources,
+RedTeam-Tools,catalog,red-team catalogue repos (browse points),Red-team catalog repositories (reviewed for picks),https://github.com/A-poc/RedTeam-Tools,
+RedTeamTools,catalog,red-team catalogue repos (browse points),Red-team catalog repositories (reviewed for picks),https://github.com/MantisSTS/RedTeamTools,
+Automated Red Team lab (training),seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://redteams.ai/topics/labs/intermediate/lab-automated-red-team,
+Burp Suite,seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://portswigger.net/burp,
+Metasploit Framework,seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://github.com/rapid7/metasploit-framework,
+Microsoft PyRIT,seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://github.com/Azure/PyRIT,
+NVIDIA garak,seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://github.com/NVIDIA/garak,
+Red Canary Atomic Red Team,seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://github.com/redcanaryco/atomic-red-team,
+RedTeam-Tools (catalog),seed,initial seed (director-provided),Initial seed list (provided by the offensive security director),https://github.com/A-poc/RedTeam-Tools,
+Chintan Gurjar — Essential Red Team GitHub Repos List (~168 repos),methodology,methodology / catalogue source,Recon depth — catalogue source,https://red.osx.asia/notes/red/github-repos,"Reviewed for SAST/DAST. Net add: theHarvester. List is overwhelmingly red-team tradecraft / cheatsheets, not SAST/DAST. Original (gated): https://www.scribd.com/document/608127056/1668123815769"
+Lalatenduswain/Dynamic-Application-Security-Testing-DAST-Tools,methodology,methodology / catalogue source,Web / API DAST — catalogue source,https://github.com/Lalatenduswain/Dynamic-Application-Security-Testing-DAST-Tools-Cybersec-Tools-and-scanner,"Already-wired: Nuclei, ZAP. Added: Nikto, OpenVAS/Greenbone, Wapiti, Adobe Ride, OWASP purpleteam, Deepfence ThreatMapper. Skipped (abandoned): Arachni, GoLismero, Grabber, Grendel-Scan, Vega."
+OWASP — Source Code Analysis Tools community page,methodology,methodology / catalogue source,Static analysis additions — catalogue source,https://owasp.org/www-community/Source_Code_Analysis_Tools,"Already-wired: Bandit, Bearer, Grype, Semgrep, Syft. Wired this round: gosec, OWASP Noir, SplxAI Agentic Radar, Adobe Ride. Skipped (dead/commercial): FindBugs, PREFast, VisualCodeGrepper, Google CodeSearchDiggity, PVS-Studio, ParaSoft, Spectral, HCL CodeSweep, Puma Scan, .NET Code Analysis, GitHub Advanced Security."
+promptfoo — Top 5 open-source AI red-teaming tools (2025),methodology,methodology / catalogue source,AI-specific (defer / niche) — catalogue source,https://www.promptfoo.dev/blog/top-5-open-source-ai-red-teaming-tools-2025/,"Already-wired matches: Promptfoo, PyRIT, Garak. New: FuzzyAI, promptmap2 (added to defer/niche). Honorable: Viper, Woodpecker."
+johal.in — CI/CD Pipeline Security: Integrating SAST and DAST Tools in GitHub Actions Workflows (2025),methodology,methodology / integration pattern,"Methodology references (reviewed, no tool additions)",https://johal.in/ci-cd-pipeline-security-integrating-sast-and-dast-tools-in-github-actions-workflows-2025/,"Site blocks bot fetch (403). Content from search snippets. Tools mentioned: ZAP, CodeQL (wired), Fortify, Veracode, Checkmarx, WebInspect, Acunetix, Snyk (commercial-only). Net adapter additions: zero. Prompted GHA workflow at .github/workflows/ai-protect.yml."
+primeop/Secure-SDLC-DevSecOps-Pipeline,methodology,methodology / integration pattern,"Methodology references (reviewed, no tool additions)",https://github.com/primeop/Secure-SDLC-DevSecOps-Pipeline,"Tools (Semgrep, SonarQube, ZAP, Burp, Trivy, Syft) all already wired/catalogued. Pattern: per-tool Docker images via GHA. 26 commits, 0 stars, no license. Prompted Containerization plan deferred section."
+alekzandren/Automated_Vulnerability_Scanner (PySec-Hybrid),skipped,reviewed and skipped,Tools reviewed and not pursued,https://github.com/alekzandren/Automated_Vulnerability_Scanner,"Educational-grade Python-only AST scanner (eval/exec/os.system). 2 stars, 11 commits, 0 forks. Strict subset of wired-in bandit. MIT."

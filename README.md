@@ -597,6 +597,18 @@ The realistic minimum viable container story is therefore a `docker-compose.yml`
 
 This is recorded as deferred — pull in when the team actually wants ephemeral CI scans or when Platform Engineering asks for a containerized deployment artifact.
 
+### Agent-skills library (future investigation, deferred)
+
+**[mukul975/Anthropic-Cybersecurity-Skills](https://github.com/mukul975/Anthropic-Cybersecurity-Skills)** — a community collection of ~754 agent "skill" files (YAML-frontmatter markdown procedures conforming to the agentskills.io standard, Apache-2.0). **Community project, not official Anthropic.** Not pipeline-adapter material — these are procedural knowledge documents an agent (Claude Code, Cursor, etc.) discovers and executes, not scanners that emit findings.
+
+Where it would fit if integrated:
+
+- **Claude Code skills for the five verticals** — curate down (754 is far too many to load wholesale) to Threat Hunt (~55 skills), Red Team (~24), Incident Response (~25), Digital Forensics (~37), Malware Analysis (~39), Threat Intel. Drop the curated subset into `~/.claude/skills/`. Entry point: `npx skills add mukul975/Anthropic-Cybersecurity-Skills`.
+- **Remediation side of the pipeline, not the scanning side** — for findings that need judgment rather than a deterministic one-line patch (e.g. a Bearer critical that warrants an investigation), an agent following an IR / threat-hunt skill is the right shape. Future hook in `pipeline/remediate/`, not `pipeline/adapters/`.
+- **Phase 1 playbook-as-code scaffold** — provides a template structure (prerequisites → workflow → verification) with MITRE ATT&CK / ATLAS / NIST CSF 2.0 / D3FEND / NIST AI RMF mappings already wired, which lines up with HIPAA/HITRUST audit-evidence needs (those map through NIST). A starting library for codifying the team's own playbooks, not a finished product.
+
+Caveats to resolve before integrating: **zero healthcare-specific skills** (no HIPAA breach containment, no PHI minimum-necessary audit, no medical-device forensics — the team would fill that gap); community-maintained, so fine for procedural scaffolding but not for anything cited as compliance evidence without vetting; v1.2.0 as of April 2026, 6.2k stars.
+
 ### Tools reviewed and not pursued
 
 Single-tool repositories evaluated and explicitly skipped. Recorded so the catalogue stays auditable and so the same source isn't re-evaluated.

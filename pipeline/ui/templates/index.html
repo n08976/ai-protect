@@ -64,6 +64,24 @@
     {% if filter_severity or filter_app or filter_adapter or filter_category %}
       <a class="clear-filters" href="{{ url_for('index') }}">clear filters</a>
     {% endif %}
+    <a class="download-csv" href="{{ url_for('findings_csv', severity=filter_severity, app=filter_app, adapter=filter_adapter, category=filter_category) }}">
+      ⬇ Download CSV{% if filter_severity or filter_app or filter_adapter or filter_category %} (filtered){% endif %}
+    </a>
+  </section>
+
+  <div id="bulk-bar" class="bulk-bar" hidden>
+    <span class="bulk-count"><strong id="bulk-count">0</strong> selected</span>
+    <button id="bulk-fix-btn" class="btn btn-primary">⚡ Fix selected</button>
+    <button id="bulk-clear-btn" class="btn btn-secondary">Clear</button>
+    <span id="bulk-progress" class="bulk-progress" hidden></span>
+  </div>
+
+  <section id="bulk-results" class="bulk-results" hidden>
+    <div class="bulk-results-header">
+      <h3>Bulk fix results <span id="bulk-results-summary" class="bulk-results-summary"></span></h3>
+      <button id="bulk-results-close" class="btn btn-secondary">Hide</button>
+    </div>
+    <div id="bulk-results-body"></div>
   </section>
 
   <section class="findings-list">
@@ -71,6 +89,7 @@
       <table class="findings">
         <thead>
           <tr>
+            <th class="col-check"><input type="checkbox" id="select-all" title="Select all visible (fixable)"></th>
             <th>Severity</th>
             <th>App</th>
             <th>Tier</th>
@@ -83,7 +102,12 @@
         </thead>
         <tbody>
           {% for f in findings %}
-          <tr class="finding-row sev-row-{{ f.severity.value }}">
+          <tr class="finding-row sev-row-{{ f.severity.value }}" data-finding-id="{{ f.finding_id }}">
+            <td class="col-check">
+              {% if fixable.get(f.finding_id) %}
+                <input type="checkbox" class="row-check" name="finding_ids" value="{{ f.finding_id }}">
+              {% endif %}
+            </td>
             <td><span class="sev-badge sev-{{ f.severity.value }}">{{ f.severity.value }}</span></td>
             <td class="mono">{{ f.app_name }}</td>
             <td><span class="tier-badge tier-{{ f.tier }}">T{{ f.tier }}</span></td>
@@ -119,4 +143,116 @@
       </div>
     {% endif %}
   </section>
+
+  <script>
+  (function() {
+    const bar = document.getElementById('bulk-bar');
+    const countEl = document.getElementById('bulk-count');
+    const fixBtn = document.getElementById('bulk-fix-btn');
+    const clearBtn = document.getElementById('bulk-clear-btn');
+    const progress = document.getElementById('bulk-progress');
+    const selectAll = document.getElementById('select-all');
+    const resultsSection = document.getElementById('bulk-results');
+    const resultsBody = document.getElementById('bulk-results-body');
+    const resultsSummary = document.getElementById('bulk-results-summary');
+    const resultsClose = document.getElementById('bulk-results-close');
+
+    function selected() {
+      return Array.from(document.querySelectorAll('.row-check:checked'));
+    }
+    function refresh() {
+      const n = selected().length;
+      countEl.textContent = n;
+      bar.hidden = (n === 0);
+    }
+    document.querySelectorAll('.row-check').forEach(cb => cb.addEventListener('change', refresh));
+    if (selectAll) {
+      selectAll.addEventListener('change', () => {
+        document.querySelectorAll('.row-check').forEach(cb => { cb.checked = selectAll.checked; });
+        refresh();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        document.querySelectorAll('.row-check').forEach(cb => { cb.checked = false; });
+        if (selectAll) selectAll.checked = false;
+        refresh();
+      });
+    }
+
+    function escapeHtml(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderResult(r) {
+      const status = r.status || 'failed';
+      const success = (status === 'applied' || status === 'applied-tests-failed');
+      const cls = success ? 'ok' : (status === 'no-remediator' || status === 'no-manifest' ? 'skip' : 'fail');
+      const changeLink = r.change_id
+        ? `<a href="/change/${r.change_id}" class="mono small">${r.change_id.slice(0, 8)}…</a>`
+        : '<span class="small muted">—</span>';
+      const errorBlock = r.error
+        ? `<div class="bulk-error"><strong>error:</strong> ${escapeHtml(r.error)}</div>`
+        : '';
+      return `
+        <div class="bulk-result bulk-result-${cls}">
+          <div class="bulk-result-head">
+            <span class="bulk-status bulk-status-${cls}">${escapeHtml(status)}</span>
+            <span class="bulk-result-title">${escapeHtml(r.title || r.finding_id)}</span>
+            <span class="bulk-result-meta mono small">${escapeHtml(r.app_name || '')} · ${changeLink}</span>
+          </div>
+          ${errorBlock}
+          <pre class="bulk-log">${escapeHtml(r.log || '(no log)')}</pre>
+        </div>`;
+    }
+
+    function summaryPill(summary) {
+      const parts = [];
+      for (const [k, v] of Object.entries(summary || {})) {
+        const cls = (k === 'applied') ? 'ok' : (k === 'applied-tests-failed' ? 'warn' : 'fail');
+        parts.push(`<span class="bulk-summary-pill bulk-summary-${cls}">${escapeHtml(k)}: ${v}</span>`);
+      }
+      return parts.join('');
+    }
+
+    if (fixBtn) {
+      fixBtn.addEventListener('click', async () => {
+        const ids = selected().map(cb => cb.value);
+        if (ids.length === 0) return;
+        if (!confirm(`Run propose → approve → apply for ${ids.length} finding(s)?\n\nThis writes file changes on disk (with backups). Tier 1/2 manifests require human actor — you are signed in as the configured actor.`)) return;
+        fixBtn.disabled = true;
+        clearBtn.disabled = true;
+        progress.hidden = false;
+        progress.textContent = `running ${ids.length}…`;
+        try {
+          const resp = await fetch('/findings/bulk-fix', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({finding_ids: ids}),
+          });
+          if (!resp.ok) {
+            const txt = await resp.text();
+            throw new Error(`HTTP ${resp.status}: ${txt.slice(0, 200)}`);
+          }
+          const data = await resp.json();
+          resultsBody.innerHTML = (data.results || []).map(renderResult).join('');
+          resultsSummary.innerHTML = summaryPill(data.summary || {});
+          resultsSection.hidden = false;
+          resultsSection.scrollIntoView({behavior: 'smooth', block: 'start'});
+        } catch (e) {
+          resultsBody.innerHTML = `<div class="bulk-error"><strong>request failed:</strong> ${escapeHtml(String(e))}</div>`;
+          resultsSummary.innerHTML = '';
+          resultsSection.hidden = false;
+        } finally {
+          fixBtn.disabled = false;
+          clearBtn.disabled = false;
+          progress.hidden = true;
+        }
+      });
+    }
+    if (resultsClose) {
+      resultsClose.addEventListener('click', () => { resultsSection.hidden = true; });
+    }
+  })();
+  </script>
 {% endblock %}

@@ -13,7 +13,10 @@ import os
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+import csv
+import io
+
+from flask import Flask, Response, jsonify, redirect, render_template, request, url_for
 
 from ..adapters.registry import REGISTRY
 from ..core.findings import FindingStore, Severity
@@ -126,6 +129,73 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
         return jsonify([f.to_dict() for f in store.all()])
+
+    @app.route("/findings.csv")
+    def findings_csv():
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        findings = store.all()
+        # Honor the same filters the index page uses so the download matches
+        # what the operator is currently looking at.
+        sev_filter = request.args.get("severity")
+        cat_filter = request.args.get("category")
+        app_filter = request.args.get("app")
+        adapter_filter = request.args.get("adapter")
+        if sev_filter:
+            findings = [f for f in findings if f.severity.value == sev_filter]
+        if cat_filter:
+            findings = [f for f in findings if f.category.value == cat_filter]
+        if app_filter:
+            findings = [f for f in findings if f.app_name == app_filter]
+        if adapter_filter:
+            findings = [f for f in findings if f.adapter == adapter_filter]
+        findings.sort(key=lambda f: -f.severity_score)
+
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow([
+            "finding_id", "detected_at", "severity", "app_name", "tier",
+            "adapter", "stage", "category", "title", "description",
+            "file", "line", "url",
+            "compliance", "remediation", "references",
+        ])
+        for f in findings:
+            ev = f.evidence or {}
+            af = f.affected or {}
+            file_ = ev.get("file") or af.get("file") or ""
+            line = ev.get("line") or ev.get("start_line") or ""
+            url = ev.get("url") or af.get("url") or af.get("target") or af.get("endpoint") or ""
+            w.writerow([
+                f.finding_id,
+                f.detected_at,
+                f.severity.value,
+                f.app_name,
+                f.tier,
+                f.adapter,
+                f.stage,
+                f.category.value,
+                f.title,
+                (f.description or "")[:1000],
+                file_,
+                line,
+                url,
+                "; ".join(f.compliance or []),
+                (f.remediation or "")[:500],
+                "; ".join(f.references or []),
+            ])
+        ts = __import__("time").strftime("%Y%m%d-%H%M%S")
+        suffix = []
+        if app_filter: suffix.append(app_filter)
+        if sev_filter: suffix.append(sev_filter)
+        if adapter_filter: suffix.append(adapter_filter)
+        if cat_filter: suffix.append(cat_filter)
+        slug = ("-" + "-".join(suffix)) if suffix else ""
+        filename = f"findings{slug}-{ts}.csv"
+        return Response(
+            buf.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
 
     @app.route("/api/stats")
     def api_stats():
@@ -253,6 +323,125 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             "change_detail.html", change=change, events=change_events,
             allowed_next=_allowed_next(change.state),
         )
+
+    @app.route("/findings/bulk-fix", methods=["POST"])
+    def bulk_fix():
+        """Run propose → approve → apply for each selected finding.
+
+        Accepts JSON {finding_ids: [...]} or form-encoded finding_ids[].
+        Returns JSON {results: [{finding_id, title, app_name, status, change_id,
+                                 log, error}, ...]} suitable for inline rendering.
+        """
+        if request.is_json:
+            ids = (request.get_json() or {}).get("finding_ids") or []
+        else:
+            ids = request.form.getlist("finding_ids") or request.form.getlist("finding_ids[]")
+        if not ids:
+            return jsonify({"results": [], "error": "no finding_ids supplied"}), 400
+
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        all_findings = {f.finding_id: f for f in store.all()}
+
+        results = []
+        for fid in ids:
+            log_lines: list[str] = []
+            outcome = {
+                "finding_id": fid,
+                "title": "",
+                "app_name": "",
+                "status": "failed",
+                "change_id": None,
+                "log": "",
+                "error": None,
+            }
+            f = all_findings.get(fid)
+            if not f:
+                outcome["error"] = "finding not found in current store"
+                outcome["log"] = f"[ERROR] finding_id={fid} not found in {app.config['FINDINGS_PATH']}\n"
+                results.append(outcome)
+                continue
+            outcome["title"] = f.title
+            outcome["app_name"] = f.app_name
+
+            eng = _engine_for(f.app_name)
+            if not eng:
+                outcome["status"] = "no-manifest"
+                outcome["error"] = f"no manifest registered for app {f.app_name!r}"
+                outcome["log"] = f"[SKIP] no manifest for app={f.app_name!r}; cannot construct Engine\n"
+                results.append(outcome)
+                continue
+
+            log_lines.append(f"[{f.app_name}] finding={fid[:8]}…  '{f.title[:80]}'")
+            log_lines.append(f"  category={f.category.value}  severity={f.severity.value}  adapter={f.adapter}")
+
+            # propose
+            try:
+                change = eng.propose(fid, actor=DEFAULT_ACTOR)
+                outcome["change_id"] = change.change_id
+                log_lines.append(f"+ propose            change_id={change.change_id[:8]}… strategy={change.strategy} confidence={change.confidence}")
+                log_lines.append(f"  summary: {(change.summary or '').strip()[:200]}")
+                if change.test_status:
+                    log_lines.append(f"  test_status={change.test_status} ({len(change.tests)} test(s) authored)")
+            except EngineError as e:
+                outcome["status"] = "no-remediator"
+                outcome["error"] = str(e)
+                log_lines.append(f"- propose            FAILED: {e}")
+                outcome["log"] = "\n".join(log_lines) + "\n"
+                results.append(outcome)
+                continue
+            except Exception as e:
+                outcome["error"] = f"propose raised {type(e).__name__}: {e}"
+                log_lines.append(f"- propose            CRASHED: {type(e).__name__}: {e}")
+                outcome["log"] = "\n".join(log_lines) + "\n"
+                results.append(outcome)
+                continue
+
+            # approve
+            try:
+                eng.approve(change.change_id, actor=DEFAULT_ACTOR)
+                log_lines.append(f"+ approve            actor={DEFAULT_ACTOR}")
+            except EngineError as e:
+                outcome["status"] = "approve-failed"
+                outcome["error"] = str(e)
+                log_lines.append(f"- approve            FAILED: {e}")
+                outcome["log"] = "\n".join(log_lines) + "\n"
+                results.append(outcome)
+                continue
+
+            # apply
+            try:
+                applied = eng.apply(change.change_id, actor=DEFAULT_ACTOR)
+                files_touched = [fe.path for fe in (applied.files or [])]
+                log_lines.append(f"+ apply              files={len(files_touched)}")
+                for p in files_touched[:8]:
+                    log_lines.append(f"    wrote {p}")
+                if len(files_touched) > 8:
+                    log_lines.append(f"    … and {len(files_touched)-8} more")
+                if applied.tests:
+                    passed = sum(1 for t in applied.tests if t.post_apply_passed)
+                    log_lines.append(
+                        f"  post-apply tests: {passed}/{len(applied.tests)} passed  (test_status={applied.test_status})"
+                    )
+                outcome["status"] = "applied"
+                if applied.test_status == "failed":
+                    outcome["status"] = "applied-tests-failed"
+            except EngineError as e:
+                outcome["status"] = "apply-failed"
+                outcome["error"] = str(e)
+                log_lines.append(f"- apply              FAILED: {e}")
+            except Exception as e:
+                outcome["status"] = "apply-failed"
+                outcome["error"] = f"apply raised {type(e).__name__}: {e}"
+                log_lines.append(f"- apply              CRASHED: {type(e).__name__}: {e}")
+
+            outcome["log"] = "\n".join(log_lines) + "\n"
+            results.append(outcome)
+
+        # Aggregate counts for the UI banner
+        from collections import Counter as _C
+        summary = dict(_C(r["status"] for r in results))
+        return jsonify({"results": results, "summary": summary, "count": len(results)})
 
     @app.route("/finding/<finding_id>/propose", methods=["POST"])
     def propose_change(finding_id):
