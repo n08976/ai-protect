@@ -23,6 +23,10 @@
     </div>
 
     <div class="severity-row">
+      <a class="severity-pill sev-all{% if not filter_severity and not filter_fixable %} active{% endif %}"
+         href="{{ url_for('index') }}">
+        all <strong>{{ stats.total }}</strong>
+      </a>
       {% for sev in severities %}
         {% set cnt = stats.by_severity.get(sev, 0) %}
         <a class="severity-pill sev-{{ sev }}{% if filter_severity == sev %} active{% endif %}"
@@ -30,6 +34,10 @@
           {{ sev }} <strong>{{ cnt }}</strong>
         </a>
       {% endfor %}
+      <a class="severity-pill sev-fixable{% if filter_fixable %} active{% endif %}"
+         href="{% if filter_fixable %}{{ url_for('index') }}{% else %}{{ url_for('index', fixable=1) }}{% endif %}">
+        ⚡ has fix <strong>{{ fixable_count }}</strong>
+      </a>
     </div>
   </section>
 
@@ -61,11 +69,11 @@
         {% endfor %}
       </select>
     </div>
-    {% if filter_severity or filter_app or filter_adapter or filter_category %}
+    {% if filter_severity or filter_app or filter_adapter or filter_category or filter_fixable %}
       <a class="clear-filters" href="{{ url_for('index') }}">clear filters</a>
     {% endif %}
-    <a class="download-csv" href="{{ url_for('findings_csv', severity=filter_severity, app=filter_app, adapter=filter_adapter, category=filter_category) }}">
-      ⬇ Download CSV{% if filter_severity or filter_app or filter_adapter or filter_category %} (filtered){% endif %}
+    <a class="download-csv" href="{{ url_for('findings_csv', severity=filter_severity, app=filter_app, adapter=filter_adapter, category=filter_category, fixable=(1 if filter_fixable else None)) }}">
+      ⬇ Download CSV{% if filter_severity or filter_app or filter_adapter or filter_category or filter_fixable %} (filtered){% endif %}
     </a>
   </section>
 

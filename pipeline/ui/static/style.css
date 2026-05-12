@@ -120,11 +120,13 @@ main {
 }
 .severity-pill.active { box-shadow: 0 0 0 2px var(--navy); }
 .severity-pill strong { font-weight: 700; }
+.sev-all      { background: var(--navy); color: white; border-color: var(--navy-dk); }
 .sev-critical { background: #fde7e2; color: #8a2010; border-color: #f3b6a6; }
 .sev-high     { background: #fbe9d8; color: #8a4a10; border-color: #f3cba0; }
 .sev-medium   { background: #fdf6dc; color: #8a6c10; border-color: #ecdb8e; }
 .sev-low      { background: #e3eef5; color: #1F3A5F; border-color: #b9d0e0; }
 .sev-info     { background: #eee;    color: #555;    border-color: #ccc; }
+.sev-fixable  { background: #e2f0e8; color: #2d6b46; border-color: #b8d8c5; }
 
 /* Filters */
 .filters {

@@ -79,6 +79,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         cat_filter = request.args.get("category")
         app_filter = request.args.get("app")
         adapter_filter = request.args.get("adapter")
+        fixable_filter = request.args.get("fixable")
         if sev_filter:
             findings = [f for f in findings if f.severity.value == sev_filter]
         if cat_filter:
@@ -87,6 +88,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             findings = [f for f in findings if f.app_name == app_filter]
         if adapter_filter:
             findings = [f for f in findings if f.adapter == adapter_filter]
+        if fixable_filter:
+            findings = [f for f in findings if fixable.get(f.finding_id)]
         findings.sort(key=lambda f: (-f.severity_score, f.detected_at), reverse=False)
         findings.sort(key=lambda f: -f.severity_score)
         all_findings = store.all()
@@ -94,11 +97,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             "index.html",
             findings=findings,
             fixable=fixable,
+            fixable_count=sum(1 for ok in fixable.values() if ok),
             stats=_stats(all_findings),
             filter_severity=sev_filter,
             filter_category=cat_filter,
             filter_app=app_filter,
             filter_adapter=adapter_filter,
+            filter_fixable=bool(fixable_filter),
             apps=sorted({f.app_name for f in all_findings}),
             categories=sorted({f.category.value for f in all_findings}),
             adapters=sorted({f.adapter for f in all_findings}),
@@ -141,6 +146,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         cat_filter = request.args.get("category")
         app_filter = request.args.get("app")
         adapter_filter = request.args.get("adapter")
+        fixable_filter = request.args.get("fixable")
         if sev_filter:
             findings = [f for f in findings if f.severity.value == sev_filter]
         if cat_filter:
@@ -149,6 +155,21 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             findings = [f for f in findings if f.app_name == app_filter]
         if adapter_filter:
             findings = [f for f in findings if f.adapter == adapter_filter]
+        if fixable_filter:
+            # Same remediator check the dashboard uses.
+            engines: dict[str, Engine | None] = {}
+            keep = []
+            for f in findings:
+                eng = engines.get(f.app_name)
+                if f.app_name not in engines:
+                    eng = _engine_for(f.app_name)
+                    engines[f.app_name] = eng
+                try:
+                    if eng and remediators_for(f, eng.manifest.raw):
+                        keep.append(f)
+                except Exception:
+                    pass
+            findings = keep
         findings.sort(key=lambda f: -f.severity_score)
 
         buf = io.StringIO()
@@ -189,6 +210,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         if sev_filter: suffix.append(sev_filter)
         if adapter_filter: suffix.append(adapter_filter)
         if cat_filter: suffix.append(cat_filter)
+        if fixable_filter: suffix.append("fixable")
         slug = ("-" + "-".join(suffix)) if suffix else ""
         filename = f"findings{slug}-{ts}.csv"
         return Response(
