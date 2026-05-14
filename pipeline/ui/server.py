@@ -600,6 +600,31 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 log_tail = ""
         return render_template("scan_status.html", job=job, log_tail=log_tail)
 
+    @app.route("/api/scan/<scan_id>")
+    def api_scan(scan_id):
+        """JSON poll endpoint for the scan status page — feeds AJAX updates
+        so the page doesn't have to reload itself every 3 seconds."""
+        job = get_scan(scan_id)
+        if not job:
+            return jsonify({"error": "not found"}), 404
+        update_status_from_pid(job)
+        log_tail = ""
+        if job.log_path and Path(job.log_path).exists():
+            try:
+                log_tail = Path(job.log_path).read_text()[-4000:]
+            except Exception:
+                log_tail = ""
+        return jsonify({
+            "scan_id": job.scan_id,
+            "status": job.status,
+            "pid": job.pid,
+            "exit_code": job.exit_code,
+            "findings_before": job.findings_before,
+            "findings_after": job.findings_after,
+            "ended_at": job.ended_at,
+            "log_tail": log_tail,
+        })
+
     @app.route("/history")
     def history():
         events = EventStore().all()

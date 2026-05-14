@@ -2,53 +2,157 @@
 {% block title %}Scan {{ job.scan_id }} · ai-protect{% endblock %}
 
 {% block autorefresh %}
-  // Status page polls itself every 3 seconds while the scan is running.
-  {% if job.status == 'running' %}
-    setTimeout(() => window.location.reload(), 3000);
-  {% endif %}
+  // Disable the global autorefresh on this page — we do our own AJAX polling
+  // below (see #scan-poller) so the page doesn't lose scroll position or
+  // flash the log every 3 seconds while the scan is running.
   window.AI_PROTECT_NO_AUTOREFRESH = true;
 {% endblock %}
 
 {% block content %}
   <a class="back" href="{{ url_for('scan_launcher') }}">← back to scan launcher</a>
 
-  <article class="change-detail">
+  <article class="change-detail" data-scan-id="{{ job.scan_id }}" data-initial-status="{{ job.status }}">
     <header>
-      {% if job.status == 'running' %}<span class="sev-badge sev-medium status-running"><span class="status-dot"></span>running</span>
-      {% elif job.status == 'done' %}<span class="sev-badge sev-info">done</span>
-      {% elif job.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
-      {% else %}<span class="sev-badge sev-low">{{ job.status }}</span>
-      {% endif %}
+      <span id="scan-status-badge" class="sev-badge
+        {%- if job.status == 'running' %} sev-medium status-running
+        {%- elif job.status == 'done' %} sev-info
+        {%- elif job.status == 'failed' %} sev-high
+        {%- else %} sev-low{% endif %}">
+        {% if job.status == 'running' %}<span class="status-dot"></span>{% endif %}{{ job.status }}
+      </span>
       <h1>Scan {{ job.scan_id }}</h1>
       <div class="meta">
         <span><strong>app:</strong> {{ job.app_name }}</span>
         <span><strong>stage:</strong> {{ job.stage }}</span>
         <span><strong>adapter:</strong> {{ job.adapter or "all" }}</span>
         <span><strong>pid:</strong> <code>{{ job.pid }}</code></span>
-        {% if job.findings_after is not none %}
-          <span><strong>findings:</strong> {{ job.findings_before }} → {{ job.findings_after }}
-            (Δ {{ job.findings_after - job.findings_before }})</span>
-        {% endif %}
+        <span id="scan-findings-meta">
+          {% if job.findings_after is not none %}
+            <strong>findings:</strong> {{ job.findings_before }} → {{ job.findings_after }}
+            (Δ {{ job.findings_after - job.findings_before }})
+          {% endif %}
+        </span>
       </div>
     </header>
 
     <section>
       <h2>Live log</h2>
-      <pre class="diff" style="max-height:520px">{{ log_tail }}</pre>
+      <pre id="scan-log" class="diff" style="max-height:520px">{{ log_tail }}</pre>
     </section>
 
-    {% if job.status == 'done' %}
-      <section class="action-bar">
+    <section id="scan-action-bar" class="action-bar"
+      {% if job.status not in ('done', 'failed') %}hidden{% endif %}>
+      {% if job.status == 'done' %}
         <h2>Done</h2>
         <a href="{{ url_for('index') }}" class="btn btn-primary">View findings</a>
         <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Run another scan</a>
-      </section>
-    {% elif job.status == 'failed' %}
-      <section class="action-bar">
+      {% elif job.status == 'failed' %}
         <h2>Failed</h2>
         <p>Exit code {{ job.exit_code }}. Inspect the log above; common causes: missing tool on PATH, manifest validation error, adapter crash.</p>
         <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Try again</a>
-      </section>
-    {% endif %}
+      {% endif %}
+    </section>
   </article>
+
+  <script id="scan-poller">
+  (function() {
+    const article = document.querySelector('article.change-detail');
+    if (!article) return;
+    const scanId = article.dataset.scanId;
+    const initial = article.dataset.initialStatus;
+    if (initial !== 'running' && initial !== 'pending') return;  // nothing to poll
+
+    const badge = document.getElementById('scan-status-badge');
+    const logEl = document.getElementById('scan-log');
+    const findingsMeta = document.getElementById('scan-findings-meta');
+    const actionBar = document.getElementById('scan-action-bar');
+
+    const POLL_MS = 4000;
+    let timer = null;
+    let lastLog = logEl.textContent;
+    let consecutiveErrors = 0;
+
+    function escapeHtml(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function updateBadge(status) {
+      badge.className = 'sev-badge';
+      if (status === 'running') {
+        badge.classList.add('sev-medium', 'status-running');
+        badge.innerHTML = '<span class="status-dot"></span>running';
+      } else if (status === 'done') {
+        badge.classList.add('sev-info');
+        badge.textContent = 'done';
+      } else if (status === 'failed') {
+        badge.classList.add('sev-high');
+        badge.textContent = 'failed';
+      } else {
+        badge.classList.add('sev-low');
+        badge.textContent = status;
+      }
+    }
+
+    function renderFinishedActions(data) {
+      if (data.status === 'done') {
+        actionBar.innerHTML =
+          '<h2>Done</h2>' +
+          '<a href="/" class="btn btn-primary">View findings</a> ' +
+          '<a href="/scan" class="btn btn-secondary">Run another scan</a>';
+      } else if (data.status === 'failed') {
+        actionBar.innerHTML =
+          '<h2>Failed</h2>' +
+          '<p>Exit code ' + (data.exit_code ?? '?') + '. Inspect the log above; common causes: missing tool on PATH, manifest validation error, adapter crash.</p>' +
+          '<a href="/scan" class="btn btn-secondary">Try again</a>';
+      }
+      actionBar.hidden = false;
+    }
+
+    async function tick() {
+      try {
+        const resp = await fetch('/api/scan/' + encodeURIComponent(scanId), {cache: 'no-store'});
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        consecutiveErrors = 0;
+
+        // Status transition
+        updateBadge(data.status);
+
+        // Log — only repaint if changed (avoids losing selection/scroll)
+        if (data.log_tail !== lastLog) {
+          const atBottom = (logEl.scrollTop + logEl.clientHeight) >= (logEl.scrollHeight - 8);
+          logEl.textContent = data.log_tail;
+          lastLog = data.log_tail;
+          if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Findings delta — show only when both numbers are present
+        if (data.findings_after !== null && data.findings_after !== undefined) {
+          const delta = (data.findings_after - (data.findings_before || 0));
+          findingsMeta.innerHTML = '<strong>findings:</strong> ' +
+            escapeHtml(String(data.findings_before)) + ' → ' +
+            escapeHtml(String(data.findings_after)) +
+            ' (Δ ' + (delta >= 0 ? '+' : '') + delta + ')';
+        }
+
+        if (data.status === 'done' || data.status === 'failed') {
+          renderFinishedActions(data);
+          return;  // stop polling — no setTimeout
+        }
+      } catch (e) {
+        consecutiveErrors += 1;
+        if (consecutiveErrors >= 5) return;  // give up after ~20s of errors
+      }
+      timer = setTimeout(tick, POLL_MS);
+    }
+
+    // Stop polling when the tab is hidden; resume on visibility.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && timer) { clearTimeout(timer); timer = null; }
+      else if (!document.hidden && !timer) { tick(); }
+    });
+
+    timer = setTimeout(tick, POLL_MS);
+  })();
+  </script>
 {% endblock %}
