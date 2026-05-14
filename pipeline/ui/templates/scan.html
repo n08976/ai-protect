@@ -6,7 +6,7 @@
   <article class="change-detail">
     <header>
       <h1>Re-scan</h1>
-      <p class="muted">Pick what to scan. "All adapters" runs every adapter the policy table assigns to this tier × stage; pick one adapter to scope it tight.</p>
+      <p class="muted">Pick the app (manifest), the SDLC stage, and optionally narrow to a single adapter. Inline help is under each control.</p>
     </header>
 
     <form method="POST" action="{{ url_for('scan_start') }}" class="scan-form">
@@ -17,7 +17,9 @@
             <option value="{{ m.path }}">{{ m.name }} — {{ m.path }}</option>
           {% endfor %}
         </select>
+        <small class="form-help">The app to scan. Each manifest declares its tier, data sensitivity, and surfaces — that's what the policy table consults to decide which adapters run.</small>
       </div>
+
       <div class="filter-group" style="margin-bottom:14px">
         <label>Stage</label>
         <select name="stage" required>
@@ -25,7 +27,19 @@
             <option value="{{ s }}" {% if s == 'build' %}selected{% endif %}>{{ s }}</option>
           {% endfor %}
         </select>
+        <small class="form-help">
+          The v2.1 SDLC stage that defines <em>what</em> runs. Each stage maps to a different adapter list per the policy table.
+          <ul class="form-help-list">
+            <li><strong>intake</strong> — manifest validation + shadow-AI recon (subfinder/httpx/naabu/katana) + OWASP Noir endpoint discovery.</li>
+            <li><strong>design</strong> — threat model check (Tier 1/2 required) + IaC scan (Checkov) + guardrails validation.</li>
+            <li><strong>build</strong> — the SAST / secrets / SCA bulk (Semgrep, Bandit, gosec, TruffleHog, Gitleaks, pip-audit, Grype, Syft, ModelScan, Presidio, Agentic Radar, garak/PyRIT lite). Fastest feedback loop.</li>
+            <li><strong>preprod</strong> — the full gate: DAST (ZAP, Burp, Nuclei, sqlmap, Ride), MCP scope (highest-leverage), AI red team (garak/PyRIT full, eval_suite), adversary emulation (Atomic, Caldera), guardrails smoke.</li>
+            <li><strong>production</strong> — telemetry drift + anomaly detection against live AI telemetry.</li>
+          </ul>
+          Default is <strong>build</strong>. Use <strong>preprod</strong> for the full gate before a deployment decision.
+        </small>
       </div>
+
       <div class="filter-group" style="margin-bottom:18px">
         <label>Adapter</label>
         <select name="adapter">
@@ -34,7 +48,15 @@
             <option value="{{ a }}">{{ a }}</option>
           {% endfor %}
         </select>
+        <small class="form-help">
+          Scope <em>within</em> the stage you picked above.
+          <ul class="form-help-list">
+            <li><strong>all adapters</strong> — runs every adapter the policy table assigns to this tier × stage. This is the typical full re-scan and what you want when you've changed code, manifest, or want a fresh baseline.</li>
+            <li><strong>single adapter</strong> — runs only that one tool. Faster; use it when you've updated an adapter's config, tuned a noisy rule (e.g. bandit B113), installed a new scanner binary, or want to validate one finding without re-running the whole stage. Adapters that don't fire at the selected stage will graceful-degrade as unavailable.</li>
+          </ul>
+        </small>
       </div>
+
       <button type="submit" class="btn btn-primary">Start scan</button>
       <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-left:8px">Cancel</a>
     </form>

@@ -306,6 +306,23 @@ main {
   vertical-align: top;
 }
 
+/* Inline help text under form controls (e.g. /scan stage + adapter help) */
+.form-help {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 720px;
+}
+.form-help strong { color: var(--navy-dk); font-weight: 600; }
+.form-help em { color: var(--text); font-style: italic; }
+.form-help-list {
+  margin: 4px 0 4px 0;
+  padding-left: 18px;
+}
+.form-help-list li { margin-bottom: 2px; }
+
 /* Bulk fix action bar (sticky at top of findings table when items selected) */
 .bulk-bar {
   position: sticky;
