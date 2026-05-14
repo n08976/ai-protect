@@ -2,6 +2,10 @@
 pyyaml>=6.0
 requests>=2.31
 
+# UI / dashboard
+Flask>=3.0       # /, /scan, /finding, /findings.csv, /findings.pdf, etc.
+reportlab==4.5.1 # PDF report generation (pipeline/ui/pdf_report.py)
+
 # AI red-team adapters (install only the ones you'll exercise locally)
 # garak>=0.9
 # pyrit>=0.4
