@@ -73,7 +73,10 @@
       <a class="clear-filters" href="{{ url_for('index') }}">clear filters</a>
     {% endif %}
     <a class="download-csv" href="{{ url_for('findings_csv', severity=filter_severity, app=filter_app, adapter=filter_adapter, category=filter_category, fixable=(1 if filter_fixable else None)) }}">
-      ⬇ Download CSV{% if filter_severity or filter_app or filter_adapter or filter_category or filter_fixable %} (filtered){% endif %}
+      ⬇ CSV{% if filter_severity or filter_app or filter_adapter or filter_category or filter_fixable %} (filtered){% endif %}
+    </a>
+    <a class="download-pdf" href="{{ url_for('findings_pdf', severity=filter_severity, app=filter_app, adapter=filter_adapter, category=filter_category, fixable=(1 if filter_fixable else None)) }}">
+      ⬇ PDF{% if filter_severity or filter_app or filter_adapter or filter_category or filter_fixable %} (filtered){% else %} (full){% endif %}
     </a>
   </section>
 
@@ -110,6 +113,7 @@
         </thead>
         <tbody>
           {% for f in findings %}
+          {% set tool_meta = catalog.get(f.adapter, {}) %}
           <tr class="finding-row sev-row-{{ f.severity.value }}" data-finding-id="{{ f.finding_id }}">
             <td class="col-check">
               {% if fixable.get(f.finding_id) %}
@@ -121,7 +125,10 @@
             <td><span class="tier-badge tier-{{ f.tier }}">T{{ f.tier }}</span></td>
             <td class="mono">{{ f.adapter }}</td>
             <td><span class="cat">{{ f.category.value }}</span></td>
-            <td><a href="{{ url_for('finding_detail', finding_id=f.finding_id) }}">{{ f.title }}</a></td>
+            <td>
+              <button type="button" class="row-toggle" aria-expanded="false" data-target="d-{{ f.finding_id }}" title="Show details">+</button>
+              <a href="{{ url_for('finding_detail', finding_id=f.finding_id) }}">{{ f.title }}</a>
+            </td>
             <td class="mono small">
               {% if f.evidence.get('file') %}{{ f.evidence['file'] | replace('/opt/app/', '') }}
                 {% if f.evidence.get('line') %}:{{ f.evidence['line'] }}{% endif %}
@@ -141,6 +148,74 @@
               {% endif %}
             </td>
           </tr>
+          <tr class="finding-detail-row" id="d-{{ f.finding_id }}" hidden>
+            <td colspan="9">
+              <div class="finding-detail">
+                <dl class="finding-kv">
+                  <dt>Description</dt>
+                  <dd>{{ f.description or "—" }}</dd>
+                  <dt>Stage</dt>
+                  <dd class="mono">{{ f.stage }}</dd>
+                  <dt>Tool / Source</dt>
+                  <dd>
+                    <span class="mono">{{ f.adapter }}</span>
+                    {% if tool_meta.get('source_url') %}
+                      — <a href="{{ tool_meta.source_url }}" target="_blank" rel="noopener">{{ tool_meta.source_url }}</a>
+                    {% endif %}
+                    {% if tool_meta.get('description') %}
+                      <div class="small muted" style="margin-top:4px">{{ tool_meta.description }}</div>
+                    {% endif %}
+                  </dd>
+                  {% if f.evidence %}
+                    <dt>Evidence</dt>
+                    <dd>
+                      <table class="kv-inner">
+                        {% for k, v in f.evidence.items() %}
+                          {% if v is not none and v != '' %}
+                            <tr><th>{{ k }}</th><td class="mono small">{{ v|string|truncate(800, killwords=False, end='…') }}</td></tr>
+                          {% endif %}
+                        {% endfor %}
+                      </table>
+                    </dd>
+                  {% endif %}
+                  {% if f.affected %}
+                    <dt>Affected</dt>
+                    <dd>
+                      <table class="kv-inner">
+                        {% for k, v in f.affected.items() %}
+                          {% if v is not none and v != '' %}
+                            <tr><th>{{ k }}</th><td class="mono small">{{ v|string|truncate(400, killwords=False, end='…') }}</td></tr>
+                          {% endif %}
+                        {% endfor %}
+                      </table>
+                    </dd>
+                  {% endif %}
+                  {% if f.compliance %}
+                    <dt>Compliance</dt>
+                    <dd>
+                      {% for c in f.compliance %}
+                        <span class="cat" style="margin-right:4px">{{ c }}</span>
+                      {% endfor %}
+                    </dd>
+                  {% endif %}
+                  {% if f.remediation %}
+                    <dt>Remediation</dt>
+                    <dd>{{ f.remediation }}</dd>
+                  {% endif %}
+                  {% if f.references %}
+                    <dt>References</dt>
+                    <dd>
+                      {% for r in f.references %}
+                        {% if r %}<div class="mono small"><a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a></div>{% endif %}
+                      {% endfor %}
+                    </dd>
+                  {% endif %}
+                  <dt>Finding ID</dt>
+                  <dd class="mono small">{{ f.finding_id }}</dd>
+                </dl>
+              </div>
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -153,6 +228,23 @@
   </section>
 
   <script>
+  // Row-detail toggles: click the "+" next to a finding title to expand the
+  // inline detail row below it (server-rendered, no fetch).
+  (function() {
+    document.querySelectorAll('.row-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = btn.getAttribute('data-target');
+        const row = document.getElementById(id);
+        if (!row) return;
+        const open = !row.hidden;
+        row.hidden = open;
+        btn.textContent = open ? '+' : '−';
+        btn.setAttribute('aria-expanded', String(!open));
+        btn.title = open ? 'Show details' : 'Hide details';
+      });
+    });
+  })();
   (function() {
     const bar = document.getElementById('bulk-bar');
     const countEl = document.getElementById('bulk-count');

@@ -65,7 +65,10 @@
                   ({{ s.findings_after - s.findings_before }})
                 {% endif %}
               </td>
-              <td><a href="{{ url_for('scan_status', scan_id=s.scan_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">View</a></td>
+              <td>
+                <a href="{{ url_for('scan_status', scan_id=s.scan_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">View</a>
+                <a href="{{ url_for('index', app=s.app_name) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px;margin-left:4px" title="Open findings page filtered to {{ s.app_name }}">Findings →</a>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

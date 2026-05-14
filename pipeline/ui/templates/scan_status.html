@@ -11,7 +11,7 @@
 {% block content %}
   <a class="back" href="{{ url_for('scan_launcher') }}">← back to scan launcher</a>
 
-  <article class="change-detail" data-scan-id="{{ job.scan_id }}" data-initial-status="{{ job.status }}">
+  <article class="change-detail" data-scan-id="{{ job.scan_id }}" data-initial-status="{{ job.status }}" data-app-name="{{ job.app_name }}">
     <header>
       <span id="scan-status-badge" class="sev-badge
         {%- if job.status == 'running' %} sev-medium status-running
@@ -44,7 +44,8 @@
       {% if job.status not in ('done', 'failed') %}hidden{% endif %}>
       {% if job.status == 'done' %}
         <h2>Done</h2>
-        <a href="{{ url_for('index') }}" class="btn btn-primary">View findings</a>
+        <a href="{{ url_for('index', app=job.app_name) }}" class="btn btn-primary">View findings for {{ job.app_name }}</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">All findings</a>
         <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Run another scan</a>
       {% elif job.status == 'failed' %}
         <h2>Failed</h2>
@@ -60,6 +61,7 @@
     if (!article) return;
     const scanId = article.dataset.scanId;
     const initial = article.dataset.initialStatus;
+    const appName = article.dataset.appName || '';
     if (initial !== 'running' && initial !== 'pending') return;  // nothing to poll
 
     const badge = document.getElementById('scan-status-badge');
@@ -95,9 +97,12 @@
 
     function renderFinishedActions(data) {
       if (data.status === 'done') {
+        const appHref = appName ? ('/?app=' + encodeURIComponent(appName)) : '/';
+        const appLabel = appName ? ('View findings for ' + escapeHtml(appName)) : 'View findings';
         actionBar.innerHTML =
           '<h2>Done</h2>' +
-          '<a href="/" class="btn btn-primary">View findings</a> ' +
+          '<a href="' + appHref + '" class="btn btn-primary">' + appLabel + '</a> ' +
+          (appName ? '<a href="/" class="btn btn-secondary">All findings</a> ' : '') +
           '<a href="/scan" class="btn btn-secondary">Run another scan</a>';
       } else if (data.status === 'failed') {
         actionBar.innerHTML =

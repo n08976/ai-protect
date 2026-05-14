@@ -108,6 +108,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             categories=sorted({f.category.value for f in all_findings}),
             adapters=sorted({f.adapter for f in all_findings}),
             severities=["critical", "high", "medium", "low", "info"],
+            catalog=CATALOG,
         )
 
     @app.route("/finding/<finding_id>")
@@ -138,6 +139,69 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         if request.args.get("include_resolved"):
             return jsonify([f.to_dict() for f in store.all()])
         return jsonify([f.to_dict() for f in _active_findings(store)])
+
+    @app.route("/findings.pdf")
+    def findings_pdf():
+        """Filter-aware PDF report. Same query-param contract as /findings.csv."""
+        from .pdf_report import generate_pdf
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        findings = _active_findings(store)
+        sev_filter = request.args.get("severity")
+        cat_filter = request.args.get("category")
+        app_filter = request.args.get("app")
+        adapter_filter = request.args.get("adapter")
+        fixable_filter = request.args.get("fixable")
+        if sev_filter:
+            findings = [f for f in findings if f.severity.value == sev_filter]
+        if cat_filter:
+            findings = [f for f in findings if f.category.value == cat_filter]
+        if app_filter:
+            findings = [f for f in findings if f.app_name == app_filter]
+        if adapter_filter:
+            findings = [f for f in findings if f.adapter == adapter_filter]
+        if fixable_filter:
+            engines: dict[str, Engine | None] = {}
+            keep = []
+            for f in findings:
+                eng = engines.get(f.app_name)
+                if f.app_name not in engines:
+                    eng = _engine_for(f.app_name)
+                    engines[f.app_name] = eng
+                try:
+                    if eng and remediators_for(f, eng.manifest.raw):
+                        keep.append(f)
+                except Exception:
+                    pass
+            findings = keep
+
+        filters = {
+            "severity": sev_filter,
+            "category": cat_filter,
+            "app": app_filter,
+            "adapter": adapter_filter,
+            "fixable": "yes" if fixable_filter else None,
+        }
+        any_filter = any(filters.values())
+        title = "ai-protect findings report"
+        if any_filter:
+            title += " (filtered)"
+        pdf_bytes = generate_pdf(findings, filters=filters, title=title)
+
+        ts = __import__("time").strftime("%Y%m%d-%H%M%S")
+        suffix = []
+        if app_filter: suffix.append(app_filter)
+        if sev_filter: suffix.append(sev_filter)
+        if adapter_filter: suffix.append(adapter_filter)
+        if cat_filter: suffix.append(cat_filter)
+        if fixable_filter: suffix.append("fixable")
+        slug = ("-" + "-".join(suffix)) if suffix else ""
+        filename = f"findings{slug}-{ts}.pdf"
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
 
     @app.route("/findings.csv")
     def findings_csv():

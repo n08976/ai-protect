@@ -216,6 +216,95 @@ main {
 }
 .download-csv:hover { background: var(--navy-dk); }
 .clear-filters + .download-csv { margin-left: 12px; }
+.download-pdf {
+  font-size: 12px;
+  color: white;
+  background: var(--accent);
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  padding: 6px 12px;
+  text-decoration: none;
+  margin-left: 8px;
+  align-self: end;
+  white-space: nowrap;
+}
+.download-pdf:hover { filter: brightness(0.92); }
+
+/* Expandable per-row detail */
+.row-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--navy);
+  border-radius: 3px;
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.row-toggle:hover { background: var(--alt); border-color: var(--navy); }
+.row-toggle[aria-expanded="true"] { background: var(--navy); color: white; border-color: var(--navy); }
+
+.finding-detail-row > td {
+  background: var(--alt);
+  padding: 12px 18px !important;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.finding-detail {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.finding-kv {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 4px 14px;
+  margin: 0;
+}
+.finding-kv dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  padding-top: 4px;
+  font-weight: 600;
+}
+.finding-kv dd {
+  margin: 0;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+.kv-inner {
+  width: 100%;
+  border-collapse: collapse;
+}
+.kv-inner th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 2px 8px 2px 0;
+  width: 110px;
+  vertical-align: top;
+  text-transform: lowercase;
+}
+.kv-inner td {
+  padding: 2px 0;
+  word-break: break-word;
+  font-size: 12px;
+  vertical-align: top;
+}
 
 /* Bulk fix action bar (sticky at top of findings table when items selected) */
 .bulk-bar {
