@@ -14,7 +14,7 @@
 
   <article class="change-detail">
     <header>
-      {% if job.status == 'running' %}<span class="sev-badge sev-medium">running</span>
+      {% if job.status == 'running' %}<span class="sev-badge sev-medium status-running"><span class="status-dot"></span>running</span>
       {% elif job.status == 'done' %}<span class="sev-badge sev-info">done</span>
       {% elif job.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
       {% else %}<span class="sev-badge sev-low">{{ job.status }}</span>

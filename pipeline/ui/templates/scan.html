@@ -53,7 +53,7 @@
               <td class="mono">{{ s.stage }}</td>
               <td class="mono">{{ s.adapter or "all" }}</td>
               <td>
-                {% if s.status == 'running' %}<span class="sev-badge sev-medium">running</span>
+                {% if s.status == 'running' %}<span class="sev-badge sev-medium status-running"><span class="status-dot"></span>running</span>
                 {% elif s.status == 'done' %}<span class="sev-badge sev-info">done</span>
                 {% elif s.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
                 {% else %}<span class="sev-badge sev-low">{{ s.status }}</span>

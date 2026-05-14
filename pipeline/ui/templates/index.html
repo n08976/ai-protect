@@ -230,8 +230,9 @@
         if (!confirm(`Run propose → approve → apply for ${ids.length} finding(s)?\n\nThis writes file changes on disk (with backups). Tier 1/2 manifests require human actor — you are signed in as the configured actor.`)) return;
         fixBtn.disabled = true;
         clearBtn.disabled = true;
+        bar.classList.add('bulk-running');
         progress.hidden = false;
-        progress.textContent = `running ${ids.length}…`;
+        progress.textContent = `applying ${ids.length} fix(es)…`;
         try {
           const resp = await fetch('/findings/bulk-fix', {
             method: 'POST',
@@ -254,6 +255,7 @@
         } finally {
           fixBtn.disabled = false;
           clearBtn.disabled = false;
+          bar.classList.remove('bulk-running');
           progress.hidden = true;
         }
       });

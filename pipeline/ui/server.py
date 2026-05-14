@@ -60,7 +60,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def index():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None  # always re-read
-        findings = store.all()
+        findings = _active_findings(store)
         # For the dashboard, mark each finding with whether a remediator exists.
         # Cheap: group by app once, look up the manifest, run can_fix per finding.
         engines: dict[str, Engine] = {}
@@ -92,7 +92,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             findings = [f for f in findings if fixable.get(f.finding_id)]
         findings.sort(key=lambda f: (-f.severity_score, f.detected_at), reverse=False)
         findings.sort(key=lambda f: -f.severity_score)
-        all_findings = store.all()
+        all_findings = _active_findings(store)
         return render_template(
             "index.html",
             findings=findings,
@@ -133,13 +133,17 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def api_findings():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        return jsonify([f.to_dict() for f in store.all()])
+        # Active dashboard view: deduped by fingerprint + resolved filtered.
+        # Pass ?include_resolved=1 to get the full append-only history instead.
+        if request.args.get("include_resolved"):
+            return jsonify([f.to_dict() for f in store.all()])
+        return jsonify([f.to_dict() for f in _active_findings(store)])
 
     @app.route("/findings.csv")
     def findings_csv():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        findings = store.all()
+        findings = _active_findings(store)
         # Honor the same filters the index page uses so the download matches
         # what the operator is currently looking at.
         sev_filter = request.args.get("severity")
@@ -223,13 +227,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def api_stats():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        return jsonify(_stats(store.all()))
+        return jsonify(_stats(_active_findings(store)))
 
     @app.route("/about")
     def about():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        findings = store.all()
+        findings = _active_findings(store)
         # Per-adapter live counts from the current findings store
         from collections import Counter
         counts = Counter(f.adapter for f in findings)
@@ -615,6 +619,43 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
 def _allowed_next(state: ChangeState) -> list[str]:
     from ..remediate.state import ALLOWED
     return [s.value for s in ALLOWED.get(state, set())]
+
+
+# Change states that mean "the underlying finding is resolved" — these
+# fingerprints should NOT count toward the dashboard total.
+# APPLIED   = files written + post-apply tests passed (user's expectation: fixed)
+# VALIDATED = rescan confirmed the finding is gone
+# DEPLOYED  = applied + validated + deployed downstream
+# Any later REVERTED change re-opens the finding.
+_RESOLVED_STATES = {"applied", "validated", "deployed"}
+
+
+def _resolved_fingerprints() -> set[str]:
+    """Set of finding fingerprints currently resolved by an applied change.
+
+    Honors revert: if a fingerprint has a more-recent REVERTED change than its
+    APPLIED/VALIDATED/DEPLOYED change, the finding is re-opened.
+    """
+    from ..remediate.state import ChangeStore
+    latest_by_fp: dict[str, str] = {}  # fingerprint -> most recent state
+    for c in sorted(ChangeStore().all(), key=lambda c: c.last_state_at):
+        if not c.finding_fingerprint:
+            continue
+        latest_by_fp[c.finding_fingerprint] = c.state.value
+    return {fp for fp, st in latest_by_fp.items() if st in _RESOLVED_STATES}
+
+
+def _active_findings(store):
+    """Dashboard view of findings: deduped by fingerprint (latest per
+    fingerprint by detected_at) and stripped of fingerprints resolved by a
+    successful Change. This is what the dashboard, CSV, and JSON API should
+    show — the append-only store has full history, but the dashboard wants
+    current state."""
+    resolved = _resolved_fingerprints()
+    latest: dict = {}
+    for f in sorted(store.all(), key=lambda x: x.detected_at):
+        latest[f.fingerprint] = f
+    return [f for f in latest.values() if f.fingerprint not in resolved]
 
 
 def _stats(findings) -> dict:
