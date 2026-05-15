@@ -213,6 +213,13 @@ main {
   pointer-events: none;
 }
 
+/* --- Done color (green) --- same pill geometry as Running, no animation. */
+.status-pill.status-done {
+  background:   #e2f0e8;
+  color:        #2d6b46;
+  border-color: #b8d8c5;
+}
+
 /* --- Stop color (solid red) --- */
 .status-pill.status-stop {
   background: #c0392b;
