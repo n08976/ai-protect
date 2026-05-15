@@ -147,17 +147,38 @@ main {
   100% { background-position: 145% 0; }
 }
 
-/* Make the whole running badge meaningfully bigger so it reads from
-   across the room and not just by squinting at a 1px dot. */
+/* Shared pill geometry for status indicators (Running, Stop scan).
+   Same dimensions, padding, font, letter-spacing — only the glyph and color differ. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;             /* roomy spacing — the icons sit clear of the word */
+  padding: 6px 18px !important;
+  font-size: 13px !important;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  border-width: 1.5px !important;
+  border-radius: 18px !important;
+  line-height: 1;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+/* Running — chunky pulsing dot with a halo ring on each side. */
 .status-running {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 5px 14px !important;
+  gap: 22px;
+  padding: 6px 18px !important;
   font-size: 13px !important;
   font-weight: 700;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
   border-width: 1.5px !important;
+  border-radius: 18px !important;
+  line-height: 1;
+  white-space: nowrap;
 }
 .status-running .status-dot {
   width: 12px;
@@ -177,6 +198,36 @@ main {
   opacity: 0.5;
   animation: ai-halo 1.4s ease-out infinite;
   pointer-events: none;
+}
+
+/* Stop scan — same pill geometry as Running, solid red, stop-sign emoji
+   flanking the word. Implemented as a <button> so it stays focusable and
+   keyboard-accessible. */
+.status-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  padding: 6px 18px !important;
+  font-size: 13px !important;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  border-radius: 18px !important;
+  border: 1.5px solid #9a2b20 !important;
+  background: #c0392b;
+  color: white !important;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+}
+.status-stop:hover    { background: #9a2b20; }
+.status-stop:focus    { outline: 2px solid #c0392b; outline-offset: 2px; }
+.status-stop:disabled { background: #888; border-color: #777 !important; cursor: not-allowed; }
+.status-stop .stop-sign {
+  font-size: 14px;
+  line-height: 1;
+  filter: brightness(1.1);
 }
 
 /* Sweeping beam — sits as a strip under live log output / under any

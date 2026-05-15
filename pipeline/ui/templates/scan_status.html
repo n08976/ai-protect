@@ -23,8 +23,10 @@
       </span>
       <h1>Scan {{ job.scan_id }}</h1>
       <div id="scan-running-actions" {% if job.status not in ('running', 'pending') %}hidden{% endif %} style="margin:8px 0 0 0">
-        <button id="scan-stop-btn" type="button" class="btn btn-danger" data-scan-id="{{ job.scan_id }}">⛔ Stop scan</button>
-        <span id="scan-stop-status" class="small muted" style="margin-left:10px"></span>
+        <button id="scan-stop-btn" type="button" class="status-stop" data-scan-id="{{ job.scan_id }}">
+          <span class="stop-sign">⛔</span>Stop scan<span class="stop-sign">⛔</span>
+        </button>
+        <span id="scan-stop-status" class="small muted" style="margin-left:14px"></span>
       </div>
       <div class="meta">
         <span><strong>app:</strong> {{ job.app_name }}</span>
