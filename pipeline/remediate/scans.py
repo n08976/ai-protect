@@ -71,7 +71,7 @@ def get_scan(scan_id: str) -> ScanJob | None:
 
 def update_status_from_pid(job: ScanJob) -> ScanJob:
     """If pid is alive, mark running; if dead, look up exit via wait/log."""
-    if job.status in ("done", "failed"):
+    if job.status in ("done", "failed", "stopped"):
         return job
     if not job.pid:
         return job

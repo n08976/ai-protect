@@ -17,10 +17,15 @@
         {%- if job.status == 'running' %} sev-medium status-running
         {%- elif job.status == 'done' %} sev-info
         {%- elif job.status == 'failed' %} sev-high
+        {%- elif job.status == 'stopped' %} sev-low
         {%- else %} sev-low{% endif %}">
         {% if job.status == 'running' %}<span class="status-dot"></span>Running<span class="status-dot"></span>{% else %}{{ job.status }}{% endif %}
       </span>
       <h1>Scan {{ job.scan_id }}</h1>
+      <div id="scan-running-actions" {% if job.status not in ('running', 'pending') %}hidden{% endif %} style="margin:8px 0 0 0">
+        <button id="scan-stop-btn" type="button" class="btn btn-danger" data-scan-id="{{ job.scan_id }}">⛔ Stop scan</button>
+        <span id="scan-stop-status" class="small muted" style="margin-left:10px"></span>
+      </div>
       <div class="meta">
         <span><strong>app:</strong> {{ job.app_name }}</span>
         <span><strong>stage:</strong> {{ job.stage }}</span>
@@ -44,7 +49,7 @@
     </section>
 
     <section id="scan-action-bar" class="action-bar"
-      {% if job.status not in ('done', 'failed') %}hidden{% endif %}>
+      {% if job.status not in ('done', 'failed', 'stopped') %}hidden{% endif %}>
       {% if job.status == 'done' %}
         <h2>Done</h2>
         <a href="{{ url_for('index', app=job.app_name) }}" class="btn btn-primary">View findings for {{ job.app_name }}</a>
@@ -54,6 +59,11 @@
         <h2>Failed</h2>
         <p>Exit code {{ job.exit_code }}. Inspect the log above; common causes: missing tool on PATH, manifest validation error, adapter crash.</p>
         <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Try again</a>
+      {% elif job.status == 'stopped' %}
+        <h2>Stopped</h2>
+        <p>Scan was cancelled by the operator. Partial findings (if any) are in the store.</p>
+        <a href="{{ url_for('index', app=job.app_name) }}" class="btn btn-primary">View findings for {{ job.app_name }}</a>
+        <a href="{{ url_for('scan_launcher') }}" class="btn btn-secondary">Run another scan</a>
       {% endif %}
     </section>
   </article>
@@ -93,9 +103,17 @@
       } else if (status === 'failed') {
         badge.classList.add('sev-high');
         badge.textContent = 'failed';
+      } else if (status === 'stopped') {
+        badge.classList.add('sev-low');
+        badge.textContent = 'stopped';
       } else {
         badge.classList.add('sev-low');
         badge.textContent = status;
+      }
+      // Hide the Stop button as soon as the scan is no longer active.
+      const stopActions = document.getElementById('scan-running-actions');
+      if (stopActions && status !== 'running' && status !== 'pending') {
+        stopActions.hidden = true;
       }
     }
 
@@ -107,6 +125,14 @@
           '<h2>Done</h2>' +
           '<a href="' + appHref + '" class="btn btn-primary">' + appLabel + '</a> ' +
           (appName ? '<a href="/" class="btn btn-secondary">All findings</a> ' : '') +
+          '<a href="/scan" class="btn btn-secondary">Run another scan</a>';
+      } else if (data.status === 'stopped') {
+        const appHref = appName ? ('/?app=' + encodeURIComponent(appName)) : '/';
+        const appLabel = appName ? ('View findings for ' + escapeHtml(appName)) : 'View findings';
+        actionBar.innerHTML =
+          '<h2>Stopped</h2>' +
+          '<p>Scan was cancelled by the operator. Partial findings (if any) are in the store.</p>' +
+          '<a href="' + appHref + '" class="btn btn-primary">' + appLabel + '</a> ' +
           '<a href="/scan" class="btn btn-secondary">Run another scan</a>';
       } else if (data.status === 'failed') {
         actionBar.innerHTML =
@@ -144,7 +170,7 @@
             ' (Δ ' + (delta >= 0 ? '+' : '') + delta + ')';
         }
 
-        if (data.status === 'done' || data.status === 'failed') {
+        if (data.status === 'done' || data.status === 'failed' || data.status === 'stopped') {
           if (beam) beam.hidden = true;
           renderFinishedActions(data);
           return;  // stop polling — no setTimeout
@@ -161,6 +187,38 @@
       if (document.hidden && timer) { clearTimeout(timer); timer = null; }
       else if (!document.hidden && !timer) { tick(); }
     });
+
+    // ---- Stop scan button ----
+    const stopBtn = document.getElementById('scan-stop-btn');
+    const stopStatus = document.getElementById('scan-stop-status');
+    if (stopBtn) {
+      stopBtn.addEventListener('click', async () => {
+        if (!confirm('Stop this scan?\n\nSends SIGTERM (then SIGKILL after 2s) to the scan process and its children. Partial findings written so far stay in the store.')) return;
+        stopBtn.disabled = true;
+        if (stopStatus) stopStatus.textContent = 'sending stop signal…';
+        try {
+          const resp = await fetch('/scan/' + encodeURIComponent(scanId) + '/stop', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            if (stopStatus) stopStatus.textContent = 'stop failed: ' + (data.error || ('HTTP ' + resp.status));
+            stopBtn.disabled = false;
+            return;
+          }
+          // Immediate UI update; the next poll tick will confirm.
+          if (stopStatus) stopStatus.textContent = 'stopped via ' + (data.killed_via || 'signal');
+          updateBadge('stopped');
+          if (beam) beam.hidden = true;
+          renderFinishedActions({status: 'stopped'});
+          if (timer) { clearTimeout(timer); timer = null; }
+        } catch (e) {
+          if (stopStatus) stopStatus.textContent = 'stop request errored: ' + e;
+          stopBtn.disabled = false;
+        }
+      });
+    }
 
     timer = setTimeout(tick, POLL_MS);
   })();

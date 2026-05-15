@@ -664,6 +664,68 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 log_tail = ""
         return render_template("scan_status.html", job=job, log_tail=log_tail)
 
+    @app.route("/scan/<scan_id>/stop", methods=["POST"])
+    def scan_stop(scan_id):
+        """Kill a running scan process. SIGTERM, brief grace window, then SIGKILL.
+
+        Works on the whole process group (scans are spawned with
+        start_new_session=True) so subprocesses the adapters spawned don't
+        outlive their parent.
+        """
+        import signal as _signal
+        import time as _time
+        job = get_scan(scan_id)
+        if not job:
+            return jsonify({"error": "not found"}), 404
+        update_status_from_pid(job)
+        if job.status not in ("running", "pending"):
+            return jsonify({
+                "error": f"scan is not running (status={job.status})",
+                "status": job.status,
+            }), 400
+        if not job.pid:
+            return jsonify({"error": "no pid recorded"}), 400
+
+        killed_via = None
+        try:
+            pgid = os.getpgid(job.pid)
+            os.killpg(pgid, _signal.SIGTERM)
+            killed_via = "SIGTERM"
+        except (ProcessLookupError, PermissionError):
+            try:
+                os.kill(job.pid, _signal.SIGTERM)
+                killed_via = "SIGTERM (single)"
+            except (ProcessLookupError, PermissionError):
+                pass
+
+        # Grace window — up to 2 seconds for graceful shutdown.
+        for _ in range(10):
+            try:
+                os.kill(job.pid, 0)
+                _time.sleep(0.2)
+            except OSError:
+                break
+        else:
+            # Still alive — SIGKILL the group.
+            try:
+                os.killpg(os.getpgid(job.pid), _signal.SIGKILL)
+                killed_via = (killed_via or "") + " → SIGKILL"
+            except (ProcessLookupError, PermissionError):
+                pass
+
+        job.status = "stopped"
+        job.ended_at = _time.time()
+        job.exit_code = -int(_signal.SIGTERM)  # negative signal number = killed by signal
+        write_scan(job)
+
+        return jsonify({
+            "scan_id": job.scan_id,
+            "status": job.status,
+            "ended_at": job.ended_at,
+            "exit_code": job.exit_code,
+            "killed_via": killed_via or "no signal sent (process already gone)",
+        })
+
     @app.route("/api/scan/<scan_id>")
     def api_scan(scan_id):
         """JSON poll endpoint for the scan status page — feeds AJAX updates
