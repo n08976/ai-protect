@@ -56,6 +56,15 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 continue
         return None
 
+    @app.route("/favicon.ico")
+    def favicon_ico():
+        """Browsers reflexively request /favicon.ico; serve the same SVG.
+
+        Modern browsers prefer the SVG href in <link rel='icon'>, but legacy
+        UAs and Slack/Teams link previews still hit /favicon.ico directly.
+        """
+        return app.send_static_file("favicon.svg")
+
     @app.route("/")
     def index():
         store = FindingStore(app.config["FINDINGS_PATH"])

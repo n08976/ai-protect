@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ai-protect">
+  <!-- Mirrors the top-bar brand: accent-orange dot on a navy rounded square,
+       with a subtle inner halo so it reads as the "● Running" motif. -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#1F3A5F" stroke="#15293F" stroke-width="2"/>
+  <!-- Faint accent halo, evokes the running-pill halo ring -->
+  <circle cx="32" cy="32" r="20" fill="none" stroke="#C04A2B" stroke-width="1.5" opacity="0.35"/>
+  <!-- Main brand mark -->
+  <circle cx="32" cy="32" r="13" fill="#C04A2B"/>
+  <!-- Inner highlight for depth -->
+  <circle cx="28" cy="28" r="3.5" fill="#FFF4E5" opacity="0.55"/>
+</svg>
