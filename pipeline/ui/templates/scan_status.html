@@ -18,7 +18,7 @@
         {%- elif job.status == 'done' %} sev-info
         {%- elif job.status == 'failed' %} sev-high
         {%- else %} sev-low{% endif %}">
-        {% if job.status == 'running' %}<span class="status-dot"></span>{% endif %}{{ job.status }}
+        {% if job.status == 'running' %}<span class="status-dot"></span>Running<span class="status-dot"></span>{% else %}{{ job.status }}{% endif %}
       </span>
       <h1>Scan {{ job.scan_id }}</h1>
       <div class="meta">
@@ -38,6 +38,9 @@
     <section>
       <h2>Live log</h2>
       <pre id="scan-log" class="diff" style="max-height:520px">{{ log_tail }}</pre>
+      <div id="scan-beam" class="scan-beam scan-beam-thick"
+        {% if job.status not in ('running', 'pending') %}hidden{% endif %}
+        aria-hidden="true"></div>
     </section>
 
     <section id="scan-action-bar" class="action-bar"
@@ -66,6 +69,7 @@
 
     const badge = document.getElementById('scan-status-badge');
     const logEl = document.getElementById('scan-log');
+    const beam = document.getElementById('scan-beam');
     const findingsMeta = document.getElementById('scan-findings-meta');
     const actionBar = document.getElementById('scan-action-bar');
 
@@ -82,7 +86,7 @@
       badge.className = 'sev-badge';
       if (status === 'running') {
         badge.classList.add('sev-medium', 'status-running');
-        badge.innerHTML = '<span class="status-dot"></span>running';
+        badge.innerHTML = '<span class="status-dot"></span>Running<span class="status-dot"></span>';
       } else if (status === 'done') {
         badge.classList.add('sev-info');
         badge.textContent = 'done';
@@ -141,6 +145,7 @@
         }
 
         if (data.status === 'done' || data.status === 'failed') {
+          if (beam) beam.hidden = true;
           renderFinishedActions(data);
           return;  // stop polling — no setTimeout
         }
