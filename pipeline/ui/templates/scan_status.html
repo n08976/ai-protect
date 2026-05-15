@@ -13,21 +13,29 @@
 
   <article class="change-detail" data-scan-id="{{ job.scan_id }}" data-initial-status="{{ job.status }}" data-app-name="{{ job.app_name }}">
     <header>
-      <span id="scan-status-badge" class="sev-badge
-        {%- if job.status == 'running' %} sev-medium status-running
-        {%- elif job.status == 'done' %} sev-info
-        {%- elif job.status == 'failed' %} sev-high
-        {%- elif job.status == 'stopped' %} sev-low
-        {%- else %} sev-low{% endif %}">
-        {% if job.status == 'running' %}<span class="status-dot"></span>Running<span class="status-dot"></span>{% else %}{{ job.status }}{% endif %}
-      </span>
-      <h1>Scan {{ job.scan_id }}</h1>
-      <div id="scan-running-actions" {% if job.status not in ('running', 'pending') %}hidden{% endif %} style="margin:8px 0 0 0">
-        <button id="scan-stop-btn" type="button" class="status-stop" data-scan-id="{{ job.scan_id }}">
-          <span class="stop-sign">⛔</span>Stop scan<span class="stop-sign">⛔</span>
-        </button>
-        <span id="scan-stop-status" class="small muted" style="margin-left:14px"></span>
+      <div class="status-row">
+        {% if job.status == 'running' %}
+          <span id="scan-status-badge" class="status-pill status-running">
+            <span class="status-dot"></span>Running<span class="status-dot"></span>
+          </span>
+          <button id="scan-stop-btn" type="button" class="status-pill status-stop" data-scan-id="{{ job.scan_id }}">
+            <span class="stop-sign">⛔</span>Stop scan<span class="stop-sign">⛔</span>
+          </button>
+        {% else %}
+          <span id="scan-status-badge" class="sev-badge
+            {%- if job.status == 'done' %} sev-info
+            {%- elif job.status == 'failed' %} sev-high
+            {%- elif job.status == 'stopped' %} sev-low
+            {%- else %} sev-low{% endif %}">{{ job.status }}</span>
+          {# Stop button placeholder for AJAX path: hidden but kept in DOM so
+             a status flip back to 'running' (rare) can reveal it. #}
+          <button id="scan-stop-btn" type="button" class="status-pill status-stop" data-scan-id="{{ job.scan_id }}" hidden>
+            <span class="stop-sign">⛔</span>Stop scan<span class="stop-sign">⛔</span>
+          </button>
+        {% endif %}
+        <span id="scan-stop-status" class="small muted"></span>
       </div>
+      <h1>Scan {{ job.scan_id }}</h1>
       <div class="meta">
         <span><strong>app:</strong> {{ job.app_name }}</span>
         <span><strong>stage:</strong> {{ job.stage }}</span>
@@ -95,27 +103,27 @@
     }
 
     function updateBadge(status) {
-      badge.className = 'sev-badge';
       if (status === 'running') {
-        badge.classList.add('sev-medium', 'status-running');
+        badge.className = 'status-pill status-running';
         badge.innerHTML = '<span class="status-dot"></span>Running<span class="status-dot"></span>';
       } else if (status === 'done') {
-        badge.classList.add('sev-info');
+        badge.className = 'sev-badge sev-info';
         badge.textContent = 'done';
       } else if (status === 'failed') {
-        badge.classList.add('sev-high');
+        badge.className = 'sev-badge sev-high';
         badge.textContent = 'failed';
       } else if (status === 'stopped') {
-        badge.classList.add('sev-low');
+        badge.className = 'sev-badge sev-low';
         badge.textContent = 'stopped';
       } else {
-        badge.classList.add('sev-low');
+        badge.className = 'sev-badge sev-low';
         badge.textContent = status;
       }
-      // Hide the Stop button as soon as the scan is no longer active.
-      const stopActions = document.getElementById('scan-running-actions');
-      if (stopActions && status !== 'running' && status !== 'pending') {
-        stopActions.hidden = true;
+      // The Stop pill sits in the same .status-row as the badge — show it
+      // only while the scan is actively running.
+      const stopBtn = document.getElementById('scan-stop-btn');
+      if (stopBtn) {
+        stopBtn.hidden = (status !== 'running' && status !== 'pending');
       }
     }
 

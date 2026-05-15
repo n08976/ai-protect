@@ -147,40 +147,53 @@ main {
   100% { background-position: 145% 0; }
 }
 
-/* Shared pill geometry for status indicators (Running, Stop scan).
-   Same dimensions, padding, font, letter-spacing — only the glyph and color differ. */
+/* Row that holds the status pills (Running + Stop) side by side. */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 10px 0;
+}
+
+/* === SHARED pill geometry ===
+   Every status-pill — Running, Stop, anything later — uses these exact
+   dimensions. Color modifiers below only set background/color/border-color
+   (and animation for the Running dot). This makes the pills sit at the same
+   height/width/baseline guaranteed, regardless of host element (<span> or
+   <button>).  */
 .status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 22px;             /* roomy spacing — the icons sit clear of the word */
-  padding: 6px 18px !important;
-  font-size: 13px !important;
+  justify-content: center;
+  gap: 22px;
+  padding: 6px 18px;
+  border-radius: 18px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 1.3px;
   text-transform: uppercase;
-  border-width: 1.5px !important;
-  border-radius: 18px !important;
   line-height: 1;
   white-space: nowrap;
-  font-family: inherit;
+  vertical-align: middle;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  cursor: default;
 }
 
-/* Running — chunky pulsing dot with a halo ring on each side. */
-.status-running {
-  display: inline-flex;
-  align-items: center;
-  gap: 22px;
-  padding: 6px 18px !important;
-  font-size: 13px !important;
-  font-weight: 700;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
-  border-width: 1.5px !important;
-  border-radius: 18px !important;
-  line-height: 1;
-  white-space: nowrap;
+/* --- Running color (medium / amber) + dot animation hook --- */
+.status-pill.status-running {
+  background: #fdf6dc;
+  color:      #8a6c10;
+  border-color: #ecdb8e;
 }
-.status-running .status-dot {
+.status-pill .status-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -189,7 +202,7 @@ main {
   display: inline-block;
   position: relative;
 }
-.status-running .status-dot::before {
+.status-pill .status-dot::before {
   content: "";
   position: absolute;
   inset: -5px;
@@ -200,34 +213,20 @@ main {
   pointer-events: none;
 }
 
-/* Stop scan — same pill geometry as Running, solid red, stop-sign emoji
-   flanking the word. Implemented as a <button> so it stays focusable and
-   keyboard-accessible. */
-.status-stop {
-  display: inline-flex;
-  align-items: center;
-  gap: 22px;
-  padding: 6px 18px !important;
-  font-size: 13px !important;
-  font-weight: 700;
-  letter-spacing: 1.3px;
-  text-transform: uppercase;
-  border-radius: 18px !important;
-  border: 1.5px solid #9a2b20 !important;
+/* --- Stop color (solid red) --- */
+.status-pill.status-stop {
   background: #c0392b;
-  color: white !important;
-  line-height: 1;
-  white-space: nowrap;
+  color:      #ffffff;
+  border-color: #9a2b20;
   cursor: pointer;
-  font-family: inherit;
 }
-.status-stop:hover    { background: #9a2b20; }
-.status-stop:focus    { outline: 2px solid #c0392b; outline-offset: 2px; }
-.status-stop:disabled { background: #888; border-color: #777 !important; cursor: not-allowed; }
-.status-stop .stop-sign {
+.status-pill.status-stop:hover    { background: #9a2b20; }
+.status-pill.status-stop:focus    { outline: 2px solid #c0392b; outline-offset: 2px; }
+.status-pill.status-stop:disabled { background: #888; border-color: #777; cursor: not-allowed; }
+.status-pill .stop-sign {
   font-size: 14px;
   line-height: 1;
-  filter: brightness(1.1);
+  filter: brightness(1.05);
 }
 
 /* Sweeping beam — sits as a strip under live log output / under any
