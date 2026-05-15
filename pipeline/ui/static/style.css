@@ -220,6 +220,21 @@ main {
   border-color: #b8d8c5;
 }
 
+/* --- Failed color (light-fill red) --- terminal error state. */
+.status-pill.status-failed {
+  background:   #fde7e2;
+  color:        #8a2010;
+  border-color: #f3b6a6;
+}
+
+/* --- Stopped color (neutral grey) --- operator-cancelled, neither
+   success nor failure. */
+.status-pill.status-stopped {
+  background:   #ececec;
+  color:        #555555;
+  border-color: #c8c8c8;
+}
+
 /* --- Stop color (solid red) --- */
 .status-pill.status-stop {
   background: #c0392b;

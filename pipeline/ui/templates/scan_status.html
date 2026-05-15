@@ -23,11 +23,12 @@
           </button>
         {% elif job.status == 'done' %}
           <span id="scan-status-badge" class="status-pill status-done">{{ job.status }}</span>
+        {% elif job.status == 'failed' %}
+          <span id="scan-status-badge" class="status-pill status-failed">{{ job.status }}</span>
+        {% elif job.status == 'stopped' %}
+          <span id="scan-status-badge" class="status-pill status-stopped">{{ job.status }}</span>
         {% else %}
-          <span id="scan-status-badge" class="sev-badge
-            {%- if job.status == 'failed' %} sev-high
-            {%- elif job.status == 'stopped' %} sev-low
-            {%- else %} sev-low{% endif %}">{{ job.status }}</span>
+          <span id="scan-status-badge" class="sev-badge sev-low">{{ job.status }}</span>
           {# Stop button placeholder for AJAX path: hidden but kept in DOM so
              a status flip back to 'running' (rare) can reveal it. #}
           <button id="scan-stop-btn" type="button" class="status-pill status-stop" data-scan-id="{{ job.scan_id }}" hidden>
@@ -111,10 +112,10 @@
         badge.className = 'status-pill status-done';
         badge.textContent = 'done';
       } else if (status === 'failed') {
-        badge.className = 'sev-badge sev-high';
+        badge.className = 'status-pill status-failed';
         badge.textContent = 'failed';
       } else if (status === 'stopped') {
-        badge.className = 'sev-badge sev-low';
+        badge.className = 'status-pill status-stopped';
         badge.textContent = 'stopped';
       } else {
         badge.className = 'sev-badge sev-low';
