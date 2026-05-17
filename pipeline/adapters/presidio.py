@@ -65,7 +65,12 @@ class PresidioAdapter(Adapter):
         from presidio_analyzer import AnalyzerEngine
 
         analyzer = AnalyzerEngine()
-        path = self.config.get("path", self.manifest.raw.get("source_path", "."))
+        findings: list = []
+        for path in self.scan_paths():
+            findings.extend(self._scan_one(path, analyzer))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, path: str, analyzer) -> list:
         threshold = float(self.config.get("score_threshold", 0.85))
         max_files = int(self.config.get("max_files", 500))
         max_bytes = int(self.config.get("max_bytes_per_file", 200_000))

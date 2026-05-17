@@ -6,6 +6,8 @@ and compliance evidence generation.
 """
 from __future__ import annotations
 
+import fnmatch
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -80,6 +82,18 @@ class Manifest:
     expected_actions: list[str] = field(default_factory=list)  # ground truth for misuse tests
     expected_data_scopes: list[str] = field(default_factory=list)
 
+    # --- scan scope ---
+    # `source_paths` is the canonical list. `source_path` (singular) is kept
+    # for backward compatibility with existing manifests — if both are set,
+    # source_paths wins. scan_targets() folds them together.
+    source_path: str | None = None
+    source_paths: list[str] = field(default_factory=list)
+    # source_excludes: each entry is either an absolute path (prefix-match)
+    # or a glob pattern (fnmatch against the full path AND the basename).
+    # Adapters use is_excluded(path) to drop findings post-hoc; tools whose
+    # CLIs accept native --exclude flags can also wire these.
+    source_excludes: list[str] = field(default_factory=list)
+
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -109,8 +123,71 @@ class Manifest:
             target=target,
             expected_actions=data.get("expected_actions", []),
             expected_data_scopes=data.get("expected_data_scopes", []),
+            source_path=data.get("source_path"),
+            source_paths=list(data.get("source_paths") or []),
+            source_excludes=list(data.get("source_excludes") or []),
             raw=data,
         )
+
+    def scan_targets(self) -> list[str]:
+        """Resolve the list of directories/files to scan.
+
+        Precedence:
+            1. source_paths (list) — canonical, supports multi-path manifests
+            2. source_path  (str)  — back-compat single-path manifests
+            3. []                  — no source scope declared; adapters should
+                                     treat as "no work to do" rather than
+                                     defaulting to '.' and walking the whole repo.
+
+        Paths are returned as-is (no expansion / normalization beyond `~`).
+        Non-existent paths are NOT pruned here — the adapter that uses them
+        decides what to do (raise AdapterUnavailable, skip, etc.).
+        """
+        out: list[str] = []
+        if self.source_paths:
+            out.extend(self.source_paths)
+        if self.source_path:
+            if self.source_path not in out:
+                out.append(self.source_path)
+        return [os.path.expanduser(p) for p in out]
+
+    def is_excluded(self, path: str | None) -> bool:
+        """True if `path` matches any source_excludes entry.
+
+        Match rules per exclude entry:
+          - Starts with '/': absolute prefix match against `path`.
+          - Contains a glob char (*, ?, [): fnmatch against the full path AND
+            the basename. Useful for patterns like '*.pyc' or 'node_modules/'.
+          - Otherwise: substring match against `path` (so `__pycache__` matches
+            anywhere in the tree without the operator having to write a glob).
+
+        Returns False on empty/None input — adapters call this defensively.
+        """
+        if not path or not self.source_excludes:
+            return False
+        p = os.path.expanduser(str(path))
+        base = os.path.basename(p)
+        for pat in self.source_excludes:
+            pat = os.path.expanduser(pat)
+            if pat.startswith("/"):
+                # Strip a trailing slash so '/foo/' matches '/foo/bar' too.
+                stripped = pat.rstrip("/")
+                if p == stripped or p.startswith(stripped + "/"):
+                    return True
+                continue
+            if any(ch in pat for ch in ("*", "?", "[")):
+                if fnmatch.fnmatch(p, pat) or fnmatch.fnmatch(base, pat):
+                    return True
+                # Also try matching the pattern with leading '*/' to allow
+                # bare patterns like 'node_modules/' to hit anywhere in path.
+                if fnmatch.fnmatch(p, "*/" + pat.rstrip("/") + "/*") or \
+                   fnmatch.fnmatch(p, "*/" + pat.rstrip("/")):
+                    return True
+                continue
+            # Plain string — substring match. Catches '__pycache__', '.git'.
+            if pat in p:
+                return True
+        return False
 
     def validate(self) -> list[str]:
         """Return a list of validation errors. Empty list means valid."""

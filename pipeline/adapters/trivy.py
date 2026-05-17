@@ -44,12 +44,21 @@ class TrivyAdapter(Adapter):
     def run(self):
         self.preflight()
         mode = self.config.get("mode", "filesystem")  # filesystem | image | config | k8s
-        target = self.config.get(
-            "target",
-            self.manifest.raw.get("source_path", ".") if mode == "filesystem" else None,
-        )
-        if not target:
+        # Explicit config.target wins (e.g. image:tag for mode=image).
+        # Otherwise filesystem mode iterates manifest source paths.
+        explicit_target = self.config.get("target")
+        if explicit_target:
+            targets = [explicit_target]
+        elif mode == "filesystem":
+            targets = self.scan_paths()
+        else:
             raise AdapterUnavailable(f"trivy mode={mode} requires target in config")
+        findings: list = []
+        for target in targets:
+            findings.extend(self._scan_one(target, mode))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, target: str, mode: str) -> list:
         with tempfile.TemporaryDirectory() as td:
             report = Path(td) / "trivy.json"
             scanners = self.config.get("scanners", "vuln,secret,misconfig")

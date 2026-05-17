@@ -44,11 +44,20 @@ class GrypeAdapter(Adapter):
 
     def run(self):
         self.preflight()
-        # If a Syft SBOM was generated for this manifest, prefer it (faster, more accurate).
+        findings: list = []
+        for path in self.scan_paths():
+            findings.extend(self._scan_one(path))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, path: str) -> list:
+        # If a Syft SBOM was generated for this manifest+path, prefer it.
         sbom_dir = Path(self.config.get("sbom_dir", "/tmp/sboms"))
-        sbom_path = sbom_dir / f"{self.manifest.name}.cdx.json"
-        target = str(sbom_path) if sbom_path.exists() else self.config.get(
-            "path", self.manifest.raw.get("source_path", "."))
+        path_slug = path.strip("/").replace("/", "_") or "root"
+        sbom_path = sbom_dir / f"{self.manifest.name}.{path_slug}.cdx.json"
+        # Back-compat fallback: legacy SBOM name (pre-multi-path).
+        if not sbom_path.exists():
+            sbom_path = sbom_dir / f"{self.manifest.name}.cdx.json"
+        target = str(sbom_path) if sbom_path.exists() else path
         with tempfile.TemporaryDirectory() as td:
             report = Path(td) / "grype.json"
             cmd = [

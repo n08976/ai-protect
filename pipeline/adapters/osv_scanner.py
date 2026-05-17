@@ -42,7 +42,12 @@ class OSVScannerAdapter(Adapter):
 
     def run(self):
         self.preflight()
-        path = self.config.get("path", self.manifest.raw.get("source_path", "."))
+        findings: list = []
+        for path in self.scan_paths():
+            findings.extend(self._scan_one(path))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, path: str) -> list:
         with tempfile.TemporaryDirectory() as td:
             report = Path(td) / "osv.json"
             cmd = ["osv-scanner", "--format", "json", "--output", str(report), "-r", path]

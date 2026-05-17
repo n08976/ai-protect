@@ -39,10 +39,17 @@ class SyftAdapter(Adapter):
 
     def run(self):
         self.preflight()
-        path = self.config.get("path", self.manifest.raw.get("source_path", "."))
+        findings: list = []
+        for path in self.scan_paths():
+            findings.extend(self._scan_one(path))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, path: str) -> list:
         out_dir = Path(self.config.get("output_dir", "/tmp/sboms"))
         out_dir.mkdir(parents=True, exist_ok=True)
-        out_file = out_dir / f"{self.manifest.name}.cdx.json"
+        # Path-suffixed SBOM filename so multi-path manifests don't collide.
+        path_slug = path.strip("/").replace("/", "_") or "root"
+        out_file = out_dir / f"{self.manifest.name}.{path_slug}.cdx.json"
         cmd = [
             "syft", "scan", path,
             "-o", f"cyclonedx-json={out_file}",

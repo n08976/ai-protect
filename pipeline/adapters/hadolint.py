@@ -40,7 +40,12 @@ class HadolintAdapter(Adapter):
 
     def run(self):
         self.preflight()
-        path = Path(self.config.get("path", self.manifest.raw.get("source_path", ".")))
+        findings: list = []
+        for path in self.scan_paths():
+            findings.extend(self._scan_one(Path(path)))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, path: Path) -> list:
         # Find every Dockerfile-like file in the tree.
         candidates = list(path.rglob("Dockerfile*")) + list(path.rglob("*.Dockerfile"))
         if not candidates:

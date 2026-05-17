@@ -58,6 +58,55 @@ class Adapter(ABC):
                 "(this adapter modifies state on the target)."
             )
 
+    # ---- scope helpers (source paths + excludes from the manifest) ----
+
+    def scan_paths(self) -> list[str]:
+        """Resolve the list of scan target paths for this adapter call.
+
+        Precedence:
+            1. config['paths']  — list, explicit per-call override
+            2. config['path']   — single path, back-compat with existing adapter configs
+            3. manifest.scan_targets()  — source_paths + source_path from manifest
+            4. ['.']            — last-resort fallback so adapters keep working when
+                                  a manifest declares no scan scope (rare).
+        """
+        cfg_paths = self.config.get("paths")
+        if cfg_paths:
+            import os as _os
+            return [_os.path.expanduser(str(p)) for p in cfg_paths]
+        cfg_path = self.config.get("path")
+        if cfg_path:
+            import os as _os
+            return [_os.path.expanduser(str(cfg_path))]
+        targets = self.manifest.scan_targets()
+        return targets if targets else ["."]
+
+    def is_excluded(self, path: str | None) -> bool:
+        """True if a finding referencing `path` should be filtered out per
+        the manifest's source_excludes list. Adapters use this defensively
+        to drop findings even if the underlying tool didn't honor an exclude
+        flag (or doesn't accept one)."""
+        return self.manifest.is_excluded(path)
+
+    def filter_findings(self, findings: list[Finding]) -> list[Finding]:
+        """Drop findings whose evidence.file / evidence.path / affected.file /
+        affected.path match the manifest's source_excludes. Adapters call this
+        on the results they return — orchestrator-friendly, no special wiring."""
+        if not self.manifest.source_excludes:
+            return findings
+        keep: list[Finding] = []
+        for f in findings:
+            ev = f.evidence or {}
+            af = f.affected or {}
+            candidates = [
+                ev.get("file"), ev.get("path"),
+                af.get("file"), af.get("path"),
+            ]
+            if any(c and self.manifest.is_excluded(c) for c in candidates):
+                continue
+            keep.append(f)
+        return keep
+
     def make_finding(
         self,
         *,

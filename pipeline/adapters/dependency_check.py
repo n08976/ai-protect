@@ -59,7 +59,12 @@ class DependencyCheckAdapter(Adapter):
 
     def run(self):
         self.preflight()
-        path = self.config.get("path", self.manifest.raw.get("source_path", "."))
+        findings: list = []
+        for path in self.scan_paths():
+            findings.extend(self._scan_one(path))
+        return self.filter_findings(findings)
+
+    def _scan_one(self, path: str) -> list:
         bin_name = "dependency-check" if shutil.which("dependency-check") else "dependency-check.sh"
         with tempfile.TemporaryDirectory() as td:
             out_dir = Path(td)
