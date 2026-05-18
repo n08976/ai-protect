@@ -89,40 +89,67 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         app_filter = request.args.get("app")
         adapter_filter = request.args.get("adapter")
         fixable_filter = request.args.get("fixable")
-        if sev_filter:
-            findings = [f for f in findings if f.severity.value == sev_filter]
-        if cat_filter:
-            findings = [f for f in findings if f.category.value == cat_filter]
-        if app_filter:
-            findings = [f for f in findings if f.app_name == app_filter]
-        if adapter_filter:
-            findings = [f for f in findings if f.adapter == adapter_filter]
-        if fixable_filter:
-            findings = [f for f in findings if fixable.get(f.finding_id)]
-        findings.sort(key=lambda f: (-f.severity_score, f.detected_at), reverse=False)
-        findings.sort(key=lambda f: -f.severity_score)
+
         all_findings = _active_findings(store)
 
-        # Hero stats track the CURRENT view. When any filter is active, the
-        # numbers reflect the filtered set so they match the table below them.
-        # Severity pills still show the totals-per-severity for the filtered
-        # set, which is also what an operator expects ("under this filter,
-        # how many criticals?"). When no filters are active the two are
-        # identical — global stats.
+        # Pill counts shouldn't change based on the filter the pill itself
+        # represents — otherwise clicking "critical" under an app filter
+        # zeroes every other severity pill. The right semantics is "if I
+        # clicked this pill, how many findings would I see?".
+        #
+        # So we compute four intermediate views:
+        #   base_no_sev_fix  — everything filtered EXCEPT severity & fixable
+        #                       → severity pill counts come from this set,
+        #                         grouped by severity
+        #                       → "all" pill count is len(this set)
+        #   base_no_fix      — base_no_sev_fix + severity filter applied
+        #                       → fixable pill count = items in this set
+        #                         that have a remediator
+        #   findings         — base_no_fix + fixable filter applied
+        #                       → table rows + hero numbers
+        def _apply(items, **drops):
+            out = items
+            if sev_filter and not drops.get("severity"):
+                out = [f for f in out if f.severity.value == sev_filter]
+            if cat_filter and not drops.get("category"):
+                out = [f for f in out if f.category.value == cat_filter]
+            if app_filter and not drops.get("app"):
+                out = [f for f in out if f.app_name == app_filter]
+            if adapter_filter and not drops.get("adapter"):
+                out = [f for f in out if f.adapter == adapter_filter]
+            if fixable_filter and not drops.get("fixable"):
+                out = [f for f in out if fixable.get(f.finding_id)]
+            return out
+
+        base_no_sev_fix = _apply(all_findings, severity=True, fixable=True)
+        base_no_fix     = _apply(all_findings, fixable=True)
+        findings        = _apply(all_findings)
+
+        findings.sort(key=lambda f: (-f.severity_score, f.detected_at), reverse=False)
+        findings.sort(key=lambda f: -f.severity_score)
+
+        # Hero stats reflect the table the operator is looking at.
         any_filter = bool(sev_filter or cat_filter or app_filter or adapter_filter or fixable_filter)
-        stats_for_view = _stats(findings) if any_filter else _stats(all_findings)
-        # Re-compute fixable_count under the filter too so the "has fix" pill
-        # honors the same scope.
-        if any_filter:
-            fixable_count = sum(1 for f in findings if fixable.get(f.finding_id))
-        else:
-            fixable_count = sum(1 for ok in fixable.values() if ok)
+        stats_for_view = _stats(findings)
+
+        # Severity-pill histogram: counts of findings if the user toggled to
+        # that severity under the OTHER active filters. Built from
+        # base_no_sev_fix so each pill shows "what would I see if I clicked
+        # me", independent of the current severity choice.
+        from collections import Counter as _C
+        pill_severity_counts = _C(f.severity.value for f in base_no_sev_fix)
+        pill_all_count = len(base_no_sev_fix)
+
+        # has-fix pill count: items in base_no_fix that have a remediator.
+        pill_fixable_count = sum(1 for f in base_no_fix if fixable.get(f.finding_id))
 
         return render_template(
             "index.html",
             findings=findings,
             fixable=fixable,
-            fixable_count=fixable_count,
+            fixable_count=pill_fixable_count,
+            pill_severity_counts=dict(pill_severity_counts),
+            pill_all_count=pill_all_count,
             stats=stats_for_view,
             stats_scope="filtered" if any_filter else "all apps",
             global_total=len(all_findings),

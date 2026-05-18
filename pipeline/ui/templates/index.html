@@ -62,10 +62,10 @@
           (app/adapter/category remain sticky). -#}
       <a class="severity-pill sev-all{% if not filter_severity and not filter_fixable %} active{% endif %}"
          href="{% set qs = {} %}{% if filter_category %}{% set _ = qs.update({'category': filter_category}) %}{% endif %}{% if filter_app %}{% set _ = qs.update({'app': filter_app}) %}{% endif %}{% if filter_adapter %}{% set _ = qs.update({'adapter': filter_adapter}) %}{% endif %}{{ url_for('index', **qs) }}">
-        all <strong>{{ stats.total }}</strong>
+        all <strong>{{ pill_all_count }}</strong>
       </a>
       {% for sev in severities %}
-        {% set cnt = stats.by_severity.get(sev, 0) %}
+        {% set cnt = pill_severity_counts.get(sev, 0) %}
         <a class="severity-pill sev-{{ sev }}{% if filter_severity == sev %} active{% endif %}"
            href="{% if filter_severity == sev %}{{ _url(clear='severity') }}{% else %}{{ _url(severity=sev, override='severity') }}{% endif %}">
           {{ sev }} <strong>{{ cnt }}</strong>
