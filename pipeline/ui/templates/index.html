@@ -342,7 +342,8 @@
     function renderResult(r) {
       const status = r.status || 'failed';
       const success = (status === 'applied' || status === 'applied-tests-failed');
-      const cls = success ? 'ok' : (status === 'no-remediator' || status === 'no-manifest' ? 'skip' : 'fail');
+      const skipStates = ['no-remediator', 'no-manifest', 'no-fix-needed'];
+      const cls = success ? 'ok' : (skipStates.includes(status) ? 'skip' : 'fail');
       const changeLink = r.change_id
         ? `<a href="/change/${r.change_id}" class="mono small">${r.change_id.slice(0, 8)}…</a>`
         : '<span class="small muted">—</span>';

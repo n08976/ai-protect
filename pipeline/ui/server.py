@@ -70,8 +70,11 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None  # always re-read
         findings = _active_findings(store)
-        # For the dashboard, mark each finding with whether a remediator exists.
-        # Cheap: group by app once, look up the manifest, run can_fix per finding.
+        # Mark each finding with whether ACTUALLY-FIXABLE — not just "has a
+        # remediator class". If propose() returns None (e.g. existing pin
+        # already satisfies the fix, or no published fix version), the Fix
+        # button must not appear; otherwise the operator clicks it and
+        # gets "no fix applicable" errors from the Engine.
         engines: dict[str, Engine] = {}
         fixable: dict[str, bool] = {}
         for f in findings:
@@ -79,10 +82,19 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             if eng is None:
                 eng = _engine_for(f.app_name)
                 engines[f.app_name] = eng
-            try:
-                fixable[f.finding_id] = bool(eng and remediators_for(f, eng.manifest.raw))
-            except Exception:
-                fixable[f.finding_id] = False
+            ok = False
+            if eng:
+                try:
+                    for r in remediators_for(f, eng.manifest.raw):
+                        try:
+                            if r.propose(f, eng.manifest.raw) is not None:
+                                ok = True
+                                break
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+            fixable[f.finding_id] = ok
         # Filters
         sev_filter = request.args.get("severity")
         cat_filter = request.args.get("category")
@@ -770,9 +782,20 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 if change.test_status:
                     log_lines.append(f"  test_status={change.test_status} ({len(change.tests)} test(s) authored)")
             except EngineError as e:
-                outcome["status"] = "no-remediator"
-                outcome["error"] = str(e)
-                log_lines.append(f"- propose            FAILED: {e}")
+                msg = str(e)
+                # "no fix applicable" is the Engine's signal that the remediator
+                # examined the finding and decided no useful change would help
+                # (existing pin already satisfies the fix, no published fix
+                # version, etc.). Treat as a benign skip, not an error — the
+                # finding is effectively already resolved.
+                if "no fix applicable" in msg or "no remediator handles" in msg:
+                    outcome["status"] = "no-fix-needed"
+                    outcome["error"] = None
+                    log_lines.append(f"= skip               {msg}")
+                else:
+                    outcome["status"] = "no-remediator"
+                    outcome["error"] = msg
+                    log_lines.append(f"- propose            FAILED: {msg}")
                 outcome["log"] = "\n".join(log_lines) + "\n"
                 results.append(outcome)
                 continue
