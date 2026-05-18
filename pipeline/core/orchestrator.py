@@ -133,11 +133,30 @@ class Orchestrator:
             ar.duration_s = time.time() - t0
             log.info("adapter %s skipped (authorization): %s", call.adapter, e)
             return ar
+        except SystemExit as e:
+            # Some libraries (notably spacy.cli.download) call sys.exit() from
+            # subprocess error paths. SystemExit inherits from BaseException
+            # not Exception, so `except Exception` below wouldn't catch it.
+            # Trap it explicitly so a misbehaving adapter can't kill the whole
+            # scan process.
+            ar.status = "error"
+            ar.error = f"SystemExit (code={e.code}) raised inside {call.adapter}"
+            ar.duration_s = time.time() - t0
+            log.exception("adapter %s called sys.exit()", call.adapter)
+            return ar
         except Exception as e:
             ar.status = "error"
             ar.error = f"{type(e).__name__}: {e}"
             ar.duration_s = time.time() - t0
             log.exception("adapter %s raised", call.adapter)
+            return ar
+        except BaseException as e:  # noqa: BLE001 — defense in depth
+            # Catches anything else weird (KeyboardInterrupt from a misbehaving
+            # subprocess, etc.) so the run keeps moving.
+            ar.status = "error"
+            ar.error = f"{type(e).__name__}: {e}"
+            ar.duration_s = time.time() - t0
+            log.exception("adapter %s raised %s", call.adapter, type(e).__name__)
             return ar
 
         ar.findings_count = len(findings)

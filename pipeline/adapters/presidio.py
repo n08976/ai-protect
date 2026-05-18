@@ -60,6 +60,33 @@ class PresidioAdapter(Adapter):
                 "python -m spacy download en_core_web_lg"
             ) from e
 
+        # Hard-verify the spaCy model is already loadable. Without this check,
+        # presidio's AnalyzerEngine() tries to auto-download the model via
+        # `spacy.cli.download()` → shells out to pip → PEP 668 fails → spacy
+        # calls sys.exit() which raises SystemExit (NOT Exception), bypassing
+        # the orchestrator's safety net and killing the whole scan process.
+        # Raising AdapterUnavailable here makes the adapter degrade gracefully
+        # like every other missing-tool adapter.
+        try:
+            import spacy
+        except ImportError as e:
+            raise AdapterUnavailable(
+                "spacy not installed. Install: pip install spacy && "
+                "python -m spacy download en_core_web_lg"
+            ) from e
+
+        model_name = self.config.get("spacy_model", "en_core_web_lg")
+        try:
+            spacy.load(model_name)
+        except (OSError, IOError) as e:
+            # spaCy raises OSError when a model isn't installed.
+            raise AdapterUnavailable(
+                f"spaCy model {model_name!r} not installed. "
+                f"Install: python -m spacy download {model_name}  "
+                "(or pass --break-system-packages if your Python is "
+                "externally-managed)."
+            ) from e
+
     def run(self):
         self.preflight()
         from presidio_analyzer import AnalyzerEngine
