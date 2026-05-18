@@ -33,20 +33,46 @@
       </div>
     </div>
 
+    {#
+      _url(): build a /  URL preserving every currently-active filter while
+      overriding one. Passing None for `value` clears that single filter.
+      Used by every pill / dropdown so navigation never silently drops
+      filters the user has set (e.g. clicking the "critical" pill while
+      viewing app=example-ads-studio must stay on that app).
+    #}
+    {% macro _url(severity=None, category=None, app=None, adapter=None, fixable=None, override=None, clear=None) -%}
+      {%- set qs = {} -%}
+      {%- if filter_severity %}{% set _ = qs.update({'severity': filter_severity}) %}{% endif -%}
+      {%- if filter_category %}{% set _ = qs.update({'category': filter_category}) %}{% endif -%}
+      {%- if filter_app %}{% set _ = qs.update({'app': filter_app}) %}{% endif -%}
+      {%- if filter_adapter %}{% set _ = qs.update({'adapter': filter_adapter}) %}{% endif -%}
+      {%- if filter_fixable %}{% set _ = qs.update({'fixable': 1}) %}{% endif -%}
+      {#- override `clear` first (drop the named filter), then apply explicit set -#}
+      {%- if clear %}{% set _ = qs.pop(clear, None) %}{% endif -%}
+      {%- if override == 'severity' %}{% set _ = qs.update({'severity': severity}) %}{% endif -%}
+      {%- if override == 'category' %}{% set _ = qs.update({'category': category}) %}{% endif -%}
+      {%- if override == 'app' %}{% set _ = qs.update({'app': app}) %}{% endif -%}
+      {%- if override == 'adapter' %}{% set _ = qs.update({'adapter': adapter}) %}{% endif -%}
+      {%- if override == 'fixable' %}{% set _ = qs.update({'fixable': 1}) %}{% endif -%}
+      {{ url_for('index', **qs) }}
+    {%- endmacro %}
+
     <div class="severity-row">
+      {#- "all" pill = drop severity + fixable, keep everything else
+          (app/adapter/category remain sticky). -#}
       <a class="severity-pill sev-all{% if not filter_severity and not filter_fixable %} active{% endif %}"
-         href="{{ url_for('index') }}">
+         href="{% set qs = {} %}{% if filter_category %}{% set _ = qs.update({'category': filter_category}) %}{% endif %}{% if filter_app %}{% set _ = qs.update({'app': filter_app}) %}{% endif %}{% if filter_adapter %}{% set _ = qs.update({'adapter': filter_adapter}) %}{% endif %}{{ url_for('index', **qs) }}">
         all <strong>{{ stats.total }}</strong>
       </a>
       {% for sev in severities %}
         {% set cnt = stats.by_severity.get(sev, 0) %}
         <a class="severity-pill sev-{{ sev }}{% if filter_severity == sev %} active{% endif %}"
-           href="{% if filter_severity == sev %}{{ url_for('index') }}{% else %}{{ url_for('index', severity=sev) }}{% endif %}">
+           href="{% if filter_severity == sev %}{{ _url(clear='severity') }}{% else %}{{ _url(severity=sev, override='severity') }}{% endif %}">
           {{ sev }} <strong>{{ cnt }}</strong>
         </a>
       {% endfor %}
       <a class="severity-pill sev-fixable{% if filter_fixable %} active{% endif %}"
-         href="{% if filter_fixable %}{{ url_for('index') }}{% else %}{{ url_for('index', fixable=1) }}{% endif %}">
+         href="{% if filter_fixable %}{{ _url(clear='fixable') }}{% else %}{{ _url(override='fixable') }}{% endif %}">
         ⚡ has fix <strong>{{ fixable_count }}</strong>
       </a>
     </div>
@@ -55,7 +81,7 @@
   <section class="filters">
     <div class="filter-group">
       <label>App</label>
-      <select onchange="if(this.value) location.href='?app='+this.value; else location.href='/'">
+      <select data-filter-key="app" class="filter-select">
         <option value="">all apps</option>
         {% for a in apps %}
           <option value="{{ a }}" {% if filter_app == a %}selected{% endif %}>{{ a }}</option>
@@ -64,7 +90,7 @@
     </div>
     <div class="filter-group">
       <label>Adapter</label>
-      <select onchange="if(this.value) location.href='?adapter='+this.value; else location.href='/'">
+      <select data-filter-key="adapter" class="filter-select">
         <option value="">all adapters</option>
         {% for a in adapters %}
           <option value="{{ a }}" {% if filter_adapter == a %}selected{% endif %}>{{ a }}</option>
@@ -73,7 +99,7 @@
     </div>
     <div class="filter-group">
       <label>Category</label>
-      <select onchange="if(this.value) location.href='?category='+this.value; else location.href='/'">
+      <select data-filter-key="category" class="filter-select">
         <option value="">all categories</option>
         {% for c in categories %}
           <option value="{{ c }}" {% if filter_category == c %}selected{% endif %}>{{ c }}</option>
@@ -239,6 +265,24 @@
   </section>
 
   <script>
+  // Filter dropdowns: changing one filter must PRESERVE every other active
+  // filter — so e.g. selecting a different app from /?adapter=bandit keeps
+  // the adapter filter, doesn't reset to all-adapters.
+  (function() {
+    document.querySelectorAll('select.filter-select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const params = new URLSearchParams(window.location.search);
+        const key = sel.dataset.filterKey;
+        if (sel.value) {
+          params.set(key, sel.value);
+        } else {
+          params.delete(key);
+        }
+        const qs = params.toString();
+        window.location.href = '/' + (qs ? ('?' + qs) : '');
+      });
+    });
+  })();
   // Row-detail toggles: click the "+" next to a finding title to expand the
   // inline detail row below it (server-rendered, no fetch).
   (function() {
