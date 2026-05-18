@@ -380,6 +380,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 try:
                     m = Manifest.from_yaml(p)
                     d = classify(m)
+                    # paths = source_paths or [source_path]; for display use scan_targets()
                     items.append({
                         "name": m.name,
                         "owner": m.owner,
@@ -387,10 +388,250 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                         "data_sensitivity": m.data_sensitivity,
                         "decision_impact": m.decision_impact,
                         "path": str(p),
+                        "scan_targets": m.scan_targets(),
+                        "exclude_count": len(m.source_excludes),
                     })
                 except Exception as e:
-                    items.append({"name": p.name, "error": str(e), "path": str(p)})
+                    items.append({"name": p.stem, "error": str(e), "path": str(p)})
         return render_template("manifests.html", manifests=items)
+
+    # ============================================================
+    # Manifest CRUD — UI editor
+    # ============================================================
+
+    def _form_to_manifest_data(form) -> dict:
+        """Translate flat HTML form fields into the YAML schema dict."""
+        def _split_lines(s: str) -> list[str]:
+            return [ln.strip() for ln in (s or "").splitlines() if ln.strip()]
+
+        # Models — repeated fields named models-N-name etc.
+        models = []
+        for i in range(20):
+            name = (form.get(f"model-{i}-name") or "").strip()
+            if not name:
+                continue
+            models.append({
+                "name": name,
+                "provider": (form.get(f"model-{i}-provider") or "").strip(),
+                "model": (form.get(f"model-{i}-model") or "").strip(),
+                "via_gateway": form.get(f"model-{i}-via_gateway") == "on",
+                "baa_covered": form.get(f"model-{i}-baa_covered") == "on",
+                "auth_env": (form.get(f"model-{i}-auth_env") or "").strip() or None,
+            })
+
+        # MCP servers — same pattern.
+        mcps = []
+        for i in range(20):
+            mname = (form.get(f"mcp-{i}-name") or "").strip()
+            if not mname:
+                continue
+            try:
+                tier = int(form.get(f"mcp-{i}-tier") or 2)
+            except (TypeError, ValueError):
+                tier = 2
+            mcps.append({
+                "name": mname,
+                "tier": tier,
+                "data_scope": (form.get(f"mcp-{i}-data_scope") or "internal").strip(),
+                "actions": _split_lines(form.get(f"mcp-{i}-actions") or ""),
+                "side_effects": (form.get(f"mcp-{i}-side_effects") or "read_only").strip(),
+                "third_party": form.get(f"mcp-{i}-third_party") == "on",
+            })
+
+        data = {
+            "name": (form.get("name") or "").strip(),
+            "owner": (form.get("owner") or "").strip(),
+            "on_call": (form.get("on_call") or "").strip() or (form.get("owner") or "").strip(),
+            "description": (form.get("description") or "").strip(),
+            "data_sensitivity": form.get("data_sensitivity"),
+            "decision_impact": form.get("decision_impact"),
+            "integration_footprint": form.get("integration_footprint"),
+            "user_population": form.get("user_population"),
+            "models": models,
+            "mcp_servers": mcps,
+            "surfaces": {
+                "has_user_chat":      form.get("surface_user_chat") == "on",
+                "has_email_intake":   form.get("surface_email") == "on",
+                "has_document_ingest": form.get("surface_doc") == "on",
+                "has_webhook":        form.get("surface_webhook") == "on",
+                "has_voice":          form.get("surface_voice") == "on",
+            },
+            "target": {
+                "base_url": (form.get("target_base_url") or "").strip() or None,
+                "api_url":  (form.get("target_api_url") or "").strip() or None,
+                "test_user_token_env": (form.get("target_test_user_token_env") or "").strip() or None,
+                "allow_mutation": form.get("target_allow_mutation") == "on",
+                "network_allowed_zones": _split_lines(form.get("target_network_allowed_zones") or ""),
+            },
+            "expected_actions":     _split_lines(form.get("expected_actions") or ""),
+            "expected_data_scopes": _split_lines(form.get("expected_data_scopes") or ""),
+            "threat_model_path":    (form.get("threat_model_path") or "").strip() or None,
+            "source_paths":         _split_lines(form.get("source_paths") or ""),
+            "source_excludes":      _split_lines(form.get("source_excludes") or ""),
+        }
+        # Legacy source_path support (UI rarely surfaces it, but we keep
+        # the field if the operator deliberately filled it).
+        legacy = (form.get("source_path") or "").strip()
+        if legacy:
+            data["source_path"] = legacy
+        # Strip empties in surfaces and target so the YAML stays clean.
+        data["surfaces"] = {k: v for k, v in data["surfaces"].items() if v}
+        data["target"] = {k: v for k, v in data["target"].items() if v}
+        if not data["surfaces"]:
+            data.pop("surfaces")
+        if not data["target"]:
+            data.pop("target")
+        return data
+
+    @app.route("/manifests/new", methods=["GET", "POST"])
+    def manifest_new():
+        from . import manifest_io as mio
+        if request.method == "GET":
+            return render_template(
+                "manifest_form.html",
+                mode="new", form=_empty_manifest_form(), errors=[], warnings=[],
+                options={
+                    "data_sensitivity": mio.DATA_SENSITIVITY_OPTIONS,
+                    "decision_impact": mio.DECISION_IMPACT_OPTIONS,
+                    "integration_footprint": mio.INTEGRATION_OPTIONS,
+                    "user_population": mio.USER_POPULATION_OPTIONS,
+                    "side_effects": mio.SIDE_EFFECTS_OPTIONS,
+                },
+                browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+            )
+        # POST
+        data = _form_to_manifest_data(request.form)
+        # Name collision check
+        if data.get("name") in mio.list_existing_names():
+            return render_template(
+                "manifest_form.html",
+                mode="new", form=data,
+                errors=[f"manifest name {data['name']!r} already exists — pick a different name or use Edit"],
+                warnings=[],
+                options=_form_options(), browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+            ), 400
+        errors = mio.validate_for_save(data)
+        if errors:
+            return render_template(
+                "manifest_form.html",
+                mode="new", form=data, errors=errors, warnings=[],
+                options=_form_options(), browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+            ), 400
+        warnings = mio.validate_path_warnings(data)
+        try:
+            mio.save(data["name"], data, overwrite=False)
+        except (ValueError, FileExistsError) as e:
+            errors.append(str(e))
+            return render_template(
+                "manifest_form.html",
+                mode="new", form=data, errors=errors, warnings=warnings,
+                options=_form_options(), browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+            ), 400
+        return redirect(url_for("manifests"))
+
+    @app.route("/manifests/<name>/edit", methods=["GET", "POST"])
+    def manifest_edit(name):
+        from . import manifest_io as mio
+        if request.method == "GET":
+            try:
+                data = mio.load_raw(name)
+            except (FileNotFoundError, ValueError) as e:
+                return f"Cannot edit {name!r}: {e}", 404
+            return render_template(
+                "manifest_form.html",
+                mode="edit", form=data, errors=[], warnings=[],
+                options=_form_options(), browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+                original_name=name,
+            )
+        data = _form_to_manifest_data(request.form)
+        errors = mio.validate_for_save(data)
+        if errors:
+            return render_template(
+                "manifest_form.html",
+                mode="edit", form=data, errors=errors, warnings=[],
+                options=_form_options(), browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+                original_name=name,
+            ), 400
+        warnings = mio.validate_path_warnings(data)
+        # Renaming: if the form changed the name, delete the old file after saving the new.
+        try:
+            mio.save(data["name"], data, overwrite=True)
+            if data["name"] != name and name in mio.list_existing_names():
+                mio.delete(name)
+        except (ValueError, FileNotFoundError) as e:
+            errors.append(str(e))
+            return render_template(
+                "manifest_form.html",
+                mode="edit", form=data, errors=errors, warnings=warnings,
+                options=_form_options(), browse_roots=mio.BROWSE_ROOTS,
+                existing_names=mio.list_existing_names(),
+                original_name=name,
+            ), 400
+        return redirect(url_for("manifests"))
+
+    @app.route("/manifests/<name>/delete", methods=["POST"])
+    def manifest_delete(name):
+        from . import manifest_io as mio
+        try:
+            mio.delete(name)
+        except (FileNotFoundError, ValueError) as e:
+            return f"Cannot delete {name!r}: {e}", 400
+        return redirect(url_for("manifests"))
+
+    @app.route("/api/browse")
+    def api_browse():
+        from . import manifest_io as mio
+        p = request.args.get("path") or os.path.expanduser("~")
+        return jsonify(mio.browse_listing(p))
+
+    @app.route("/api/tier/preview")
+    def api_tier_preview():
+        """Live tier classification for the form's four scoring inputs."""
+        data = {
+            "name": "preview",
+            "owner": "preview@example.com",
+            "on_call": "preview@example.com",
+            "description": "",
+            "data_sensitivity": request.args.get("data_sensitivity", "public"),
+            "decision_impact": request.args.get("decision_impact", "advisory"),
+            "integration_footprint": request.args.get("integration_footprint", "read_only"),
+            "user_population": request.args.get("user_population", "single_user"),
+        }
+        try:
+            m = Manifest.from_dict(data)
+            d = classify(m)
+            return jsonify(d.to_dict())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+    def _form_options() -> dict:
+        from . import manifest_io as mio
+        return {
+            "data_sensitivity": mio.DATA_SENSITIVITY_OPTIONS,
+            "decision_impact": mio.DECISION_IMPACT_OPTIONS,
+            "integration_footprint": mio.INTEGRATION_OPTIONS,
+            "user_population": mio.USER_POPULATION_OPTIONS,
+            "side_effects": mio.SIDE_EFFECTS_OPTIONS,
+        }
+
+    def _empty_manifest_form() -> dict:
+        return {
+            "name": "", "owner": "", "on_call": "", "description": "",
+            "data_sensitivity": "confidential",
+            "decision_impact": "advisory",
+            "integration_footprint": "read_only",
+            "user_population": "single_user",
+            "models": [], "mcp_servers": [],
+            "surfaces": {}, "target": {},
+            "expected_actions": [], "expected_data_scopes": [],
+            "source_paths": [], "source_excludes": [],
+        }
 
     # ============================================================
     # Remediation routes

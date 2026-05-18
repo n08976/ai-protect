@@ -2,8 +2,13 @@
 {% block title %}Manifests · ai-protect{% endblock %}
 
 {% block content %}
-  <h1>Registered manifests</h1>
-  <p class="muted">Apps registered with the pipeline. Tier is computed from the v2.1 four-dimension scoring.</p>
+  <div class="page-head">
+    <div>
+      <h1>Registered manifests</h1>
+      <p class="muted">Apps registered with the pipeline. Tier is computed from the v2.1 four-dimension scoring; click a row to edit.</p>
+    </div>
+    <a href="{{ url_for('manifest_new') }}" class="btn btn-primary">+ New manifest</a>
+  </div>
 
   {% if manifests %}
     <table class="findings">
@@ -14,7 +19,9 @@
           <th>Owner</th>
           <th>Data</th>
           <th>Decision</th>
-          <th>Path</th>
+          <th>Source paths</th>
+          <th>Excludes</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -25,16 +32,34 @@
             {% else %}
               <td>—</td>
             {% endif %}
-            <td class="mono">{{ m.name }}</td>
+            <td class="mono">{{ m.name }}{% if m.error %} <span class="small" style="color:#c0392b">parse error</span>{% endif %}</td>
             <td>{{ m.owner or "—" }}</td>
             <td>{{ m.data_sensitivity or "—" }}</td>
             <td>{{ m.decision_impact or "—" }}</td>
-            <td class="mono small">{{ m.path }}</td>
+            <td class="mono small">
+              {% if m.scan_targets %}
+                {% for sp in m.scan_targets %}
+                  <div>{{ sp }}</div>
+                {% endfor %}
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td class="mono small">{{ m.exclude_count or 0 }}</td>
+            <td>
+              <a href="{{ url_for('manifest_edit', name=m.name) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">Edit</a>
+              {% if m.name %}
+                <a href="{{ url_for('index', app=m.name) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px;margin-left:4px" title="View findings for this app">Findings →</a>
+              {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p class="empty">No manifests in the configured directory.</p>
+    <div class="empty">
+      No manifests registered yet.
+      <div style="margin-top:8px"><a href="{{ url_for('manifest_new') }}" class="btn btn-primary">+ Create your first manifest</a></div>
+    </div>
   {% endif %}
 {% endblock %}

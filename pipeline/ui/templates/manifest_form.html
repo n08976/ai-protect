@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if mode == "edit" else "New" }} manifest · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% macro select(name, options, current, allow_blank=False) %}
+  <select name="{{ name }}" id="{{ name }}">
+    {% if allow_blank %}<option value=""></option>{% endif %}
+    {% for opt in options %}
+      <option value="{{ opt }}" {% if current == opt %}selected{% endif %}>{{ opt }}</option>
+    {% endfor %}
+  </select>
+{% endmacro %}
+
+{% block content %}
+  <a class="back" href="{{ url_for('manifests') }}">← back to manifests</a>
+  <h1>
+    {% if mode == "edit" %}Edit manifest <span class="mono">{{ original_name }}</span>
+    {% else %}New manifest{% endif %}
+  </h1>
+
+  {% if errors %}
+    <div class="alert alert-error">
+      <strong>Validation errors:</strong>
+      <ul>
+        {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if warnings %}
+    <div class="alert alert-warn">
+      <strong>Warnings (saved anyway):</strong>
+      <ul>
+        {% for w in warnings %}<li>{{ w }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <form method="POST" class="manifest-form" id="manifest-form"
+        action="{{ url_for('manifest_edit', name=original_name) if mode == 'edit' else url_for('manifest_new') }}">
+
+    <fieldset class="form-fs">
+      <legend>Identity</legend>
+      <div class="form-grid">
+        <label class="form-row">
+          <span>Name <span class="req">*</span></span>
+          <input type="text" name="name" required pattern="[a-z][a-z0-9_-]{1,63}"
+                 placeholder="e.g. example-commercial"
+                 value="{{ form.get('name', '') }}">
+          <small class="form-help">Lower-case letters, digits, dashes, underscores. This is the filename — keep it stable.</small>
+        </label>
+        <label class="form-row">
+          <span>Owner email <span class="req">*</span></span>
+          <input type="email" name="owner" required
+                 placeholder="you@example.com"
+                 value="{{ form.get('owner', '') }}">
+          <small class="form-help">Accountable owner of the app. Receives findings notifications.</small>
+        </label>
+        <label class="form-row">
+          <span>On-call email</span>
+          <input type="email" name="on_call"
+                 placeholder="oncall@example.com (defaults to Owner)"
+                 value="{{ form.get('on_call', '') }}">
+          <small class="form-help">Optional — defaults to the Owner if blank.</small>
+        </label>
+        <label class="form-row span-2">
+          <span>Description</span>
+          <textarea name="description" rows="3" placeholder="What does this app do, what's the security shape?">{{ form.get('description', '') }}</textarea>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>Risk tiering (v2.1 four-dimension scoring)</legend>
+      <div class="form-grid form-grid-4">
+        <label class="form-row">
+          <span>Data sensitivity</span>
+          {{ select('data_sensitivity', options.data_sensitivity, form.get('data_sensitivity')) }}
+          <small class="form-help">PHI forces Tier 1.</small>
+        </label>
+        <label class="form-row">
+          <span>Decision impact</span>
+          {{ select('decision_impact', options.decision_impact, form.get('decision_impact')) }}
+          <small class="form-help">clinical_influence forces Tier 1.</small>
+        </label>
+        <label class="form-row">
+          <span>Integration footprint</span>
+          {{ select('integration_footprint', options.integration_footprint, form.get('integration_footprint')) }}
+        </label>
+        <label class="form-row">
+          <span>User population</span>
+          {{ select('user_population', options.user_population, form.get('user_population')) }}
+          <small class="form-help">external + non-advisory forces Tier 1.</small>
+        </label>
+      </div>
+      <div class="tier-preview-block">
+        Live preview:
+        <span id="tier-preview" class="tier-badge tier-3">T?</span>
+        <span id="tier-preview-rationale" class="small muted"></span>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>Scan scope</legend>
+      <label class="form-row">
+        <span>Source paths <span class="req">*</span></span>
+        <textarea name="source_paths" id="source_paths" rows="4" required
+                  placeholder="/home/user/ExampleAdsApp/commercial&#10;/home/user/ExampleAdsApp/ads-studio">{% for p in (form.get('source_paths') or []) %}{{ p }}
+{% endfor %}</textarea>
+        <small class="form-help">
+          One path per line. Each is scanned by every SAST/SCA adapter the policy table assigns to this tier × stage; findings from all paths are aggregated.
+          <button type="button" class="btn-link" id="browse-btn">⇲ Browse for a path…</button>
+        </small>
+      </label>
+      <label class="form-row">
+        <span>Source excludes</span>
+        <textarea name="source_excludes" rows="4"
+                  placeholder="__pycache__&#10;node_modules&#10;*.pyc&#10;/opt/secrets/">{% for e in (form.get('source_excludes') or []) %}{{ e }}
+{% endfor %}</textarea>
+        <small class="form-help">
+          One pattern per line. Drops findings post-hoc whose path matches:
+          <code>/abs/prefix</code> (absolute prefix), <code>*.pyc</code> (glob), or
+          <code>__pycache__</code> (substring of path). Common defaults
+          (<code>__pycache__</code>, <code>node_modules</code>, <code>.git</code>, <code>*.pyc</code>)
+          are already skipped by most adapters.
+        </small>
+      </label>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>Model endpoints (optional)</legend>
+      <small class="form-help" style="display:block;margin-bottom:8px">
+        Each model the app sends prompts to. PHI requires <code>via_gateway=true</code> AND <code>baa_covered=true</code> — manifest validation rejects otherwise.
+      </small>
+      <div id="models-list" data-prefix="model">
+        {% for m in (form.get('models') or []) %}
+          {% set i = loop.index0 %}
+          <div class="repeat-row">
+            <label><input type="text" name="model-{{i}}-name" placeholder="name" value="{{ m.name }}"></label>
+            <label><input type="text" name="model-{{i}}-provider" placeholder="provider" value="{{ m.provider }}"></label>
+            <label><input type="text" name="model-{{i}}-model" placeholder="model id" value="{{ m.model }}"></label>
+            <label><input type="text" name="model-{{i}}-auth_env" placeholder="AUTH_ENV" value="{{ m.auth_env or '' }}"></label>
+            <label class="cb"><input type="checkbox" name="model-{{i}}-via_gateway" {% if m.via_gateway %}checked{% endif %}> via gateway</label>
+            <label class="cb"><input type="checkbox" name="model-{{i}}-baa_covered" {% if m.baa_covered %}checked{% endif %}> BAA covered</label>
+            <button type="button" class="btn-link repeat-remove">remove</button>
+          </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="add-model">+ Add model</button>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>MCP servers (optional)</legend>
+      <small class="form-help" style="display:block;margin-bottom:8px">
+        MCPs the app calls. Tier inheritance: the app's tier is at least as restrictive as the most-restrictive MCP it uses.
+      </small>
+      <div id="mcps-list" data-prefix="mcp">
+        {% for s in (form.get('mcp_servers') or []) %}
+          {% set i = loop.index0 %}
+          <div class="repeat-row">
+            <label><input type="text" name="mcp-{{i}}-name" placeholder="name" value="{{ s.name }}"></label>
+            <label><input type="number" name="mcp-{{i}}-tier" min="1" max="4" value="{{ s.tier }}"></label>
+            <label><input type="text" name="mcp-{{i}}-data_scope" placeholder="data scope" value="{{ s.data_scope }}"></label>
+            <label><input type="text" name="mcp-{{i}}-actions" placeholder="action1, action2" value="{{ (s.actions or [])|join(', ') }}"></label>
+            <label>
+              <select name="mcp-{{i}}-side_effects">
+                {% for opt in options.side_effects %}
+                  <option value="{{ opt }}" {% if s.side_effects == opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="cb"><input type="checkbox" name="mcp-{{i}}-third_party" {% if s.third_party %}checked{% endif %}> third-party</label>
+            <button type="button" class="btn-link repeat-remove">remove</button>
+          </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="add-mcp">+ Add MCP</button>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>Surfaces (attacker-controlled inputs)</legend>
+      <div class="form-grid form-grid-3">
+        <label class="cb"><input type="checkbox" name="surface_user_chat" {% if form.get('surfaces', {}).get('has_user_chat') %}checked{% endif %}> user chat</label>
+        <label class="cb"><input type="checkbox" name="surface_email" {% if form.get('surfaces', {}).get('has_email_intake') %}checked{% endif %}> email intake</label>
+        <label class="cb"><input type="checkbox" name="surface_doc" {% if form.get('surfaces', {}).get('has_document_ingest') %}checked{% endif %}> document ingest</label>
+        <label class="cb"><input type="checkbox" name="surface_webhook" {% if form.get('surfaces', {}).get('has_webhook') %}checked{% endif %}> webhook</label>
+        <label class="cb"><input type="checkbox" name="surface_voice" {% if form.get('surfaces', {}).get('has_voice') %}checked{% endif %}> voice</label>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>Target environment</legend>
+      <div class="form-grid">
+        <label class="form-row">
+          <span>Base URL</span>
+          <input type="text" name="target_base_url" placeholder="https://example.com" value="{{ form.get('target', {}).get('base_url') or '' }}">
+        </label>
+        <label class="form-row">
+          <span>API URL</span>
+          <input type="text" name="target_api_url" placeholder="https://example.com/api/" value="{{ form.get('target', {}).get('api_url') or '' }}">
+        </label>
+        <label class="form-row">
+          <span>Test user token env var</span>
+          <input type="text" name="target_test_user_token_env" placeholder="TEST_TOKEN" value="{{ form.get('target', {}).get('test_user_token_env') or '' }}">
+          <small class="form-help">If set, mcp_scope probes a forbidden action live.</small>
+        </label>
+        <label class="cb">
+          <input type="checkbox" name="target_allow_mutation" {% if form.get('target', {}).get('allow_mutation') %}checked{% endif %}>
+          Allow mutation
+          <small class="form-help">Required for active DAST + atomic / caldera / metasploit exploits + ride.</small>
+        </label>
+        <label class="form-row span-2">
+          <span>Network allowed zones</span>
+          <textarea name="target_network_allowed_zones" rows="2" placeholder="one zone per line">{% for z in (form.get('target', {}).get('network_allowed_zones') or []) %}{{ z }}
+{% endfor %}</textarea>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-fs">
+      <legend>Expected behavior (optional)</legend>
+      <div class="form-grid">
+        <label class="form-row">
+          <span>Expected actions</span>
+          <textarea name="expected_actions" rows="3" placeholder="one action per line">{% for a in (form.get('expected_actions') or []) %}{{ a }}
+{% endfor %}</textarea>
+          <small class="form-help">Ground-truth allow-list. Anything an MCP exposes outside this set is a scope violation.</small>
+        </label>
+        <label class="form-row">
+          <span>Expected data scopes</span>
+          <textarea name="expected_data_scopes" rows="3" placeholder="one scope per line">{% for s in (form.get('expected_data_scopes') or []) %}{{ s }}
+{% endfor %}</textarea>
+        </label>
+        <label class="form-row span-2">
+          <span>Threat model path</span>
+          <input type="text" name="threat_model_path" placeholder="pipeline/fixtures/your_threat_model.yml" value="{{ form.get('threat_model_path') or '' }}">
+          <small class="form-help">Required for Tier 1/2 at design stage.</small>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ "Save changes" if mode == "edit" else "Create manifest" }}</button>
+      <a href="{{ url_for('manifests') }}" class="btn btn-secondary">Cancel</a>
+      {% if mode == "edit" %}
+        <button type="button" class="btn btn-danger" id="delete-btn"
+                data-name="{{ original_name }}"
+                style="margin-left:auto">Delete manifest</button>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Browse modal -->
+  <div id="browse-modal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Pick a source path</h3>
+        <button type="button" class="btn-link" id="browse-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="browse-roots" class="browse-roots"></div>
+        <div class="browse-path mono small" id="browse-current">~</div>
+        <ul id="browse-list" class="browse-list"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="browse-pick">Use this directory</button>
+        <button type="button" class="btn btn-secondary" id="browse-up">↑ Up</button>
+        <button type="button" class="btn btn-secondary" id="browse-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    // ---- Tier preview ----
+    const tierFields = ['data_sensitivity', 'decision_impact', 'integration_footprint', 'user_population'];
+    const tierEl = document.getElementById('tier-preview');
+    const tierRat = document.getElementById('tier-preview-rationale');
+    async function refreshTier() {
+      const params = new URLSearchParams();
+      for (const f of tierFields) {
+        const v = document.getElementById(f).value;
+        if (v) params.set(f, v);
+      }
+      try {
+        const r = await fetch('/api/tier/preview?' + params.toString());
+        const d = await r.json();
+        if (d.error) return;
+        tierEl.textContent = 'T' + d.tier;
+        tierEl.className = 'tier-badge tier-' + d.tier;
+        const forced = d.forced_to_tier_1 ? ' (FORCED — ' + d.forced_reason + ')' : '';
+        tierRat.textContent = 'score=' + d.score + forced;
+      } catch (e) { /* ignore */ }
+    }
+    for (const f of tierFields) {
+      const el = document.getElementById(f);
+      if (el) el.addEventListener('change', refreshTier);
+    }
+    refreshTier();
+
+    // ---- Repeat-row helpers ----
+    function reindex(container, prefix) {
+      const rows = container.querySelectorAll(':scope > .repeat-row');
+      rows.forEach((row, i) => {
+        row.querySelectorAll('[name]').forEach(el => {
+          el.name = el.name.replace(new RegExp('^' + prefix + '-\\d+-'), prefix + '-' + i + '-');
+        });
+      });
+    }
+    function bindRow(row, container, prefix) {
+      const btn = row.querySelector('.repeat-remove');
+      if (btn) btn.addEventListener('click', () => {
+        row.remove();
+        reindex(container, prefix);
+      });
+    }
+    document.querySelectorAll('.repeat-row').forEach(r => {
+      const container = r.parentElement;
+      const prefix = container.dataset.prefix;
+      bindRow(r, container, prefix);
+    });
+
+    function addModelRow() {
+      const container = document.getElementById('models-list');
+      const i = container.children.length;
+      const div = document.createElement('div');
+      div.className = 'repeat-row';
+      div.innerHTML = `
+        <label><input type="text" name="model-${i}-name" placeholder="name"></label>
+        <label><input type="text" name="model-${i}-provider" placeholder="provider"></label>
+        <label><input type="text" name="model-${i}-model" placeholder="model id"></label>
+        <label><input type="text" name="model-${i}-auth_env" placeholder="AUTH_ENV"></label>
+        <label class="cb"><input type="checkbox" name="model-${i}-via_gateway"> via gateway</label>
+        <label class="cb"><input type="checkbox" name="model-${i}-baa_covered"> BAA covered</label>
+        <button type="button" class="btn-link repeat-remove">remove</button>`;
+      container.appendChild(div);
+      bindRow(div, container, 'model');
+    }
+    document.getElementById('add-model').addEventListener('click', addModelRow);
+
+    function addMcpRow() {
+      const container = document.getElementById('mcps-list');
+      const i = container.children.length;
+      const opts = {{ options.side_effects | tojson }};
+      const sel = opts.map(o => `<option value="${o}">${o}</option>`).join('');
+      const div = document.createElement('div');
+      div.className = 'repeat-row';
+      div.innerHTML = `
+        <label><input type="text" name="mcp-${i}-name" placeholder="name"></label>
+        <label><input type="number" name="mcp-${i}-tier" min="1" max="4" value="2"></label>
+        <label><input type="text" name="mcp-${i}-data_scope" placeholder="data scope"></label>
+        <label><input type="text" name="mcp-${i}-actions" placeholder="action1, action2"></label>
+        <label><select name="mcp-${i}-side_effects">${sel}</select></label>
+        <label class="cb"><input type="checkbox" name="mcp-${i}-third_party"> third-party</label>
+        <button type="button" class="btn-link repeat-remove">remove</button>`;
+      container.appendChild(div);
+      bindRow(div, container, 'mcp');
+    }
+    document.getElementById('add-mcp').addEventListener('click', addMcpRow);
+
+    // ---- Browse modal ----
+    const modal = document.getElementById('browse-modal');
+    const list = document.getElementById('browse-list');
+    const roots = document.getElementById('browse-roots');
+    const current = document.getElementById('browse-current');
+    const sourceTextarea = document.getElementById('source_paths');
+    let currentPath = '~';
+
+    async function loadBrowse(path) {
+      const r = await fetch('/api/browse?path=' + encodeURIComponent(path));
+      const d = await r.json();
+      currentPath = d.path || path;
+      current.textContent = currentPath;
+      list.innerHTML = (d.dirs || []).map(x =>
+        `<li><button type="button" class="browse-entry" data-path="${x.path}">📁 ${x.name}</button></li>`
+      ).join('') || '<li class="small muted">(no subdirectories)</li>';
+      list.querySelectorAll('.browse-entry').forEach(b =>
+        b.addEventListener('click', () => loadBrowse(b.dataset.path))
+      );
+      roots.innerHTML = (d.roots || []).map(r =>
+        `<button type="button" class="browse-root" data-path="${r}">${r}</button>`
+      ).join('');
+      roots.querySelectorAll('.browse-root').forEach(b =>
+        b.addEventListener('click', () => loadBrowse(b.dataset.path))
+      );
+    }
+
+    document.getElementById('browse-btn').addEventListener('click', () => {
+      modal.hidden = false;
+      loadBrowse('~');
+    });
+    document.getElementById('browse-close').addEventListener('click', () => modal.hidden = true);
+    document.getElementById('browse-cancel').addEventListener('click', () => modal.hidden = true);
+    document.getElementById('browse-up').addEventListener('click', () => {
+      const parent = currentPath.replace(/\/[^/]+$/, '') || '/';
+      loadBrowse(parent);
+    });
+    document.getElementById('browse-pick').addEventListener('click', () => {
+      const t = sourceTextarea.value.trimEnd();
+      sourceTextarea.value = t ? (t + '\n' + currentPath) : currentPath;
+      modal.hidden = true;
+    });
+
+    // ---- Delete confirm ----
+    const delBtn = document.getElementById('delete-btn');
+    if (delBtn) {
+      delBtn.addEventListener('click', () => {
+        const name = delBtn.dataset.name;
+        if (!confirm(`Delete manifest "${name}"?\n\nThis removes the YAML file from disk. Existing findings keyed to this app will remain in the store but no future scans will run.`)) return;
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '/manifests/' + encodeURIComponent(name) + '/delete';
+        document.body.appendChild(f);
+        f.submit();
+      });
+    }
+  })();
+  </script>
+{% endblock %}
