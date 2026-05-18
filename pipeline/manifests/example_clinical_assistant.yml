@@ -62,5 +62,8 @@ step_up_auth:
 # Threat model artifact — required for Tier 1 / 2 at design stage.
 threat_model_path: pipeline/fixtures/clinical_assistant_threat_model.yml
 
-# Where the source tree lives — used by trufflehog at build stage.
-source_path: ./
+# Where the source tree lives — used by trufflehog / semgrep / pip-audit /
+# osv-scanner / etc. at build stage. Pointing at a self-contained fixture
+# directory so example scans don't write artifacts into the ai-protect
+# repo root (which previously happened with source_path: ./).
+source_path: pipeline/fixtures/clinical_assistant
