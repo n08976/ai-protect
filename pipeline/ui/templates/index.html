@@ -3,10 +3,21 @@
 
 {% block content %}
   <section class="hero">
+    {% if stats_scope == "filtered" %}
+      <div class="hero-scope">
+        Showing <strong>filtered</strong> view
+        {% if filter_app %} · app <span class="mono">{{ filter_app }}</span>{% endif %}
+        {% if filter_severity %} · severity <span class="mono">{{ filter_severity }}</span>{% endif %}
+        {% if filter_adapter %} · adapter <span class="mono">{{ filter_adapter }}</span>{% endif %}
+        {% if filter_category %} · category <span class="mono">{{ filter_category }}</span>{% endif %}
+        {% if filter_fixable %} · ⚡ has fix{% endif %}
+        · numbers below reflect this filter ({{ global_total }} total across all apps · <a href="{{ url_for('index') }}">clear</a>)
+      </div>
+    {% endif %}
     <div class="hero-stats">
       <div class="stat stat-total">
         <div class="stat-num">{{ stats.total }}</div>
-        <div class="stat-label">findings</div>
+        <div class="stat-label">findings{% if stats_scope == "filtered" %} (filtered){% endif %}</div>
       </div>
       <div class="stat stat-high">
         <div class="stat-num">{{ stats.high_or_above }}</div>
@@ -14,11 +25,11 @@
       </div>
       <div class="stat">
         <div class="stat-num">{{ stats.by_app|length }}</div>
-        <div class="stat-label">apps scanned</div>
+        <div class="stat-label">{% if stats_scope == "filtered" %}apps in view{% else %}apps scanned{% endif %}</div>
       </div>
       <div class="stat">
         <div class="stat-num">{{ stats.by_adapter|length }}</div>
-        <div class="stat-label">adapters used</div>
+        <div class="stat-label">adapters firing</div>
       </div>
     </div>
 

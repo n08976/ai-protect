@@ -102,12 +102,30 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         findings.sort(key=lambda f: (-f.severity_score, f.detected_at), reverse=False)
         findings.sort(key=lambda f: -f.severity_score)
         all_findings = _active_findings(store)
+
+        # Hero stats track the CURRENT view. When any filter is active, the
+        # numbers reflect the filtered set so they match the table below them.
+        # Severity pills still show the totals-per-severity for the filtered
+        # set, which is also what an operator expects ("under this filter,
+        # how many criticals?"). When no filters are active the two are
+        # identical — global stats.
+        any_filter = bool(sev_filter or cat_filter or app_filter or adapter_filter or fixable_filter)
+        stats_for_view = _stats(findings) if any_filter else _stats(all_findings)
+        # Re-compute fixable_count under the filter too so the "has fix" pill
+        # honors the same scope.
+        if any_filter:
+            fixable_count = sum(1 for f in findings if fixable.get(f.finding_id))
+        else:
+            fixable_count = sum(1 for ok in fixable.values() if ok)
+
         return render_template(
             "index.html",
             findings=findings,
             fixable=fixable,
-            fixable_count=sum(1 for ok in fixable.values() if ok),
-            stats=_stats(all_findings),
+            fixable_count=fixable_count,
+            stats=stats_for_view,
+            stats_scope="filtered" if any_filter else "all apps",
+            global_total=len(all_findings),
             filter_severity=sev_filter,
             filter_category=cat_filter,
             filter_app=app_filter,
