@@ -176,6 +176,7 @@ KEY_ORDER = [
     "source_path",        # legacy single
     "source_paths",
     "source_excludes",
+    "app_aliases",
 ]
 
 

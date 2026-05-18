@@ -124,6 +124,21 @@
           are already skipped by most adapters.
         </small>
       </label>
+      <label class="form-row">
+        <span>App aliases (inherit remediation history)</span>
+        <textarea name="app_aliases" rows="2"
+                  placeholder="ads-automation">{% for a in (form.get('app_aliases') or []) %}{{ a }}
+{% endfor %}</textarea>
+        <small class="form-help">
+          One previous <code>app_name</code> per line. When this manifest
+          inherits findings from a renamed predecessor (e.g. <code>opt_ads</code> →
+          <code>example_ads_studio</code>), list the old <code>name</code>(s) here so the
+          dashboard treats this app's same logical findings (same adapter +
+          category + title) as resolved when the predecessor's Change has
+          been applied. Re-keys fingerprints into this app's namespace at
+          view time — no data is modified on disk.
+        </small>
+      </label>
     </fieldset>
 
     <fieldset class="form-fs">

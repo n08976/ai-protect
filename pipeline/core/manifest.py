@@ -94,6 +94,14 @@ class Manifest:
     # CLIs accept native --exclude flags can also wire these.
     source_excludes: list[str] = field(default_factory=list)
 
+    # --- app aliases (Option A from session 2026-05-18) ---
+    # Past app_names this manifest inherits resolution history from. When a
+    # finding's underlying (adapter, category, title) match a resolved Change
+    # under an aliased app, the dashboard treats this app's same logical
+    # finding as resolved too. Useful when a manifest is renamed/relocated
+    # but the source under it is the same as the old app.
+    app_aliases: list[str] = field(default_factory=list)
+
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -126,6 +134,7 @@ class Manifest:
             source_path=data.get("source_path"),
             source_paths=list(data.get("source_paths") or []),
             source_excludes=list(data.get("source_excludes") or []),
+            app_aliases=list(data.get("app_aliases") or []),
             raw=data,
         )
 
