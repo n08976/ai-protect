@@ -14,8 +14,25 @@ import sys
 import time
 from pathlib import Path
 
+from ..core.dashboard import active_count_for_app
 from ..core.findings import FindingStore
+from ..core.manifest import Manifest
 from .scans import SCAN_LOG_DIR, ScanJob, get_scan, update_status_from_pid, write_scan
+
+
+def _active_count(findings_path: str, app_name: str) -> int:
+    """Active findings (deduped, resolved-filtered, alias-honored) for `app_name`.
+
+    Falls back to raw row count for the app on any error — the runner mustn't
+    crash just because dashboard computation has a hiccup.
+    """
+    try:
+        return active_count_for_app(FindingStore(findings_path), app_name)
+    except Exception:
+        try:
+            return sum(1 for f in FindingStore(findings_path).all() if f.app_name == app_name)
+        except Exception:
+            return 0
 
 
 def main():
@@ -26,10 +43,20 @@ def main():
     log_path = SCAN_LOG_DIR / f"{scan_id}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Resolve app_name from the manifest — used to scope before/after counts.
+    try:
+        app_name = Manifest.from_yaml(manifest_path).name
+    except Exception:
+        app_name = ""
+
     job = get_scan(scan_id)
     if job:
         job.status = "running"
-        job.findings_before = len(FindingStore(findings_path).all())
+        # Active count for THIS app (deduped + resolved-filtered), not raw store size.
+        # The raw store grows by ~100 rows on every rescan because findings are
+        # append-only; reporting raw counts confuses operators about what the
+        # scan actually changed.
+        job.findings_before = _active_count(findings_path, app_name) if app_name else 0
         job.log_path = str(log_path)
         write_scan(job)
 
@@ -46,7 +73,7 @@ def main():
     with open(log_path, "w") as logf:
         proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT)
 
-    findings_after = len(FindingStore(findings_path).all())
+    findings_after = _active_count(findings_path, app_name) if app_name else 0
     marker = {
         "exit_code": proc.returncode,
         "findings_after": findings_after,

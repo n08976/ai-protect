@@ -1023,107 +1023,15 @@ def _allowed_next(state: ChangeState) -> list[str]:
     return [s.value for s in ALLOWED.get(state, set())]
 
 
-# Change states that mean "the underlying finding is resolved" — these
-# fingerprints should NOT count toward the dashboard total.
-# APPLIED   = files written + post-apply tests passed (user's expectation: fixed)
-# VALIDATED = rescan confirmed the finding is gone
-# DEPLOYED  = applied + validated + deployed downstream
-# Any later REVERTED change re-opens the finding.
-_RESOLVED_STATES = {"applied", "validated", "deployed"}
-
-
-def _alias_map() -> dict[str, list[str]]:
-    """Reverse alias map: original_app_name → [list of apps that inherit it].
-
-    If manifest M declares ``app_aliases: [A, B]``, M inherits resolution
-    history from apps A and B — so the map returned here is {A: [M], B: [M]}.
-    Used by _resolved_fingerprints to re-key resolved fingerprints from
-    aliased apps onto the inheriting app's fingerprint space.
-    """
-    from . import manifest_io as mio
-    out: dict[str, list[str]] = {}
-    md = mio.manifests_dir()
-    if not md.is_dir():
-        return out
-    for p in md.glob("*.yml"):
-        try:
-            m = Manifest.from_yaml(p)
-        except Exception:
-            continue
-        for alias in (m.app_aliases or []):
-            out.setdefault(alias, []).append(m.name)
-    return out
-
-
-def _resolved_fingerprints(store=None) -> set[str]:
-    """Set of finding fingerprints currently resolved by an applied change.
-
-    Honors revert: if a fingerprint has a more-recent REVERTED change than its
-    APPLIED/VALIDATED/DEPLOYED change, the finding is re-opened.
-
-    Honors app_aliases: when a manifest inherits from a renamed predecessor,
-    resolved Changes under the predecessor's app_name are re-keyed onto the
-    new app's fingerprint space. Requires `store` to look up the original
-    Finding's (adapter, category, title) — without it, aliases are ignored
-    (back-compat with call sites that don't pass a store).
-    """
-    import hashlib
-    from ..remediate.state import ChangeStore
-
-    # Latest state per (app, fingerprint) — sorted oldest first so the last
-    # write wins.
-    latest_by_app_fp: dict[tuple[str, str], str] = {}
-    for c in sorted(ChangeStore().all(), key=lambda c: c.last_state_at):
-        if not c.finding_fingerprint:
-            continue
-        latest_by_app_fp[(c.app_name, c.finding_fingerprint)] = c.state.value
-
-    # Step 1 — direct resolutions: anything in {applied, validated, deployed}.
-    resolved: set[str] = {
-        fp for (_, fp), st in latest_by_app_fp.items()
-        if st in _RESOLVED_STATES
-    }
-
-    # Step 2 — alias re-key. Need the original finding's (adapter, category,
-    # title) for each resolved fingerprint so we can recompute under the
-    # inheriting app's namespace.
-    aliases = _alias_map()
-    if not aliases or store is None:
-        return resolved
-
-    fp_attrs: dict[str, tuple[str, str, str]] = {}
-    for f in store.all():
-        if f.fingerprint not in fp_attrs:
-            fp_attrs[f.fingerprint] = (f.adapter, f.category.value, f.title)
-
-    for (orig_app, fp), st in latest_by_app_fp.items():
-        if st not in _RESOLVED_STATES:
-            continue
-        target_apps = aliases.get(orig_app)
-        if not target_apps:
-            continue
-        attrs = fp_attrs.get(fp)
-        if attrs is None:
-            continue  # can't re-key without the source Finding loaded
-        adapter, category, title = attrs
-        for target_app in target_apps:
-            key = f"{target_app}|{adapter}|{category}|{title}"
-            resolved.add(hashlib.sha256(key.encode()).hexdigest()[:16])
-
-    return resolved
-
-
-def _active_findings(store):
-    """Dashboard view of findings: deduped by fingerprint (latest per
-    fingerprint by detected_at) and stripped of fingerprints resolved by a
-    successful Change. This is what the dashboard, CSV, and JSON API should
-    show — the append-only store has full history, but the dashboard wants
-    current state."""
-    resolved = _resolved_fingerprints(store=store)
-    latest: dict = {}
-    for f in sorted(store.all(), key=lambda x: x.detected_at):
-        latest[f.fingerprint] = f
-    return [f for f in latest.values() if f.fingerprint not in resolved]
+# Re-export from the shared dashboard module so existing call sites in this
+# file keep working. Logic lives in pipeline/core/dashboard.py and is shared
+# with pipeline/remediate/scan_runner.py — keeping the two paths from drifting.
+from ..core.dashboard import (
+    RESOLVED_STATES as _RESOLVED_STATES,
+    alias_map as _alias_map,
+    resolved_fingerprints as _resolved_fingerprints,
+    active_findings as _active_findings,
+)
 
 
 def _stats(findings) -> dict:
