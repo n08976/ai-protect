@@ -67,13 +67,31 @@ def list_existing_names() -> list[str]:
 
 def load_raw(name: str) -> dict:
     """Read the raw YAML dict (for the edit form). Does NOT instantiate
-    the Manifest dataclass — we want to preserve unknown keys verbatim."""
+    the Manifest dataclass — we want to preserve unknown keys verbatim.
+
+    Tries `name.yml` directly first. If that misses, falls back to scanning
+    the manifests dir for a file whose internal `name:` field matches —
+    handles the case where the manifest's YAML `name` uses dashes
+    (e.g. example-commercial) but the filename uses underscores
+    (example_commercial.yml). Without the fallback, /manifests' edit links
+    404 because they're built from the YAML name.
+    """
     p = path_for(name)
-    if not p.is_file():
-        raise FileNotFoundError(f"manifest {name!r} not found at {p}")
-    with p.open() as f:
-        data = yaml.safe_load(f) or {}
-    return data
+    if p.is_file():
+        with p.open() as f:
+            return yaml.safe_load(f) or {}
+    # Fallback — scan for a file whose `name:` field equals the requested name.
+    md = manifests_dir()
+    if md.is_dir():
+        for cand in md.glob("*.yml"):
+            try:
+                with cand.open() as f:
+                    data = yaml.safe_load(f) or {}
+            except Exception:
+                continue
+            if isinstance(data, dict) and data.get("name") == name:
+                return data
+    raise FileNotFoundError(f"manifest {name!r} not found at {p}")
 
 
 def save(name: str, data: dict, *, overwrite: bool = True) -> Path:
@@ -94,7 +112,21 @@ def save(name: str, data: dict, *, overwrite: bool = True) -> Path:
 def delete(name: str) -> Path:
     p = path_for(name)
     if not p.is_file():
-        raise FileNotFoundError(f"manifest {name!r} not found at {p}")
+        # Same dashes-vs-underscores fallback as load_raw — when the YAML name
+        # differs from its filename, look up by the internal `name:` field.
+        md = manifests_dir()
+        if md.is_dir():
+            for cand in md.glob("*.yml"):
+                try:
+                    with cand.open() as f:
+                        data = yaml.safe_load(f) or {}
+                except Exception:
+                    continue
+                if isinstance(data, dict) and data.get("name") == name:
+                    p = cand
+                    break
+        if not p.is_file():
+            raise FileNotFoundError(f"manifest {name!r} not found at {p}")
     p.unlink()
     return p
 

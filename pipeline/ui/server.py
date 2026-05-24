@@ -566,7 +566,18 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             "threat_model_path":    (form.get("threat_model_path") or "").strip() or None,
             "source_paths":         _split_lines(form.get("source_paths") or ""),
             "source_excludes":      _split_lines(form.get("source_excludes") or ""),
+            "app_aliases":          _split_lines(form.get("app_aliases") or ""),
+            "source_provider":      (form.get("source_provider") or "").strip(),
+            "github_repo":          (form.get("github_repo") or "").strip(),
+            "github_ref":           (form.get("github_ref") or "").strip(),
         }
+        # github_clone_depth — only carry through when present and numeric
+        depth_raw = (form.get("github_clone_depth") or "").strip()
+        if depth_raw:
+            try:
+                data["github_clone_depth"] = int(depth_raw)
+            except ValueError:
+                pass
         # Legacy source_path support (UI rarely surfaces it, but we keep
         # the field if the operator deliberately filled it).
         legacy = (form.get("source_path") or "").strip()
@@ -579,6 +590,12 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             data.pop("surfaces")
         if not data["target"]:
             data.pop("target")
+        # Drop empty source-provider fields so they don't bloat every YAML.
+        for k in ("source_provider", "github_repo", "github_ref"):
+            if not data.get(k):
+                data.pop(k, None)
+        if not data.get("app_aliases"):
+            data.pop("app_aliases", None)
         return data
 
     @app.route("/manifests/new", methods=["GET", "POST"])

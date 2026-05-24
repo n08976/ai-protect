@@ -142,6 +142,75 @@
     </fieldset>
 
     <fieldset class="form-fs">
+      <legend>Source provider</legend>
+      <small class="form-help" style="display:block;margin-bottom:8px">
+        Where ai-protect fetches code from before scanning. Leave blank to use the global default set on <a href="{{ url_for('settings_page') }}">Settings → Source providers</a>. Override per-manifest by picking a provider explicitly.
+      </small>
+      <div class="form-grid">
+        <label class="form-row">
+          <span>Provider
+            <a href="{{ url_for('docs_page') }}#source-default-provider"
+               class="help-bubble" title="local = read source_paths from disk. github = clone the repo before each scan." target="_blank" rel="noopener">?</a>
+          </span>
+          <select name="source_provider" id="source_provider" data-reveal-controller="1">
+            <option value="" {% if not form.get('source_provider') %}selected{% endif %}>— use global default —</option>
+            <option value="local" {% if form.get('source_provider') == 'local' %}selected{% endif %}>local</option>
+            <option value="github" {% if form.get('source_provider') == 'github' %}selected{% endif %}>github</option>
+          </select>
+          <small class="form-help">
+            <strong>local</strong> — scan the paths listed under <em>Scan scope</em> above. No clone.
+            <strong>github</strong> — shallow-clone the repo below before each scan, set Scan scope to the materialized path automatically.
+          </small>
+        </label>
+      </div>
+
+      <div class="form-grid" id="github-fields"
+           style="{% if form.get('source_provider') != 'github' %}display:none{% endif %}">
+        <label class="form-row">
+          <span>GitHub repo
+            <a href="{{ url_for('docs_page') }}#source-github-base-url"
+               class="help-bubble" title="owner/name, full https URL, or git@github.com:owner/name.git" target="_blank" rel="noopener">?</a>
+          </span>
+          <input type="text" name="github_repo"
+                 placeholder="anchore/syft"
+                 value="{{ form.get('github_repo') or '' }}">
+          <small class="form-help">
+            Accepts <code>owner/name</code>, a full HTTPS URL (<code>https://github.com/owner/name</code>), or SSH-style (<code>git@github.com:owner/name.git</code>). For GHES the base URL configured on <a href="{{ url_for('settings_page') }}">/settings</a> is used automatically.
+          </small>
+        </label>
+        <label class="form-row">
+          <span>Ref (branch / tag / SHA)
+            <a href="{{ url_for('docs_page') }}#source-github-default-ref"
+               class="help-bubble" title="Branch / tag / SHA to checkout. Leave blank to use the settings default." target="_blank" rel="noopener">?</a>
+          </span>
+          <input type="text" name="github_ref"
+                 placeholder="main (blank = use settings default)"
+                 value="{{ form.get('github_ref') or '' }}">
+          <small class="form-help">
+            Branch name (<code>main</code>, <code>develop</code>), tag (<code>v1.2.0</code>), or commit SHA (7+ hex chars — provider detects and uses explicit checkout). Empty = settings <em>Default ref</em>.
+          </small>
+        </label>
+        <label class="form-row">
+          <span>Clone depth
+            <a href="{{ url_for('docs_page') }}#source-github-clone-depth"
+               class="help-bubble" title="1 = shallow (recommended). 0 = full history (only needed for adapters that walk git history)." target="_blank" rel="noopener">?</a>
+          </span>
+          <input type="number" name="github_clone_depth" min="0" step="1"
+                 placeholder="1 (blank = use settings default)"
+                 value="{{ form.get('github_clone_depth') if form.get('github_clone_depth') not in (none, '') else '' }}">
+          <small class="form-help">
+            <code>1</code> = shallow clone (fastest, sufficient for SAST). <code>0</code> = full history. Empty = settings default.
+          </small>
+        </label>
+      </div>
+      <div style="margin-top:8px; padding:8px 12px; border-left:3px solid #9ec5ea; background:#0c1421; color:#e6edf5; border-radius:4px">
+        <small>
+          <strong>Tip:</strong> when <em>Provider = github</em>, Scan scope's <em>Source paths</em> field above is overridden at scan time — the orchestrator materializes the repo to a temp dir (or a persistent cache, per Settings → Clone strategy) and points adapters there. You can still leave Source paths blank.
+        </small>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-fs">
       <legend>Model endpoints (optional)</legend>
       <small class="form-help" style="display:block;margin-bottom:8px">
         Each model the app sends prompts to. PHI requires <code>via_gateway=true</code> AND <code>baa_covered=true</code> — manifest validation rejects otherwise.
@@ -414,6 +483,15 @@
       sourceTextarea.value = t ? (t + '\n' + currentPath) : currentPath;
       modal.hidden = true;
     });
+
+    // ---- Source provider reveal ----
+    const providerSel = document.getElementById('source_provider');
+    const ghFields = document.getElementById('github-fields');
+    if (providerSel && ghFields) {
+      const sync = () => { ghFields.style.display = providerSel.value === 'github' ? '' : 'none'; };
+      providerSel.addEventListener('change', sync);
+      sync();
+    }
 
     // ---- Delete confirm ----
     const delBtn = document.getElementById('delete-btn');

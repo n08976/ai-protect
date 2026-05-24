@@ -1177,3 +1177,16 @@ details.dark-panel,
   color: #e6edf5;
 }
 .dark-pill .muted { color: rgba(230,237,245,0.65); }
+
+/* Help bubble — green circle with "?" next to a settings/form label,
+   links to a /docs#anchor in a new tab. Shared by /settings and the
+   manifest form so the affordance reads the same in both places. */
+.help-bubble {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #23c45e; color: #0c1421;
+  font-size: 11px; font-weight: 700;
+  text-decoration: none; cursor: help;
+  vertical-align: middle;
+}
+.help-bubble:hover { background: #3df084; }
