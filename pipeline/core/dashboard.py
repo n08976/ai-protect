@@ -56,10 +56,17 @@ def resolved_fingerprints(
     """Fingerprints currently resolved by an applied/validated/deployed Change.
 
     Honors revert: latest Change state per (app, fingerprint) wins.
+
     Honors app_aliases: re-keys resolved Changes from aliased predecessors
-    onto the inheriting app's fingerprint namespace. Requires `store` to
-    look up the original Finding's (adapter, category, title) — without
-    `store`, aliases are skipped.
+    onto the inheriting app's fingerprint namespace. The mechanics here are
+    counter-intuitive — the previous implementation had the lookup direction
+    reversed and silently matched nothing (see commit log for the May 2026
+    example-ads renaming case that exposed this).
+
+    Correct direction: iterate CURRENT findings. For each, recompute what
+    its fingerprint would have been under each declared predecessor; if that
+    predecessor-keyed fingerprint matches a resolved Change, the current
+    finding (under its new name) is also resolved.
     """
     # Lazy import to avoid the core depending on remediate at module load.
     from ..remediate.state import ChangeStore
@@ -70,35 +77,40 @@ def resolved_fingerprints(
             continue
         latest_by_app_fp[(c.app_name, c.finding_fingerprint)] = c.state.value
 
-    # Direct resolutions.
+    # Direct resolutions — fingerprint matches an active resolved Change
+    # under the SAME app_name. Works without any alias inheritance.
     resolved: set[str] = {
         fp for (_, fp), st in latest_by_app_fp.items()
         if st in RESOLVED_STATES
     }
 
-    # Alias re-key — needs store to know (adapter, category, title) per fp.
-    aliases = alias_map(manifests_dir_path)
+    aliases = alias_map(manifests_dir_path)  # {predecessor_name: [inheritors]}
     if not aliases or store is None:
         return resolved
 
-    fp_attrs: dict[str, tuple[str, str, str]] = {}
-    for f in store.all():
-        if f.fingerprint not in fp_attrs:
-            fp_attrs[f.fingerprint] = (f.adapter, f.category.value, f.title)
+    # Inverse map: inheritor_name → [predecessor_names]. We walk CURRENT
+    # findings and check the predecessors of each finding's app_name.
+    inheritors_to_predecessors: dict[str, list[str]] = {}
+    for predecessor, inheritors in aliases.items():
+        for inh in inheritors:
+            inheritors_to_predecessors.setdefault(inh, []).append(predecessor)
 
-    for (orig_app, fp), st in latest_by_app_fp.items():
-        if st not in RESOLVED_STATES:
-            continue
-        target_apps = aliases.get(orig_app)
-        if not target_apps:
-            continue
-        attrs = fp_attrs.get(fp)
-        if attrs is None:
-            continue
-        adapter, category, title = attrs
-        for target_app in target_apps:
-            key = f"{target_app}|{adapter}|{category}|{title}"
-            resolved.add(hashlib.sha256(key.encode()).hexdigest()[:16])
+    if not inheritors_to_predecessors:
+        return resolved
+
+    for f in store.all():
+        if f.fingerprint in resolved:
+            continue   # already resolved via direct match
+        predecessors = inheritors_to_predecessors.get(f.app_name) or []
+        for predecessor in predecessors:
+            # What would f's fingerprint have been when this app was named
+            # `predecessor`? If a resolved Change exists for that
+            # (predecessor, recomputed_fp) pair, the current finding inherits.
+            old_key = f"{predecessor}|{f.adapter}|{f.category.value}|{f.title}"
+            old_fp = hashlib.sha256(old_key.encode()).hexdigest()[:16]
+            if latest_by_app_fp.get((predecessor, old_fp)) in RESOLVED_STATES:
+                resolved.add(f.fingerprint)
+                break
 
     return resolved
 
