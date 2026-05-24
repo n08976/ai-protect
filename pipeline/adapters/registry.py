@@ -20,6 +20,7 @@ from .gosec import GosecAdapter
 from .grype import GrypeAdapter
 from .guardrails import GuardrailsAdapter
 from .hadolint import HadolintAdapter
+from .intel_match import IntelMatchAdapter
 from .manifest_validator import ManifestValidatorAdapter
 from .mcp_scope import MCPScopeAdapter
 from .metasploit import MetasploitAdapter
@@ -86,6 +87,7 @@ REGISTRY: dict[str, type[Adapter]] = {
     "eval_suite": EvalSuiteAdapter,
     "telemetry_drift": TelemetryDriftAdapter,
     "anomaly_detector": AnomalyDetectorAdapter,
+    "intel_match": IntelMatchAdapter,
 }
 
 

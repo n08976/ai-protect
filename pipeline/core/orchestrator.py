@@ -159,6 +159,15 @@ class Orchestrator:
             log.exception("adapter %s raised %s", call.adapter, type(e).__name__)
             return ar
 
+        # Enrich with intel-feed context before counting / persisting so
+        # severity bumps from CISA KEV are reflected in ar.high_or_above and
+        # the dashboard sees the enriched form (not the scanner's raw output).
+        if findings:
+            try:
+                from .intel_enrichment import enrich_findings
+                enrich_findings(findings)
+            except Exception:
+                log.exception("intel enrichment failed; falling back to raw scanner findings")
         ar.findings_count = len(findings)
         ar.high_or_above = sum(
             1 for f in findings

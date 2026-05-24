@@ -9,6 +9,7 @@ Run:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -25,9 +26,15 @@ from ..core.manifest import Manifest
 from ..remediate.engine import Engine, EngineError
 from ..remediate.registry import remediators_for
 from ..remediate.scans import (
-    ScanJob, all_scans, get_scan, new_scan_id, update_status_from_pid, write_scan,
+    ScanJob, all_scans, emit_event, get_scan, new_scan_id, update_status_from_pid, write_scan,
 )
 from ..remediate.state import ChangeState, ChangeStore, EventStore
+from ..intel.feeds import (
+    Feed, FeedStore, FeedFetchStore, IntelStore, VALID_FORMATS, new_feed_id,
+)
+from ..intel.fetcher import detect_feed_format, fetch_feed, start_poller, validate_feed
+from ..intel.status import overall_status
+from ..core import settings as user_settings
 from .catalog import CATALOG, CATEGORY_ORDER
 
 DEFAULT_ACTOR = "operator@example.com"
@@ -41,6 +48,14 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     )
     app.config["FINDINGS_PATH"] = findings_path
     app.config["MANIFESTS_DIR"] = manifests_dir
+
+    # Jinja filter: format any epoch timestamp in the operator's configured TZ.
+    # Re-reads config.json each call so a settings change takes effect without
+    # restarting the UI.
+    app.jinja_env.filters["localtime"] = user_settings.format_epoch
+
+    # Intel feed poller: idempotent — safe to call from create_app() repeatedly.
+    start_poller(FeedStore(), FeedFetchStore(), IntelStore())
 
     def _engine_for(app_name: str) -> Engine | None:
         """Build an Engine for the manifest matching this app."""
@@ -175,10 +190,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             adapters=sorted({f.adapter for f in all_findings}),
             severities=["critical", "high", "medium", "low", "info"],
             catalog=CATALOG,
+            system_status=overall_status(app.config["FINDINGS_PATH"]),
         )
 
     @app.route("/finding/<finding_id>")
     def finding_detail(finding_id):
+        import re as _re
+        _cve_re = _re.compile(r"CVE-\d{4}-\d{4,7}", _re.IGNORECASE)
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
         for f in store.all():
@@ -190,9 +208,31 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                     remediators = [r.name for r in remediators_for(f, eng.manifest.raw)]
                 # Existing changes for this finding
                 changes = ChangeStore().for_finding(finding_id)
+                # Cross-reference any CVEs mentioned in this finding against the
+                # intel store. Intel feeds AUGMENT scanner findings — they do
+                # not replace them — so we surface external context next to the
+                # scanner's own data, never in place of it.
+                blob = " ".join([
+                    f.title or "", f.description or "",
+                    " ".join(f.references or []),
+                    json.dumps(f.evidence) if f.evidence else "",
+                ])
+                cve_ids = sorted({m.group(0).upper() for m in _cve_re.finditer(blob)})
+                related_intel = []
+                if cve_ids:
+                    intel_store = IntelStore()
+                    feeds_by_id = {x.feed_id: x for x in FeedStore().all(include_deleted=True)}
+                    for item in intel_store.all():
+                        if item.cve_id and item.cve_id.upper() in cve_ids:
+                            related_intel.append({
+                                "item": item,
+                                "feed_name": feeds_by_id.get(item.source_feed_id).name
+                                             if feeds_by_id.get(item.source_feed_id) else item.source_feed_id,
+                            })
                 return render_template(
                     "finding.html", finding=f,
                     remediators=remediators, existing_changes=changes,
+                    cve_ids=cve_ids, related_intel=related_intel,
                 )
         return "Not found", 404
 
@@ -967,6 +1007,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         job.log_path = str(log_path)
         job.status = "running"
         write_scan(job)
+        emit_event(job, "scan.started", actor=DEFAULT_ACTOR, kind="rescan")
         return redirect(url_for("scan_status", scan_id=scan_id))
 
     @app.route("/scan/<scan_id>")
@@ -1036,6 +1077,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         job.ended_at = _time.time()
         job.exit_code = -int(_signal.SIGTERM)  # negative signal number = killed by signal
         write_scan(job)
+        emit_event(job, "scan.stopped", actor=DEFAULT_ACTOR, killed_via=killed_via or "already-gone")
 
         return jsonify({
             "scan_id": job.scan_id,
@@ -1082,6 +1124,374 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             events = [e for e in events if e.get("app") == app_filter or e.get("app_name") == app_filter]
         return render_template("history.html", events=events,
                                event_filter=event_filter, app_filter=app_filter)
+
+    @app.route("/feeds", methods=["GET"])
+    def feeds_page():
+        from collections import defaultdict
+        store = FeedStore()
+        fetch_store = FeedFetchStore()
+        feeds = store.all()
+        # Auto-group: feeds whose URLs share the same prefix-up-to-last-slash
+        # collapse into one expandable section. Threshold of 5 keeps small,
+        # hand-curated sets (e.g. three cvedaily root feeds) in the main table
+        # and only collapses the bulk clusters (e.g. 800+ per-tag feeds).
+        GROUP_THRESHOLD = 5
+        buckets: dict[str, list] = defaultdict(list)
+        for f in feeds:
+            prefix = f.url.rsplit("/", 1)[0] + "/"
+            buckets[prefix].append(f)
+        ungrouped = []
+        groups = []
+        for prefix, fs in buckets.items():
+            if len(fs) >= GROUP_THRESHOLD:
+                ok = sum(1 for x in fs if x.last_status == "ok")
+                errored = sum(1 for x in fs if x.last_status not in ("ok", ""))
+                never = sum(1 for x in fs if not x.last_fetch_ts)
+                last_fetch_ts = max((x.last_fetch_ts or 0) for x in fs) or None
+                total_items = sum((x.last_item_count or 0) for x in fs)
+                # Sort feeds inside the group by name for stable expansion order.
+                fs_sorted = sorted(fs, key=lambda x: x.name.lower())
+                groups.append({
+                    "prefix": prefix,
+                    "feeds": fs_sorted,
+                    "count": len(fs),
+                    "ok": ok, "errored": errored, "never": never,
+                    "last_fetch_ts": last_fetch_ts,
+                    "total_items": total_items,
+                })
+            else:
+                ungrouped.extend(fs)
+        ungrouped.sort(key=lambda x: x.created_at)
+        groups.sort(key=lambda g: -g["count"])   # biggest groups first
+        # Per-feed history only for ungrouped — grouped feeds get histories
+        # rendered on the per-feed detail/edit page rather than inline in the
+        # collapsed view (keeps the response small even with thousands of feeds).
+        history_by_id = {f.feed_id: fetch_store.for_feed(f.feed_id, limit=10) for f in ungrouped}
+        return render_template(
+            "feeds.html",
+            ungrouped=ungrouped,
+            groups=groups,
+            history_by_id=history_by_id,
+            formats=VALID_FORMATS,
+        )
+
+    @app.route("/feeds", methods=["POST"])
+    def feeds_create():
+        name = (request.form.get("name") or "").strip()
+        url = (request.form.get("url") or "").strip()
+        poll = request.form.get("poll_seconds", "3600")
+        if not (name and url):
+            return "name and url are required", 400
+        # Auto-detect format. No dropdown — the server fetches a sample and
+        # lets the translator's own peek-parser decide. If the bytes don't
+        # match any of our four shapes, surface the parser's reason.
+        fmt, http_status, err = detect_feed_format(url)
+        if not fmt:
+            return f"could not auto-detect feed format (HTTP {http_status}): {err}", 400
+        try:
+            poll_seconds = max(60, int(poll))
+        except ValueError:
+            poll_seconds = 3600
+        feed = Feed(
+            feed_id=new_feed_id(), name=name, url=url,
+            format=fmt, poll_seconds=poll_seconds, enabled=True,
+        )
+        FeedStore().write(feed)
+        return redirect(url_for("feeds_page"))
+
+    @app.route("/feeds/<feed_id>/edit", methods=["GET", "POST"])
+    def feeds_edit(feed_id):
+        store = FeedStore()
+        feed = store.get(feed_id)
+        if not feed or feed.deleted:
+            return "feed not found", 404
+        error = None
+        if request.method == "POST":
+            name = (request.form.get("name") or feed.name).strip()
+            url = (request.form.get("url") or feed.url).strip()
+            poll = request.form.get("poll_seconds", str(feed.poll_seconds))
+            enabled = request.form.get("enabled") == "on"
+            try:
+                poll_seconds = max(60, int(poll))
+            except ValueError:
+                poll_seconds = feed.poll_seconds
+            new_fmt = feed.format
+            # Re-detect format only when the URL changed — saves a network
+            # round-trip on edits that only change name/poll/enabled.
+            if url != feed.url:
+                detected, http_status, err = detect_feed_format(url)
+                if not detected:
+                    error = f"could not auto-detect format for new URL (HTTP {http_status}): {err}"
+                else:
+                    new_fmt = detected
+            if error is None:
+                feed.name = name
+                feed.url = url
+                feed.poll_seconds = poll_seconds
+                feed.enabled = enabled
+                feed.format = new_fmt
+                store.write(feed)
+                return redirect(url_for("feeds_page"))
+        return render_template("feed_edit.html", feed=feed, error=error)
+
+    @app.route("/feeds/discover", methods=["GET", "POST"])
+    def feeds_discover():
+        """Scrape an aggregator page for feed-like links so an operator can
+        bulk-import (e.g. https://cvedaily.com/pages/tags/ links to one feed
+        per tag). Detection is best-effort: an HTML parser pulls every <a href>,
+        we keep links that look like feeds (extension or path hint), then
+        auto-detect format per candidate. Operator picks via checkboxes."""
+        if request.method == "GET":
+            return render_template("feeds_discover.html",
+                                   page_url=request.args.get("url", ""), candidates=None)
+        page_url = (request.form.get("page_url") or "").strip()
+        if not page_url:
+            return render_template("feeds_discover.html",
+                                   page_url="", candidates=None,
+                                   error="enter a page URL")
+        from html.parser import HTMLParser
+        from urllib.parse import urljoin
+        import urllib.request as _u
+
+        class _Links(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.hrefs: list[str] = []
+                self._a_text: list[str] = []
+                self._in_a = False
+                self.texts: dict[str, str] = {}
+
+            def handle_starttag(self, tag, attrs):
+                if tag != "a":
+                    return
+                for k, v in attrs:
+                    if k == "href" and v:
+                        self.hrefs.append(v)
+                        self._in_a = True
+                        self._a_text = []
+                        self._current = v
+                        return
+
+            def handle_endtag(self, tag):
+                if tag == "a" and self._in_a:
+                    self.texts[self._current] = "".join(self._a_text).strip()
+                    self._in_a = False
+
+            def handle_data(self, data):
+                if self._in_a:
+                    self._a_text.append(data)
+
+        try:
+            req = _u.Request(page_url, headers={"User-Agent": "ai-protect/1.0 (+feed discovery)"})
+            with _u.urlopen(req, timeout=20) as r:
+                html_body = r.read().decode("utf-8", errors="replace")
+        except Exception as e:
+            return render_template("feeds_discover.html",
+                                   page_url=page_url, candidates=None,
+                                   error=f"could not fetch page: {type(e).__name__}: {e}")
+        parser = _Links()
+        try:
+            parser.feed(html_body)
+        except Exception as e:
+            return render_template("feeds_discover.html",
+                                   page_url=page_url, candidates=None,
+                                   error=f"could not parse page HTML: {e}")
+        from concurrent.futures import ThreadPoolExecutor
+
+        existing_urls = {f.url for f in FeedStore().all(include_deleted=True)}
+        seen: set[str] = set()
+        FEED_HINTS = (".xml", ".atom", ".rss", ".json", "/feed", "/rss", "/atom")
+        # First pass: filter to feed-like, dedup by absolute URL, keep the
+        # (href, full) pairing so anchor text can be looked up later.
+        targets: list[tuple[str, str]] = []
+        for href in parser.hrefs:
+            full = urljoin(page_url, href)
+            if not full.startswith(("http://", "https://")):
+                continue
+            if not any(h in full.lower() for h in FEED_HINTS):
+                continue
+            if full in seen:
+                continue
+            seen.add(full)
+            targets.append((href, full))
+        # Second pass: detect format in parallel. 32 workers comfortably
+        # handles the 800+ per-tag feeds on cvedaily.com in a few seconds;
+        # any single hung connection only delays itself thanks to per-call
+        # HTTP_TIMEOUT.
+        urls = [full for (_h, full) in targets]
+        with ThreadPoolExecutor(max_workers=32) as ex:
+            detections = list(ex.map(detect_feed_format, urls))
+        candidates: list[dict] = []
+        for (href, full), (fmt, http_status, err) in zip(targets, detections):
+            candidates.append({
+                "url": full,
+                "anchor_text": parser.texts.get(href, ""),
+                "format": fmt,
+                "http_status": http_status,
+                "error": err,
+                "already_added": full in existing_urls,
+            })
+        return render_template("feeds_discover.html",
+                               page_url=page_url, candidates=candidates,
+                               error=None)
+
+    @app.route("/feeds/discover/import", methods=["POST"])
+    def feeds_discover_import():
+        import random
+        import time as _time
+        urls = request.form.getlist("url")
+        names = request.form.getlist("name")
+        formats = request.form.getlist("format")
+        poll = request.form.get("poll_seconds", "3600")
+        try:
+            poll_seconds = max(60, int(poll))
+        except ValueError:
+            poll_seconds = 3600
+        store = FeedStore()
+        existing = {f.url for f in store.all(include_deleted=True)}
+        # Stagger first-fetch time across the polling window so a bulk import
+        # of 800+ feeds doesn't fire them all on the next 30s tick. Each feed's
+        # next-due moment becomes uniformly distributed over the full poll
+        # interval starting now.
+        now = _time.time()
+        created = 0
+        for i, url in enumerate(urls):
+            url = url.strip()
+            if not url or url in existing:
+                continue
+            name = (names[i] if i < len(names) else "").strip() or url
+            fmt = (formats[i] if i < len(formats) else "").strip()
+            if fmt not in VALID_FORMATS:
+                # detection failed at discovery time — skip; operator can add
+                # the URL manually after fixing.
+                continue
+            feed = Feed(
+                feed_id=new_feed_id(), name=name, url=url,
+                format=fmt, poll_seconds=poll_seconds, enabled=True,
+                last_fetch_ts=now - random.uniform(0, poll_seconds),
+            )
+            store.write(feed)
+            existing.add(url)
+            created += 1
+        return redirect(url_for("feeds_page"))
+
+    @app.route("/feeds/fetch-all", methods=["POST"])
+    def feeds_fetch_all():
+        """Force-fetch every enabled feed. Each fetch logs its own row to
+        FeedFetchStore so the per-feed history reflects this batch run."""
+        store = FeedStore()
+        ffs = FeedFetchStore()
+        intel = IntelStore()
+        results = []
+        for feed in store.all():
+            if not feed.enabled:
+                continue
+            r = fetch_feed(feed, store, ffs, intel)
+            results.append({
+                "feed_id": feed.feed_id, "name": feed.name,
+                "status": r.status, "items_count": r.items_count,
+                "new_count": r.new_count, "http_status": r.http_status,
+                "duration_ms": r.duration_ms, "error": r.error,
+            })
+        return jsonify({"fetched": len(results), "results": results})
+
+    @app.route("/feeds/<feed_id>/fetch", methods=["POST"])
+    def feeds_fetch(feed_id):
+        store = FeedStore()
+        feed = store.get(feed_id)
+        if not feed or feed.deleted:
+            return jsonify({"error": "feed not found"}), 404
+        result = fetch_feed(feed, store, FeedFetchStore(), IntelStore())
+        return jsonify({
+            "status": result.status, "items_count": result.items_count,
+            "new_count": result.new_count, "duration_ms": result.duration_ms,
+            "http_status": result.http_status, "error": result.error,
+        })
+
+    @app.route("/feeds/<feed_id>/delete", methods=["POST"])
+    def feeds_delete(feed_id):
+        store = FeedStore()
+        feed = store.get(feed_id)
+        if not feed:
+            return "feed not found", 404
+        feed.deleted = True
+        feed.enabled = False
+        store.write(feed)
+        return redirect(url_for("feeds_page"))
+
+    @app.route("/feeds/<feed_id>/toggle", methods=["POST"])
+    def feeds_toggle(feed_id):
+        store = FeedStore()
+        feed = store.get(feed_id)
+        if not feed:
+            return "feed not found", 404
+        feed.enabled = not feed.enabled
+        store.write(feed)
+        return redirect(url_for("feeds_page"))
+
+    @app.route("/feeds/validate", methods=["POST"])
+    def feeds_validate():
+        """Dry-run a candidate feed — no persistence. Used by the Add Feed form
+        and the per-feed Re-validate button so operators can see whether the
+        translator handles the source as-is, before saving."""
+        url = (request.form.get("url") or request.json and request.json.get("url") or "").strip()
+        fmt = (request.form.get("format") or request.json and request.json.get("format") or "").strip()
+        if not url:
+            return jsonify({"ok": False, "error": "url required"}), 400
+        return jsonify(validate_feed(url, fmt))
+
+    @app.route("/intel")
+    def intel_page():
+        store = IntelStore()
+        items = store.all()
+        feed_filter = request.args.get("feed")
+        sev_filter = request.args.get("severity")
+        if feed_filter:
+            items = [i for i in items if i.source_feed_id == feed_filter]
+        if sev_filter:
+            items = [i for i in items if i.severity == sev_filter]
+        items = items[:500]
+        feeds_by_id = {f.feed_id: f for f in FeedStore().all(include_deleted=True)}
+        return render_template(
+            "intel.html", items=items, feeds_by_id=feeds_by_id,
+            feed_filter=feed_filter, sev_filter=sev_filter,
+            severities=["critical", "high", "medium", "low", "info"],
+        )
+
+    @app.route("/api/status")
+    def api_status():
+        return jsonify(overall_status(app.config["FINDINGS_PATH"]))
+
+    @app.route("/settings", methods=["GET", "POST"])
+    def settings_page():
+        from datetime import datetime
+        from zoneinfo import ZoneInfo, available_timezones
+        error = None
+        ok = None
+        if request.method == "POST":
+            tz = (request.form.get("timezone") or "").strip()
+            tz_custom = (request.form.get("timezone_custom") or "").strip()
+            picked = tz_custom or tz
+            fmt = (request.form.get("date_format") or "").strip() or user_settings.DEFAULT_DATE_FORMAT
+            try:
+                user_settings.set_timezone(picked)
+                user_settings.set_date_format(fmt)
+                ok = f"saved · timezone={picked} · format={fmt}"
+            except ValueError as e:
+                error = str(e)
+        current_tz = user_settings.get_timezone()
+        current_fmt = user_settings.get_date_format()
+        try:
+            sample = datetime.now(ZoneInfo(current_tz)).strftime(current_fmt)
+        except Exception:
+            sample = "(invalid format)"
+        return render_template(
+            "settings.html",
+            current_tz=current_tz, current_fmt=current_fmt, sample=sample,
+            common_zones=user_settings.COMMON_TIMEZONES,
+            all_zones_count=len(available_timezones()),
+            ok=ok, error=error,
+        )
 
     return app
 

@@ -1147,3 +1147,33 @@ table.kv th {
   font-size: 12px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px;
 }
 .change-detail .meta strong { color: var(--text); }
+
+/* Dark-on-light callouts — used by the system status bar, the additive-not-
+   replacement note on /feeds, settings preview, and the auto-collapsed feed
+   groups. Without these the inline 'background:#0c1421' panels inherited the
+   page's default #222 text color, so the labels were black on near-black. */
+.dark-panel,
+details.dark-panel,
+.dark-panel > summary {
+  background: #0c1421;
+  color: #e6edf5;
+  border-color: var(--navy-dk);
+}
+.dark-panel a            { color: #9ec5ea; }
+.dark-panel a:hover      { color: #c4dcf2; }
+.dark-panel .muted       { color: rgba(230,237,245,0.65); }
+.dark-panel strong       { color: #ffffff; }
+.dark-panel code,
+.dark-panel .mono        { color: #d6dee9; }
+.dark-panel .small       { color: rgba(230,237,245,0.78); }
+/* Severity pills inside a dark panel keep their own contrasting palette —
+   we leave .sev-* alone. */
+
+/* Tinted "pill" inside the system-status bar — same idea, slightly lighter
+   background than the bar itself so each component lamp reads as a distinct
+   chip. */
+.dark-pill {
+  background: #13202f;
+  color: #e6edf5;
+}
+.dark-pill .muted { color: rgba(230,237,245,0.65); }

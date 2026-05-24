@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Discover feeds · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <a class="back" href="{{ url_for('feeds_page') }}">← back to feeds</a>
+
+  <article class="change-detail" style="margin-top:14px">
+    <header><h2>Discover feeds from a page</h2></header>
+    <p class="muted">
+      Point at an aggregator page (e.g. <code>https://cvedaily.com/pages/tags/</code>) and we'll scan its links for anything that looks like a feed —
+      paths or extensions matching <code>.xml</code>, <code>.atom</code>, <code>.rss</code>, <code>.json</code>, or <code>/feed</code>/<code>/rss</code>.
+      Each candidate is then fetched once to auto-detect its format. You pick which to import.
+    </p>
+
+    {% if error %}<div class="sev-badge sev-high" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="{{ url_for('feeds_discover') }}" class="scan-form">
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Page URL</label>
+        <input type="url" name="page_url" required value="{{ page_url }}" placeholder="https://cvedaily.com/pages/tags/">
+      </div>
+      <button type="submit" class="btn btn-primary">Scan page</button>
+    </form>
+  </article>
+
+  {% if candidates is not none %}
+    <article class="change-detail" style="margin-top:18px">
+      <header><h2>Candidates ({{ candidates|length }})</h2></header>
+      {% if not candidates %}
+        <div class="empty">No feed-like links found on this page. Try a different page, or add the feed manually on <a href="{{ url_for('feeds_page') }}">Feeds</a>.</div>
+      {% else %}
+        <form method="POST" action="{{ url_for('feeds_discover_import') }}">
+          <table class="findings">
+            <thead>
+              <tr>
+                <th style="width:30px"><input type="checkbox" id="check-all" checked></th>
+                <th>URL</th><th>Anchor text</th><th>Detected format</th><th>Suggested name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in candidates %}
+                <tr>
+                  <td>
+                    {% if c.already_added %}
+                      <span title="already added" class="muted">●</span>
+                    {% elif not c.format %}
+                      <span title="auto-detect failed: {{ c.error }}" class="muted">✗</span>
+                    {% else %}
+                      <input type="checkbox" name="url" value="{{ c.url }}" checked class="discover-pick">
+                    {% endif %}
+                  </td>
+                  <td class="mono small"><a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.url }}</a></td>
+                  <td class="small">{{ c.anchor_text or '—' }}</td>
+                  <td class="mono small">
+                    {% if c.format %}
+                      <span class="sev-badge sev-info">{{ c.format }}</span>
+                    {% else %}
+                      <span class="sev-badge sev-high" title="{{ c.error }}">unrecognized</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <input type="text" name="name" value="{{ c.anchor_text or c.url.split('/')[-1] or c.url }}" style="width:100%">
+                    <input type="hidden" name="format" value="{{ c.format }}">
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div style="margin-top:14px">
+            <label>Poll seconds for imported feeds:
+              <input type="number" name="poll_seconds" value="3600" min="60" step="60" style="width:120px">
+            </label>
+            <button type="submit" class="btn btn-primary" style="margin-left:12px">Import selected</button>
+            <span class="muted small" style="margin-left:8px">Rows marked ● are already in your feed list; ✗ rows failed auto-detection (you can add them manually with a different format).</span>
+          </div>
+        </form>
+      {% endif %}
+    </article>
+  {% endif %}
+
+  <script>
+    const ca = document.getElementById('check-all');
+    if (ca) {
+      ca.addEventListener('change', () => {
+        document.querySelectorAll('.discover-pick').forEach(cb => cb.checked = ca.checked);
+      });
+    }
+  </script>
+{% endblock %}

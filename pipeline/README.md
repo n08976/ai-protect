@@ -43,16 +43,18 @@ pip install -r pipeline/requirements.txt
 python -m pipeline.cli tier pipeline/manifests/example_clinical_assistant.yml
 
 # 3. Run a specific stage (preprod has the deepest coverage for Tier 1)
-python -m pipeline.cli --findings /tmp/findings.jsonl run \
+#    NB: --findings goes to a DURABLE path. /tmp is wiped on reboot, so any
+#    findings written there are lost. The UI and all adapters share this file.
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl run \
     pipeline/manifests/example_clinical_assistant.yml --stage preprod
 
 # 4. Run every stage end-to-end (stops at first gate failure)
-python -m pipeline.cli --findings /tmp/findings.jsonl run \
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl run \
     pipeline/manifests/example_clinical_assistant.yml --all
 
 # 5. Generate dashboards
-python -m pipeline.cli --findings /tmp/findings.jsonl report --kind technical
-python -m pipeline.cli --findings /tmp/findings.jsonl report --kind executive
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl report --kind technical
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl report --kind executive
 
 # 6. Inspect what runs where
 python -m pipeline.cli adapters
@@ -61,21 +63,118 @@ python -m pipeline.cli policy --tier 1 --stage preprod
 # 7. Tests
 python -m pytest pipeline/tests/ -q
 
-# 8. Live findings web UI (Flask) — auto-refreshes every 5s
-python -m pipeline.ui.server --findings /tmp/findings.jsonl --port 8000
-# open http://localhost:8000/
+# 8. Live findings web UI (Flask) — background poller + UI on one port
+python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
+# open http://localhost:3005/
 ```
 
 ## Web UI
 
-`pipeline/ui/` is a small Flask dashboard that reads the FindingStore on every request, so you can run a scan in one terminal and watch findings stream into the browser in another.
+`pipeline/ui/` is a Flask app that reads the FindingStore on every request, so you can run a scan in one terminal and watch findings stream into the browser in another. The UI also runs the **intel feed poller** (a daemon thread that fetches CVE / threat feeds at each feed's configured interval) and surfaces an **overall system status lamp** on the home page (worst-of-three across feeds, scans, and findings-store health).
 
-- `/` — findings table with severity / app / adapter / category filters.
-- `/finding/<id>` — drill-down with description, remediation, evidence, affected, compliance evidence (HIPAA, HITRUST, NIST AI RMF, MITRE ATLAS), and references.
-- `/manifests` — registered apps with their tier classification.
-- `/api/findings`, `/api/stats` — JSON, for plugging into Slack alerts, SIEM, or custom dashboards.
+**Launch:**
 
-Visual style mirrors the v2.1 doc family — navy header, accent-orange rule, takeaway-blue pills, navy-banded tables.
+```bash
+# Durable findings path — survives reboots, shared by the CLI and the UI.
+python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
+# open http://localhost:3005/
+```
+
+> **Findings path warning:** never use `/tmp/findings.jsonl` — Linux wipes `/tmp` on reboot and any findings there are lost. Use `~/.ai-protect/findings.jsonl` (or any path outside `/tmp`); the file is append-only and is created on first write.
+
+**Findings**
+
+- `/` — findings table with severity / app / adapter / category / fixable filters and the system-status lamp.
+- `/finding/<id>` — per-finding drill-down with description, remediation, evidence, affected, compliance tags (HIPAA · HITRUST · NIST AI RMF · MITRE ATLAS), references, and a **Related intel** section that lists any CVE matches the intel feeds have for the same vuln (post-scan cross-reference).
+- `/findings.pdf`, `/findings.csv` — filter-aware exports.
+- `/manifests`, `/manifests/new`, `/manifests/<name>/edit` — manifest CRUD with live tier preview.
+- `/history` — append-only timeline of every scan / change / finding event. Scan events include the app name (`app_name`) and the lifecycle phase (`scan.started` → `scan.done` / `scan.failed` / `scan.crashed` / `scan.stopped`); orphan transitions from power loss surface as `scan.crashed`.
+- `/scan`, `/scan/<id>`, `/scan/<id>/stop` — launch a scan, follow its log, cancel it (SIGTERM → grace → SIGKILL on the process group).
+- `/remediations`, `/change/<id>` — approve / apply / revert proposed code changes.
+
+**Intel feeds**
+
+- `/feeds` — feed catalogue. Inline **Add feed** form (URL + polling period; format is auto-detected), per-row **Fetch / Edit / Pause / Resume / Delete / View intel** actions, **Fetch all** button at the section header, and an expandable **Recent fetches** detail per feed. Large clusters of feeds sharing a URL prefix (e.g. the 800+ `cvedaily.com/feed-tags/` per-tag feeds) auto-collapse into one `<details>` block with aggregate counts so the main table stays scannable.
+- `/feeds/discover` — point at an aggregator page (e.g. `https://cvedaily.com/pages/tags/`) and the server scrapes `<a href>` links matching `.xml`/`.atom`/`.rss`/`.json` or `/feed`/`/rss`/`/atom`, then auto-detects the format of each candidate **in parallel** (ThreadPoolExecutor, ~3s for 800+ links). Operator picks via checkboxes; selected feeds are imported with `last_fetch_ts` staggered uniformly across the polling window to prevent a thundering herd on the next poller tick.
+- `/feeds/validate` — JSON validator endpoint. Fetches the URL once, returns `{ok, detected_format, item_count, sample, error}`. Used by the **Validate first** button on the Add form so you know whether the as-is translator handles the feed or you need a custom one.
+- `/feeds/<id>/fetch`, `/feeds/<id>/edit`, `/feeds/<id>/toggle`, `/feeds/<id>/delete` — per-feed actions. POST `/feeds/fetch-all` force-fetches every enabled feed.
+- `/intel` — fetched CVE / threat items, filterable by severity and source feed. Each row links to the original advisory.
+
+**Settings**
+
+- `/settings` — operator-configurable preferences in `~/.ai-protect/config.json`. Today: `timezone` (any IANA name, with a curated dropdown of common zones) and `date_format` (strftime). A Jinja `localtime` filter renders every epoch in the configured zone — feeds, history, intel rows all flip when you switch zones.
+
+**System status lamp**
+
+The home page (`/`) shows an overall **green / yellow / red** lamp computed as the worst-of-three across:
+
+- **feeds** — red if any feed errored on its last fetch; yellow if any enabled feed is stale (no fetch within 2× its polling interval) or has never fetched; green otherwise.
+- **scans** — red if any orphan scan didn't reconcile to a known terminal state; yellow if scans are running; green when idle.
+- **store** — red if `--findings` points at `/tmp`; green if it's on a durable path.
+
+The same payload is available at `/api/status` as JSON for external monitoring.
+
+**JSON API**
+
+- `/api/findings` — full or active-view findings list.
+- `/api/stats` — counts by severity / category / adapter / app.
+- `/api/status` — system status lamp payload.
+- `/api/scan/<id>` — scan-status poll endpoint (used by the live scan page).
+
+Visual style mirrors the v2.1 doc family — navy header, accent-orange rule, takeaway-blue pills, navy-banded tables; dark callouts (status lamp, additive-feeds banner, collapsible feed groups) use a navy panel class with light text.
+
+## Intel feeds (`pipeline/intel/`)
+
+External CVE / threat feeds are first-class citizens: configured in the UI, polled in the background, and consulted during scans (see **Intel-scan integration** below).
+
+| Component | What it does |
+| --- | --- |
+| `feeds.py` | `Feed` + `FeedStore` (latest-row-per-id wins), `FeedFetch` + `FeedFetchStore` (append-only history), `IntelItem` + `IntelStore` (deduped by hash of `source_feed_id + cve_id`). Persisted to `~/.ai-protect/feeds.jsonl`, `feed_fetches.jsonl`, `intel.jsonl`. |
+| `translators.py` | One translator per format: **atom**, **rss**, **xml** (generic), **json**. `detect_format(raw)` peeks at the bytes (root tag / leading char) to pick the right one. JSON translator knows the CISA KEV shape (`cveID`, `vulnerabilityName`, `shortDescription`, `dateAdded`) and marks every KEV row severity=critical because KEV inclusion ≙ active exploitation in the wild. |
+| `fetcher.py` | `fetch_feed()` (single fetch + translate + persist + log + status update), `validate_feed()` (dry-run for the UI validator), `start_poller()` (idempotent daemon thread, 30s tick, dispatches each feed whose interval has elapsed). |
+| `status.py` | `overall_status()` computes the green/yellow/red lamp by combining feed / scan / store health. |
+
+**Polling and stagger.** The poller wakes every 30s and dispatches each enabled feed whose `last_fetch_ts + poll_seconds` has elapsed. Bulk imports (via `/feeds/discover/import`) randomize `last_fetch_ts = now − uniform(0, poll_seconds)` per imported feed, so 800+ feeds spread their next-fetch times uniformly across the polling window — no thundering herd.
+
+**Format support.** Atom 1.0, RSS 2.0, generic XML (iterates top-level children, pulls common fields by tag name), and JSON (handles JSON Feed 1.x, NVD-style `{"vulnerabilities":[...]}`, CISA KEV, and bare lists of records). When detection fails, the validator surfaces the parser's exact error so you can tell the operator whether the feed needs a custom translator.
+
+**Operator workflow:**
+
+```text
+1. /feeds — paste a URL, click "Validate first" → "accept as-is" / "needs translator"
+2. Click "Add feed" — format is auto-detected on save; rejects 400 if undetectable
+3. Or /feeds/discover — point at an aggregator page and bulk-import every feed it links to
+4. Watch /feeds for green status pills; /intel for the items as they arrive
+5. /settings — pick your timezone; every timestamp on /feeds, /intel, /history reformats
+```
+
+## Intel-scan integration
+
+Feeds **participate in scans**, not just sit alongside them. Two integration points:
+
+**1. Enrichment** — `core/intel_enrichment.py:enrich_findings(findings)` is called by `Orchestrator._run_adapter` immediately before findings are persisted. For every finding from every adapter:
+
+- regex-extract CVE ids from `title`, `description`, `references`, and `evidence` (flattened to JSON for the sweep)
+- look each CVE up in `IntelStore`; stamp `evidence.intel_sources` (per-feed metadata), `evidence.cvss_max`, `evidence.kev_listed`, `evidence.kev_feeds`
+- **KEV ratchet**: if any matching intel item is from a CISA-KEV-named feed (heuristic: `"kev"` or `"known exploited"` in feed name), the finding's severity is bumped to CRITICAL. Already-critical findings stay critical; never downgrades. `evidence.severity_bumped_from` records the original for audit trail.
+
+This means a pip_audit finding for a CVE that's also on CISA's KEV list shows up as CRITICAL on the dashboard with KEV context attached, without any change to the pip_audit adapter.
+
+**2. Detection** — the `intel_match` adapter (in `adapters/intel_match.py`, registered in the build slot for all three tiers in `policy.py`) emits *new* findings for intel items that mention assets your manifest declares:
+
+- Tokenizes manifest `description` + `models[].name/provider/model` + `mcp_servers[].name`. Tokens are identifier-like only — start with a capital in the source text, OR contain a digit/hyphen/underscore, length ≥ 4. Hyphenated tokens are emitted whole AND split (`Drupal-based` → `{drupal-based, drupal, based}`).
+- A big stoplist drops generic English / tech words ("python", "internal", "single", "operator", "studio", etc.) — the design assumes pip_audit/grype/osv_scanner cover structured dep scanning, so intel_match focuses on the rare/long-tail proper-noun matches.
+- A frequency filter (corpus-adaptive) drops manifest tokens that appear in more than 5% of intel items in the store, so noise tokens like "meta" auto-disappear as the corpus grows.
+- Emission gate: `config.min_severity` (default `high`) drops below-threshold matches. KEV-listed matches always emit regardless.
+- Dedup by CVE id across feeds. Each finding carries `evidence.matched_tokens`, `evidence.intel_feed`, `evidence.kev_listed`.
+
+To tune for a specific tier, override the default in `policy.py`:
+
+```python
+AdapterCall("intel_match", config={"min_severity": "critical"}),
+```
+
+**Additivity guarantee.** Zero scanner adapter imports anything from `pipeline.intel`. Intel feeds augment scanner findings; they do not replace them. The original adapter's findings remain the source of truth — enrichment only adds context, and `intel_match` only emits when its tokens match.
 
 ## Manifest schema
 
@@ -115,6 +214,7 @@ Every adapter implements the same interface (`pipeline/adapters/base.py`): prefl
 | `njsscan` | [njsscan](https://github.com/ajinabraham/njsscan) | build | Node.js-specific SAST — Express, prototype pollution, JWT misconfig, eval. |
 | `owasp_noir` | [OWASP Noir](https://github.com/owasp-noir/noir) | intake | Attack surface enumeration via static analysis — produces an authoritative endpoint list for downstream DAST. |
 | `agentic_radar` | [SplxAI Agentic Radar](https://github.com/splx-ai/agentic-radar) | build | SAST for agentic AI workflows. LangChain / LlamaIndex / CrewAI / Claude Agent SDK / OpenAI Assistants. Surfaces tool over-grants, A2A privilege escalation, PHI flow into prompts. |
+| `intel_match` | (built-in, see [Intel-scan integration](#intel-scan-integration)) | build | Cross-references manifest tokens against the configured intel feeds (CISA KEV, NVD, vendor CVE feeds). Emits a finding for every intel item whose title/summary mentions an asset the manifest declares. KEV-listed matches are CRITICAL; tunable via `config.min_severity`. Complements pip_audit/grype/osv_scanner — fires on long-tail product names those scanners don't index. |
 | `ride` | [Adobe Ride](https://github.com/adobe/ride) | preprod | REST/JSON API test runner hook. Runs a configured Maven Ride suite, converts failures to Findings. Mutation-required. |
 | `pip_audit` | [pip-audit](https://github.com/pypa/pip-audit) | build | Python dep CVE scanner (PyPA Advisory DB + OSV). |
 | `dependency_check` | [OWASP Dependency-Check](https://github.com/dependency-check/DependencyCheck) | build | Multi-language CVE scanner (Maven / NPM / Gradle / .NET / Ruby / PHP / Python) against NIST NVD. **Requires `NVD_API_KEY` env var on v9+.** Current stable: v12.2.0. |
@@ -256,12 +356,15 @@ pipeline/
 │   ├── findings.py                 # Finding, Severity, Category, FindingStore
 │   ├── compliance.py               # category → control identifiers
 │   ├── policy.py                   # tier × stage → adapter list (the operating model)
-│   └── orchestrator.py             # ties it all together
+│   ├── orchestrator.py             # ties it all together; calls intel_enrichment before persist
+│   ├── intel_enrichment.py         # stamps intel-feed context onto findings (KEV ratchet)
+│   └── settings.py                 # ~/.ai-protect/config.json (timezone, date_format)
 ├── adapters/
 │   ├── base.py                     # Adapter base class + exceptions
 │   ├── registry.py                 # name → class
 │   ├── manifest_validator.py
 │   ├── threat_model_check.py
+│   ├── intel_match.py              # cross-refs manifest tokens vs intel feeds (detection)
 │   ├── garak.py
 │   ├── pyrit.py
 │   ├── atomic.py
@@ -272,6 +375,18 @@ pipeline/
 │   ├── trufflehog.py
 │   ├── eval_suite.py
 │   └── telemetry_drift.py
+├── intel/                          # external CVE / threat feed ingestion
+│   ├── feeds.py                    # Feed / IntelItem dataclasses + JSONL stores
+│   ├── translators.py              # atom / rss / xml / json + detect_format
+│   ├── fetcher.py                  # fetch_feed, validate_feed, background poller
+│   └── status.py                   # green/yellow/red lamp computation
+├── ui/                             # Flask app — findings dashboard + feeds + settings
+│   ├── server.py                   # routes (findings, feeds, intel, settings, history, scan, api)
+│   ├── catalog.py                  # adapter catalog metadata for /about
+│   ├── pdf_report.py               # /findings.pdf generator
+│   ├── static/                     # style.css + favicon.svg
+│   └── templates/                  # index, finding, feeds, feeds_discover, feed_edit, intel,
+│                                   # settings, history, scan, scan_status, manifests, manifest_form, ...
 ├── reporting/
 │   ├── technical.py                # per-app, per-adapter detail
 │   └── executive.py                # board-style rollup

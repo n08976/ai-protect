@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Intel · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1 style="margin-bottom:6px">Intel</h1>
+    <p class="muted">CVE / threat items pulled from the configured <a href="{{ url_for('feeds_page') }}">feeds</a>. Read-only context — these are not findings. Most recent {{ items|length }} shown.</p>
+    <div class="severity-row" style="margin-top:14px">
+      <a class="severity-pill sev-all{% if not sev_filter %} active{% endif %}"
+         href="{% if feed_filter %}{{ url_for('intel_page', feed=feed_filter) }}{% else %}{{ url_for('intel_page') }}{% endif %}">all</a>
+      {% for s in severities %}
+        <a class="severity-pill sev-{{ s }}{% if sev_filter == s %} active{% endif %}"
+           href="{% if feed_filter %}{{ url_for('intel_page', feed=feed_filter, severity=s) }}{% else %}{{ url_for('intel_page', severity=s) }}{% endif %}">{{ s }}</a>
+      {% endfor %}
+      {% if feed_filter %}
+        <span class="muted" style="margin-left:10px">filter: feed = {{ feeds_by_id.get(feed_filter).name if feeds_by_id.get(feed_filter) else feed_filter }} · <a href="{{ url_for('intel_page', severity=sev_filter) if sev_filter else url_for('intel_page') }}">clear</a></span>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="findings-list">
+    {% if not items %}
+      <div class="empty">No intel items yet. Add or fetch a feed on <a href="{{ url_for('feeds_page') }}">Feeds</a>.</div>
+    {% else %}
+      <table class="findings">
+        <thead>
+          <tr><th>CVE</th><th>Severity</th><th>CVSS</th><th>Title</th><th>Source</th><th>Published (feed)</th><th>Fetched</th></tr>
+        </thead>
+        <tbody>
+          {% for i in items %}
+            <tr>
+              <td class="mono small">{% if i.link %}<a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.cve_id or '—' }}</a>{% else %}{{ i.cve_id or '—' }}{% endif %}</td>
+              <td>{% if i.severity %}<span class="sev-badge sev-{{ i.severity }}">{{ i.severity }}</span>{% else %}—{% endif %}</td>
+              <td class="mono small">{{ '%.1f'|format(i.cvss) if i.cvss is not none else '—' }}</td>
+              <td class="small">{{ i.title }}</td>
+              <td class="small">{% set src = feeds_by_id.get(i.source_feed_id) %}{% if src %}<a href="{{ url_for('intel_page', feed=i.source_feed_id) }}">{{ src.name }}</a>{% else %}{{ i.source_feed_id }}{% endif %}</td>
+              <td class="mono small">{{ i.published }}</td>
+              <td class="mono small">{{ i.fetched_at|localtime }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}

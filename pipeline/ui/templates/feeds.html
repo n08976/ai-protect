@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Feeds · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1 style="margin-bottom:6px">Intel feeds</h1>
+    <p class="muted">External CVE / threat feeds. Background poller fetches at each feed's interval; items land in <a href="{{ url_for('intel_page') }}">Intel</a>. Force-fetch and validator are below each feed.</p>
+    <p class="muted small dark-panel" style="margin-top:6px;padding:6px 10px;border-left:3px solid #23c45e">
+      <strong style="color:#23c45e">Additive, not a replacement.</strong>
+      Feeds <em>supplement</em> the existing scanner pipeline (pip_audit, grype, osv_scanner, dependency_check, etc.) — they don't replace it.
+      Scanner findings remain the source of truth for what's actually in your apps; intel items provide external context (severity scoring, disclosure timing, mitigation links) for the same CVEs.
+      Cross-references are visible on each Finding detail page when a CVE id matches.
+    </p>
+  </section>
+
+  <article class="change-detail" style="margin-top:18px">
+    <header><h2>Add a feed</h2></header>
+    <form method="POST" action="{{ url_for('feeds_create') }}" class="scan-form">
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Name</label>
+        <input type="text" name="name" required placeholder="CVE Daily — critical">
+        <small class="form-help">Short label shown in the feed list.</small>
+      </div>
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>URL</label>
+        <input type="url" name="url" id="feed-url" required placeholder="https://...">
+        <small class="form-help">The HTTP(S) URL of the feed. Format is auto-detected on save — atom / rss / xml / json. The validator fetches once to preview what's detected.</small>
+      </div>
+      <div class="filter-group" style="margin-bottom:18px">
+        <label>Polling period (seconds)</label>
+        <input type="number" name="poll_seconds" value="3600" min="60" step="60">
+        <small class="form-help">Minimum 60s. 3600 (1h) is a reasonable default for CVE feeds.</small>
+      </div>
+      <button type="submit" class="btn btn-primary">Add feed</button>
+      <button type="button" class="btn btn-secondary" id="validate-btn" style="margin-left:8px">Validate first</button>
+      <a href="{{ url_for('feeds_discover') }}" class="btn btn-secondary" style="margin-left:8px">Discover from a page →</a>
+      <span id="validate-result" style="margin-left:10px"></span>
+    </form>
+  </article>
+
+  <article class="change-detail" style="margin-top:18px">
+    <header style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="margin:0">Configured feeds</h2>
+      <span>
+        <button type="button" class="btn btn-primary" id="fetch-all-btn">Fetch all</button>
+        <span id="fetch-all-result" style="margin-left:10px"></span>
+      </span>
+    </header>
+    {% macro feed_row(f, show_history=True) -%}
+      <tr>
+        <td><strong>{{ f.name }}</strong>{% if not f.enabled %} <span class="sev-badge sev-low" title="disabled">paused</span>{% endif %}</td>
+        <td class="mono small"><a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.url }}</a></td>
+        <td class="mono">{{ f.format }}</td>
+        <td class="mono small">{{ f.poll_seconds }}s</td>
+        <td>
+          {% if f.last_status == 'ok' %}<span class="sev-badge sev-info">ok</span>
+          {% elif f.last_status == 'http_error' %}<span class="sev-badge sev-high" title="{{ f.last_error }}">http error</span>
+          {% elif f.last_status == 'translator_error' %}<span class="sev-badge sev-high" title="{{ f.last_error }}">translator</span>
+          {% elif f.last_status %}<span class="sev-badge sev-medium" title="{{ f.last_error }}">{{ f.last_status }}</span>
+          {% else %}<span class="sev-badge sev-low">never</span>
+          {% endif %}
+        </td>
+        <td class="mono small">{{ f.last_fetch_ts|localtime }}</td>
+        <td class="mono small">{{ f.last_item_count if f.last_item_count is not none else '—' }} / {{ f.last_new_count if f.last_new_count is not none else '—' }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('feeds_fetch', feed_id=f.feed_id) }}" style="display:inline" class="ajax-fetch" data-feed="{{ f.feed_id }}">
+            <button type="submit" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">Fetch</button>
+          </form>
+          <a href="{{ url_for('feeds_edit', feed_id=f.feed_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">Edit</a>
+          <form method="POST" action="{{ url_for('feeds_toggle', feed_id=f.feed_id) }}" style="display:inline">
+            <button type="submit" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">{% if f.enabled %}Pause{% else %}Resume{% endif %}</button>
+          </form>
+          <form method="POST" action="{{ url_for('feeds_delete', feed_id=f.feed_id) }}" style="display:inline"
+                onsubmit="return confirm('Delete feed {{ f.name }}?')">
+            <button type="submit" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">Delete</button>
+          </form>
+          <a href="{{ url_for('intel_page', feed=f.feed_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px;margin-left:4px">View intel →</a>
+        </td>
+      </tr>
+      {% if show_history %}
+        {% set hist = history_by_id.get(f.feed_id, []) %}
+        {% if hist %}
+        <tr><td colspan="8" class="dark-panel" style="padding:8px 14px;">
+          <details>
+            <summary class="small muted" style="cursor:pointer">Recent fetches ({{ hist|length }})</summary>
+            <table class="findings" style="margin-top:8px">
+              <thead><tr><th>When</th><th>Status</th><th>HTTP</th><th>Items</th><th>New</th><th>Duration</th><th>Error</th></tr></thead>
+              <tbody>
+                {% for h in hist %}
+                  <tr>
+                    <td class="mono small">{{ h.ts|localtime }}</td>
+                    <td><span class="sev-badge sev-{% if h.status == 'ok' %}info{% else %}high{% endif %}">{{ h.status }}</span></td>
+                    <td class="mono small">{{ h.http_status or '—' }}</td>
+                    <td class="mono small">{{ h.items_count }}</td>
+                    <td class="mono small">{{ h.new_count }}</td>
+                    <td class="mono small">{{ h.duration_ms }}ms</td>
+                    <td class="small">{{ h.error }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </details>
+        </td></tr>
+        {% endif %}
+      {% endif %}
+    {%- endmacro %}
+
+    {% set total_feeds = ungrouped|length + groups|sum(attribute='count') %}
+
+    {% if total_feeds == 0 %}
+      <div class="empty">No feeds configured yet.</div>
+    {% else %}
+      <div class="muted small" style="margin-bottom:10px">
+        {{ total_feeds }} feed{{ 's' if total_feeds != 1 else '' }} total
+        {%- if groups %} · {{ ungrouped|length }} individual · {{ groups|length }} group{{ 's' if groups|length != 1 else '' }} ({{ groups|sum(attribute='count') }} feeds collapsed){% endif %}
+      </div>
+
+      {# Ungrouped feeds — the user's hand-curated set sits in the main table. #}
+      {% if ungrouped %}
+        <table class="findings">
+          <thead>
+            <tr>
+              <th>Name</th><th>URL</th><th>Format</th><th>Poll</th>
+              <th>Status</th><th>Last fetch</th><th>Items / new</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in ungrouped %}
+              {{ feed_row(f, show_history=True) }}
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      {# Auto-collapsed groups — large clusters of feeds sharing a URL prefix
+         (e.g. cvedaily.com/feed-tags/* with 800+ per-tag feeds) get hidden
+         behind a <details> so the main view stays scannable. #}
+      {% for g in groups %}
+        <details class="dark-panel" style="margin-top:14px;border:1px solid #213047;border-radius:6px">
+          <summary style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <strong class="mono">{{ g.prefix }}</strong>
+            <span class="muted small">{{ g.count }} feeds</span>
+            <span style="flex:1"></span>
+            <span class="sev-badge sev-info" title="last_status == ok">{{ g.ok }} ok</span>
+            {% if g.errored %}<span class="sev-badge sev-high">{{ g.errored }} errored</span>{% endif %}
+            {% if g.never %}<span class="sev-badge sev-low">{{ g.never }} never fetched</span>{% endif %}
+            <span class="mono small muted">items in store: {{ g.total_items }}</span>
+            {% if g.last_fetch_ts %}<span class="mono small muted">last fetch: {{ g.last_fetch_ts|localtime }}</span>{% endif %}
+          </summary>
+          <table class="findings" style="margin:0">
+            <thead>
+              <tr>
+                <th>Name</th><th>URL</th><th>Format</th><th>Poll</th>
+                <th>Status</th><th>Last fetch</th><th>Items / new</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in g.feeds %}
+                {{ feed_row(f, show_history=False) }}
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
+      {% endfor %}
+    {% endif %}
+  </article>
+
+  <script>
+    // Live validator on the Add-feed form: hit /feeds/validate, show "OK"
+    // with detected format + sample CVE, or the parser error so the operator
+    // knows whether the as-is translator works or a custom one is needed.
+    document.getElementById('validate-btn').addEventListener('click', async () => {
+      const url = document.getElementById('feed-url').value.trim();
+      const out = document.getElementById('validate-result');
+      if (!url) { out.textContent = 'enter a URL first'; return; }
+      out.textContent = 'validating…';
+      try {
+        const fd = new FormData();
+        fd.append('url', url);
+        // No format sent — server auto-detects and reports back.
+        const r = await fetch('/feeds/validate', { method: 'POST', body: fd });
+        const j = await r.json();
+        if (j.ok) {
+          const s = j.sample;
+          out.innerHTML = `<span class="sev-badge sev-info">accept as-is</span> detected <strong>${j.detected_format}</strong>, ${j.item_count} item(s)` +
+            (s ? ` · sample: <span class="mono small">${s.cve_id || '(no CVE id)'} · ${s.severity || '?'} · cvss ${s.cvss ?? '?'}</span>` : '');
+        } else {
+          out.innerHTML = `<span class="sev-badge sev-high">needs translator</span> ${j.error || 'unknown error'}`;
+        }
+      } catch (e) {
+        out.innerHTML = `<span class="sev-badge sev-high">request failed</span> ${e}`;
+      }
+    });
+
+    // Fetch-all: hit /feeds/fetch-all, show per-feed summary, then reload so
+    // the rows reflect the new last_fetch_ts and counts.
+    const fetchAllBtn = document.getElementById('fetch-all-btn');
+    if (fetchAllBtn) {
+      fetchAllBtn.addEventListener('click', async () => {
+        const out = document.getElementById('fetch-all-result');
+        fetchAllBtn.disabled = true;
+        const orig = fetchAllBtn.textContent;
+        fetchAllBtn.textContent = 'fetching…';
+        out.textContent = '';
+        try {
+          const r = await fetch('/feeds/fetch-all', { method: 'POST' });
+          const j = await r.json();
+          const ok = j.results.filter(x => x.status === 'ok').length;
+          const errored = j.results.length - ok;
+          const newTotal = j.results.reduce((s, x) => s + (x.new_count || 0), 0);
+          out.innerHTML = `<span class="sev-badge sev-${errored ? 'medium' : 'info'}">` +
+            `${ok}/${j.results.length} ok · ${newTotal} new items</span>`;
+          setTimeout(() => window.location.reload(), 900);
+        } catch (e) {
+          out.innerHTML = `<span class="sev-badge sev-high">failed: ${e}</span>`;
+          fetchAllBtn.disabled = false;
+          fetchAllBtn.textContent = orig;
+        }
+      });
+    }
+
+    // Ajaxify Fetch buttons so the row's result updates without a page jump.
+    document.querySelectorAll('form.ajax-fetch').forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        const orig = btn.textContent;
+        btn.textContent = 'fetching…';
+        btn.disabled = true;
+        try {
+          const r = await fetch(form.action, { method: 'POST' });
+          const j = await r.json();
+          btn.textContent = `${j.status} (${j.items_count} items, ${j.new_count} new)`;
+          setTimeout(() => window.location.reload(), 800);
+        } catch (err) {
+          btn.textContent = 'failed';
+          btn.disabled = false;
+          setTimeout(() => btn.textContent = orig, 2000);
+        }
+      });
+    });
+  </script>
+{% endblock %}

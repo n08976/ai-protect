@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .state import REMEDIATE_HOME
+from .state import REMEDIATE_HOME, EventStore
 
 SCAN_LOG_DIR = REMEDIATE_HOME / "scans"
 SCANS_PATH = REMEDIATE_HOME / "scans.jsonl"
@@ -69,6 +69,30 @@ def get_scan(scan_id: str) -> ScanJob | None:
     return None
 
 
+def emit_event(job: ScanJob, event: str, **extra: Any) -> None:
+    """Append a scan lifecycle row to EventStore — feeds the /history UI.
+
+    Carries app_name so /history can identify the app a scan belonged to;
+    without it, the only place to learn that mapping is the /scan page's
+    Recent scans table.
+    """
+    try:
+        EventStore().append(
+            event,
+            scan_id=job.scan_id,
+            app_name=job.app_name,
+            stage=job.stage,
+            adapter=job.adapter or "all",
+            status=job.status,
+            findings_before=job.findings_before,
+            findings_after=job.findings_after,
+            exit_code=job.exit_code,
+            **extra,
+        )
+    except Exception:
+        pass
+
+
 def update_status_from_pid(job: ScanJob) -> ScanJob:
     """If pid is alive, mark running; if dead, look up exit via wait/log."""
     if job.status in ("done", "failed", "stopped"):
@@ -81,6 +105,7 @@ def update_status_from_pid(job: ScanJob) -> ScanJob:
     except OSError:
         # Process gone. Read marker file if present.
         marker = Path(job.log_path).with_suffix(".done")
+        crashed = False
         if marker.exists():
             try:
                 payload = json.loads(marker.read_text())
@@ -92,7 +117,12 @@ def update_status_from_pid(job: ScanJob) -> ScanJob:
                 job.status = "failed"
                 job.ended_at = time.time()
         else:
+            # Marker missing: the runner died before it could write completion
+            # (typically power loss / kill -9). Distinguish from a normal failure
+            # so operators can spot recoverable scans on /history.
             job.status = "failed"
             job.ended_at = time.time()
+            crashed = True
         write_scan(job)
+        emit_event(job, "scan.crashed" if crashed else f"scan.{job.status}")
     return job

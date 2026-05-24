@@ -70,6 +70,42 @@
     </section>
     {% endif %}
 
+    {% if cve_ids %}
+    <section>
+      <h2>Related intel
+        <small class="muted" style="font-weight:normal;margin-left:6px">
+          external feed coverage for CVE{{ 's' if cve_ids|length > 1 else '' }} mentioned in this finding
+        </small>
+      </h2>
+      <p class="muted small">
+        CVE{{ 's' if cve_ids|length > 1 else '' }} in this finding:
+        {% for c in cve_ids %}<code>{{ c }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.
+        Intel feeds <em>supplement</em> the scanner's own data — the finding above is the source of truth for what's in your code;
+        these rows show what external feeds are saying about the same CVE.
+      </p>
+      {% if related_intel %}
+        <table class="findings">
+          <thead><tr><th>CVE</th><th>Severity</th><th>CVSS</th><th>Title</th><th>Source feed</th><th>Published</th><th>Fetched</th></tr></thead>
+          <tbody>
+            {% for r in related_intel %}
+              <tr>
+                <td class="mono small">{% if r.item.link %}<a href="{{ r.item.link }}" target="_blank" rel="noopener">{{ r.item.cve_id }}</a>{% else %}{{ r.item.cve_id }}{% endif %}</td>
+                <td>{% if r.item.severity %}<span class="sev-badge sev-{{ r.item.severity }}">{{ r.item.severity }}</span>{% else %}—{% endif %}</td>
+                <td class="mono small">{{ '%.1f'|format(r.item.cvss) if r.item.cvss is not none else '—' }}</td>
+                <td class="small">{{ r.item.title }}</td>
+                <td class="small">{{ r.feed_name }}</td>
+                <td class="mono small">{{ r.item.published }}</td>
+                <td class="mono small">{{ r.item.fetched_at|localtime }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted small">No intel matches yet for these CVEs. Configured feeds may not have surfaced them, or none of your feeds cover this CVE source. Add or fetch feeds on <a href="{{ url_for('feeds_page') }}">Feeds</a>.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
     <section>
       <h2>Remediation</h2>
 

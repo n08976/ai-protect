@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Edit feed · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <a class="back" href="{{ url_for('feeds_page') }}">← back to feeds</a>
+
+  <article class="change-detail" style="margin-top:14px">
+    <header><h2>Edit feed</h2></header>
+
+    {% if error %}<div class="sev-badge sev-high" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="{{ url_for('feeds_edit', feed_id=feed.feed_id) }}" class="scan-form">
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Name</label>
+        <input type="text" name="name" required value="{{ feed.name }}">
+      </div>
+
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>URL</label>
+        <input type="url" name="url" required value="{{ feed.url }}">
+        <small class="form-help">Change the URL and the format will be re-detected on save.</small>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Polling period (seconds)</label>
+        <input type="number" name="poll_seconds" min="60" step="60" value="{{ feed.poll_seconds }}">
+      </div>
+
+      <div class="filter-group" style="margin-bottom:18px">
+        <label>
+          <input type="checkbox" name="enabled" {% if feed.enabled %}checked{% endif %}>
+          Enabled (poller fetches at the configured interval)
+        </label>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:18px">
+        <label class="muted small">Current detected format</label>
+        <div class="mono">{{ feed.format }} <span class="muted small">(re-detected automatically if URL changes)</span></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a href="{{ url_for('feeds_page') }}" class="btn btn-secondary" style="margin-left:8px">Cancel</a>
+    </form>
+  </article>
+{% endblock %}

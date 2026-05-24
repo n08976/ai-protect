@@ -133,12 +133,13 @@ pip install -r pipeline/requirements.txt
 python -m pipeline.cli tier pipeline/manifests/example_clinical_assistant.yml
 
 # Run preprod gates end-to-end (degrades gracefully when external tools aren't installed)
-python -m pipeline.cli --findings /tmp/findings.jsonl run \
+# NB: --findings must point at a DURABLE path. Never /tmp — reboots wipe it.
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl run \
     pipeline/manifests/example_clinical_assistant.yml --stage preprod
 
 # Dashboards
-python -m pipeline.cli --findings /tmp/findings.jsonl report --kind executive
-python -m pipeline.cli --findings /tmp/findings.jsonl report --kind technical
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl report --kind executive
+python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl report --kind technical
 
 # What runs where
 python -m pipeline.cli adapters
@@ -146,9 +147,20 @@ python -m pipeline.cli policy --tier 1 --stage preprod
 
 # Tests
 python -m pytest pipeline/tests/ -q
+
+# Web UI + background feed poller (one process). See pipeline/README.md → Web UI.
+python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
+# open http://localhost:3005/
 ```
 
 The pipeline ships with three example manifests covering the spread: Tier 1 clinical assistant, Tier 3 HR-policy advisor, Tier 4 single-user code summarizer. Adapters that need an external tool (garak, nuclei, etc.) raise `AdapterUnavailable` and are skipped non-fatally — install the tools you actually plan to exercise.
+
+**Web UI + intel feeds + scan integration.** The Flask app under `pipeline/ui/` is more than a dashboard: it runs a background poller for external CVE / threat feeds (CISA KEV, cvedaily.com per-tag feeds, cvefeed.io, custom JSON/Atom/RSS/XML), surfaces an overall green/yellow/red system status lamp on the home page, and feeds the intel back into scans on two paths:
+
+- **Enrichment** — every adapter's findings get intel context stamped on them before persist. CVEs that appear on CISA KEV ratchet up to CRITICAL severity (active exploitation).
+- **Detection** — an `intel_match` adapter cross-references manifest-declared assets against the intel store and emits findings for matches that the structured scanners (pip_audit, grype, osv_scanner) didn't catch.
+
+See [`pipeline/README.md`](pipeline/README.md) → **Web UI**, **Intel feeds**, and **Intel-scan integration** for the full picture, including the `/feeds`, `/feeds/discover`, `/intel`, `/settings`, and `/api/status` routes.
 
 ---
 
@@ -162,8 +174,14 @@ ai-protect/
 │   ├── README.md                   # Pipeline architecture, adapter catalog, extension guide
 │   ├── cli.py
 │   ├── requirements.txt
-│   ├── core/                       # manifest, tiering, findings, compliance, policy, orchestrator
-│   ├── adapters/                   # garak, pyrit, atomic, burp, metasploit, mcp_scope, nuclei, trufflehog, ...
+│   ├── core/                       # manifest, tiering, findings, compliance, policy, orchestrator,
+│   │                               # intel_enrichment (KEV ratchet), settings (timezone/locale)
+│   ├── adapters/                   # garak, pyrit, atomic, burp, metasploit, mcp_scope, nuclei,
+│   │                               # trufflehog, intel_match (manifest×intel cross-ref), ...
+│   ├── intel/                      # CVE / threat feed ingestion: feeds, translators (atom/rss/xml/json),
+│   │                               # fetcher + background poller, status (green/yellow/red lamp)
+│   ├── ui/                         # Flask dashboard: findings, /feeds, /feeds/discover, /intel,
+│   │                               # /settings, /history, /scan, /api/status, /api/findings
 │   ├── reporting/                  # technical + executive dashboards
 │   ├── manifests/                  # example app declarations (Tier 1 / 3 / 4)
 │   ├── fixtures/                   # threat-model exemplars

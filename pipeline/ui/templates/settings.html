@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Settings · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1 style="margin-bottom:6px">Settings</h1>
+    <p class="muted">Configuration persisted to <code>~/.ai-protect/config.json</code>.</p>
+  </section>
+
+  <article class="change-detail" style="margin-top:18px">
+    <header><h2>Locale / time</h2></header>
+
+    {% if ok %}<div class="sev-badge sev-info" style="margin-bottom:12px">{{ ok }}</div>{% endif %}
+    {% if error %}<div class="sev-badge sev-high" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="{{ url_for('settings_page') }}" class="scan-form">
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Timezone (pick one)</label>
+        <select name="timezone">
+          {% for z in common_zones %}
+            <option value="{{ z }}" {% if z == current_tz %}selected{% endif %}>{{ z }}</option>
+          {% endfor %}
+        </select>
+        <small class="form-help">
+          {{ common_zones|length }} common zones listed. Free-text below accepts any of the
+          {{ all_zones_count }} IANA names if yours isn't here.
+        </small>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Timezone (free-text override)</label>
+        <input type="text" name="timezone_custom" placeholder="e.g. America/Los_Angeles">
+        <small class="form-help">If set, takes precedence over the dropdown. Must be a valid IANA zone name; otherwise the save fails with an error.</small>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:18px">
+        <label>Date format (strftime)</label>
+        <input type="text" name="date_format" value="{{ current_fmt }}">
+        <small class="form-help">
+          Standard strftime tokens. Default <code>%Y-%m-%d %H:%M:%S %Z</code> renders as
+          <code>{{ sample }}</code> in your current zone.
+        </small>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save settings</button>
+    </form>
+
+    <div class="dark-panel" style="margin-top:18px;padding:10px 14px;border-radius:6px">
+      <div class="small muted">Current configuration</div>
+      <div class="mono small" style="margin-top:4px">
+        timezone = <strong>{{ current_tz }}</strong> &nbsp;·&nbsp;
+        date_format = <strong>{{ current_fmt }}</strong> &nbsp;·&nbsp;
+        sample render = <strong>{{ sample }}</strong>
+      </div>
+    </div>
+  </article>
+{% endblock %}

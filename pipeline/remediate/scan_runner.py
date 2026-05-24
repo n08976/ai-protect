@@ -17,7 +17,7 @@ from pathlib import Path
 from ..core.dashboard import active_count_for_app
 from ..core.findings import FindingStore
 from ..core.manifest import Manifest
-from .scans import SCAN_LOG_DIR, ScanJob, get_scan, update_status_from_pid, write_scan
+from .scans import SCAN_LOG_DIR, ScanJob, emit_event, get_scan, update_status_from_pid, write_scan
 
 
 def _active_count(findings_path: str, app_name: str) -> int:
@@ -88,6 +88,7 @@ def main():
         job.status = "done" if proc.returncode in (0, 2) else "failed"
         job.ended_at = time.time()
         write_scan(job)
+        emit_event(job, f"scan.{job.status}")
 
 
 if __name__ == "__main__":

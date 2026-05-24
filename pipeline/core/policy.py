@@ -58,6 +58,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("garak", config={"probes": "all"}),
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection"]}),
             AdapterCall("agentic_radar"),
+            AdapterCall("intel_match"),
         ],
         "preprod": [
             AdapterCall("garak", config={"probes": "all"}, blocking=True),
@@ -116,6 +117,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}),
             AdapterCall("pyrit", config={"strategies": ["injection"]}),
             AdapterCall("agentic_radar"),
+            AdapterCall("intel_match"),
         ],
         "preprod": [
             AdapterCall("garak", config={"probes": "promptinject,leakage,encoding"}, blocking=True),
@@ -160,6 +162,7 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("nuclei"),
             AdapterCall("garak", config={"probes": "promptinject,leakage"}),
             AdapterCall("agentic_radar"),
+            AdapterCall("intel_match"),
         ],
         "preprod": [
             AdapterCall("nuclei"),

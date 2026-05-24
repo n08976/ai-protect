@@ -2,6 +2,23 @@
 {% block title %}Findings · ai-protect{% endblock %}
 
 {% block content %}
+  {% if system_status %}
+  <section class="system-status dark-panel" style="display:flex;align-items:center;gap:14px;padding:10px 16px;margin-bottom:14px;border:1px solid #213047;border-radius:8px">
+    {% set lamp_color = {'green':'#23c45e', 'yellow':'#eab308', 'red':'#ef4444'}[system_status.level] %}
+    <span title="overall: {{ system_status.level }}"
+          style="display:inline-block;width:14px;height:14px;border-radius:50%;background:{{ lamp_color }};box-shadow:0 0 8px {{ lamp_color }}"></span>
+    <span style="font-weight:600;color:{{ lamp_color }};text-transform:uppercase;letter-spacing:0.05em;font-size:12px">{{ system_status.level }}</span>
+    <span class="muted small">system status</span>
+    <span style="flex:1"></span>
+    {% for comp_name, comp in system_status.components.items() %}
+      {% set c = {'green':'#23c45e', 'yellow':'#eab308', 'red':'#ef4444'}[comp.level] %}
+      <span title="{{ comp.detail }}" class="small mono dark-pill" style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:12px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{{ c }}"></span>
+        {{ comp_name }}
+      </span>
+    {% endfor %}
+  </section>
+  {% endif %}
   <section class="hero">
     {% if stats_scope == "filtered" %}
       <div class="hero-scope">
