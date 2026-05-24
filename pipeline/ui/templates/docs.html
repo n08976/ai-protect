@@ -127,6 +127,27 @@
       </article>
 
       <article class="change-detail" style="margin-top:18px">
+        <header><h2 id="remediation-auto-resolve">Remediation behavior</h2></header>
+
+        <h3>Auto-resolve on re-scan</h3>
+        <p>The single biggest difference between an audit checklist and a working assurance pipeline: <strong>findings should close themselves when the scanner can no longer reproduce them.</strong> Manually clicking "applied" on dozens of fixed CVEs defeats the point of automation.</p>
+
+        <p>When the toggle is on, every scan compares fingerprints emitted by its <code>status=ok</code> adapters against fingerprints those same adapters emitted in past runs. Any prior fingerprint that does NOT re-appear is written as a Change with state <code>applied</code> and strategy <code>auto_resolve_absent</code> — the dashboard's resolved-stripping logic then hides it from the active view.</p>
+
+        <p>Guards (each prevents a class of false positive):</p>
+        <ul>
+          <li><strong>Adapter scope</strong> — only adapters whose status this scan was <code>ok</code> can auto-resolve their own fingerprints. If <code>garak</code> was <code>unavailable</code> (tool not installed), garak findings stay open — absence isn't evidence when the adapter didn't look.</li>
+          <li><strong>Stage scope</strong> — a build-stage scan can't auto-resolve preprod findings. We can only speak to what THIS run covered.</li>
+          <li><strong>Honor revert</strong> — if you manually reverted a Change for a fingerprint, that's a "no, leave it open" signal. The fingerprint will not auto-resolve again on subsequent absent re-scans until you re-propose it through the normal workflow.</li>
+          <li><strong>Skip already-resolved</strong> — fingerprints whose latest Change is already in <code>applied / validated / deployed</code> are left alone (no duplicate Change records).</li>
+        </ul>
+
+        <p>Provenance: each auto-resolution writes a Change with <code>actor="auto-resolve"</code>, <code>strategy="auto_resolve_absent"</code>, a summary noting the scan id and adapter, plus a <code>scan.auto_resolved</code> event on <a href="{{ url_for('history') }}">/history</a> so it's auditable.</p>
+
+        <p>To disable, uncheck the setting on <a href="{{ url_for('settings_page') }}">/settings → Remediation behavior</a>. Use cases for disabling: stochastic adapter pipelines where you don't trust single-run absence as evidence, or audit environments where every closure needs a human signature.</p>
+      </article>
+
+      <article class="change-detail" style="margin-top:18px">
         <header><h2 id="intel-poll-seconds">Intel feeds defaults</h2></header>
 
         <h3>Default polling interval (seconds)</h3>

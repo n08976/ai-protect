@@ -35,6 +35,10 @@ class AdapterResult:
     high_or_above: int = 0
     error: str | None = None
     duration_s: float = 0.0
+    # Fingerprints actually emitted by this adapter in this run. Populated
+    # in _run_adapter; consumed by auto_resolve.compute_and_apply at the
+    # end of run_stage to detect fingerprints that disappeared this scan.
+    emitted_fingerprints: set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -112,6 +116,37 @@ class Orchestrator:
             result.adapter_results.append(ar)
             result.gate_passed = False
             result.gate_reason = f"source provider failed: {ar.error}"
+
+        # Auto-resolve: any fingerprint a ran-ok adapter previously emitted but
+        # didn't this scan is treated as fixed/gone. We don't auto-resolve when
+        # materialization failed (no adapter actually looked at code) or when
+        # zero adapters ran successfully. Operator can disable via
+        # settings.auto_resolve_on_rescan = '' (unchecked).
+        ran_ok = {ar.adapter for ar in result.adapter_results if ar.status == "ok"}
+        emitted: set[str] = set()
+        for ar in result.adapter_results:
+            if ar.status == "ok":
+                emitted |= ar.emitted_fingerprints
+        if ran_ok:
+            try:
+                from .auto_resolve import compute_and_apply
+                scan_id = (self.scan_id if hasattr(self, "scan_id") else None) or f"orch-{int(time.time())}"
+                resolutions = compute_and_apply(
+                    store=self.store,
+                    manifest_name=self.manifest.name,
+                    tier=decision.tier,
+                    stage=stage,
+                    ran_adapters=ran_ok,
+                    emitted_fingerprints=emitted,
+                    scan_id=scan_id,
+                )
+                if resolutions:
+                    log.info(
+                        "auto-resolved %d finding(s) on %s/%s — fingerprints absent this scan",
+                        len(resolutions), self.manifest.name, stage,
+                    )
+            except Exception:
+                log.exception("auto-resolve hook failed; continuing")
 
         log.info(
             "stage %s complete: %d adapter(s); gate=%s",
@@ -214,6 +249,9 @@ class Orchestrator:
             if f.severity in (Severity.HIGH, Severity.CRITICAL)
         )
         ar.duration_s = time.time() - t0
+        # Capture the fingerprints THIS adapter emitted — auto_resolve consults
+        # this set to decide which prior fingerprints have "disappeared".
+        ar.emitted_fingerprints = {f.fingerprint for f in findings}
         if findings:
             self.store.append_many(findings)
         log.info(

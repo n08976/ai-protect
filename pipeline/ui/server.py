@@ -208,6 +208,18 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                     remediators = [r.name for r in remediators_for(f, eng.manifest.raw)]
                 # Existing changes for this finding
                 changes = ChangeStore().for_finding(finding_id)
+                # Auto-resolve provenance: surface the latest auto_resolve_absent
+                # Change (if any) so the operator can see when and which scan
+                # marked this finding resolved automatically.
+                auto_resolve_change = None
+                # Latest Change by (app, fingerprint) — broader than for_finding
+                # because the auto-resolver writes Changes keyed by fingerprint,
+                # and the same fingerprint may have multiple finding_id rows in
+                # the append-only store.
+                for c in sorted(ChangeStore().all(), key=lambda c: -c.last_state_at):
+                    if c.finding_fingerprint == f.fingerprint and c.strategy == "auto_resolve_absent":
+                        auto_resolve_change = c
+                        break
                 # Cross-reference any CVEs mentioned in this finding against the
                 # intel store. Intel feeds AUGMENT scanner findings — they do
                 # not replace them — so we surface external context next to the
@@ -233,6 +245,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                     "finding.html", finding=f,
                     remediators=remediators, existing_changes=changes,
                     cve_ids=cve_ids, related_intel=related_intel,
+                    auto_resolve_change=auto_resolve_change,
                 )
         return "Not found", 404
 

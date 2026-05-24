@@ -65,6 +65,7 @@ def main():
         "--findings", findings_path,
         "run", manifest_path,
         "--stage", stage,
+        "--scan-id", scan_id,
     ]
     if adapter:
         cmd += ["--adapter", adapter]

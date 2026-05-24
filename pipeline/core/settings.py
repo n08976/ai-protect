@@ -232,6 +232,25 @@ SCHEMA: list[Section] = [
             ),
         ],
     ),
+    Section(
+        key="remediation",
+        title="Remediation behavior",
+        description="How the system auto-closes findings after a re-scan.",
+        fields=[
+            Field(
+                key="auto_resolve_on_rescan", label="Auto-resolve fingerprints absent from a re-scan",
+                kind="checkbox", default="on",
+                help=("When checked (the default), any finding fingerprint that a "
+                      "ran-OK adapter previously emitted but does NOT re-emit in a "
+                      "fresh scan is automatically marked as applied. Scope guards: "
+                      "only the adapters that successfully ran in THIS scan auto-resolve "
+                      "their own fingerprints (an unavailable adapter doesn't 'erase' "
+                      "anything); reverted Changes are respected and not re-auto-resolved; "
+                      "already-applied/validated/deployed findings are skipped."),
+                help_anchor="remediation-auto-resolve",
+            ),
+        ],
+    ),
 ]
 
 

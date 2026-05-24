@@ -48,6 +48,8 @@ def cmd_run(args):
     m = Manifest.from_yaml(args.manifest)
     store = FindingStore(args.findings)
     orc = Orchestrator(m, store, dry_run=args.dry_run)
+    if getattr(args, "scan_id", None):
+        orc.scan_id = args.scan_id
     # Optional adapter filter — temporarily narrows the policy table to one adapter.
     if args.adapter:
         from .core import policy
@@ -135,6 +137,9 @@ def main(argv: list[str] | None = None) -> int:
                        help="With --all, continue past failing gates")
     p_run.add_argument("--dry-run", action="store_true",
                        help="List what would run without invoking adapters")
+    p_run.add_argument("--scan-id", default=None,
+                       help="Optional scan id (passed through to events / auto-resolve provenance). "
+                            "scan_runner.py supplies this when launching from the UI.")
     p_run.add_argument("--adapter", default=None,
                        help="Run only this adapter (filters the policy table)")
     p_run.set_defaults(func=cmd_run)

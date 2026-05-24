@@ -18,6 +18,21 @@
       </div>
     </header>
 
+    {% if auto_resolve_change %}
+    <section class="dark-panel" style="padding:10px 14px;border-left:3px solid #23c45e;border-radius:6px;margin-top:14px">
+      <strong style="color:#23c45e">Auto-resolved by re-scan.</strong>
+      <p class="small" style="margin:6px 0 0 0">
+        Change <a href="{{ url_for('change_detail', change_id=auto_resolve_change.change_id) }}" style="color:#9ec5ea"><code>{{ auto_resolve_change.change_id }}</code></a>
+        — adapter <code>{{ auto_resolve_change.rescan_adapter }}</code> did not re-emit this fingerprint
+        on the most recent {{ auto_resolve_change.notes.split('stage=')[1].split(' ')[0] if 'stage=' in (auto_resolve_change.notes or '') else 'scan' }}-stage scan
+        ({{ auto_resolve_change.last_state_at|localtime }}).
+        The scanner is treating this finding as fixed/gone. If that's wrong (e.g. the file was moved
+        rather than fixed), revert the Change from its detail page — subsequent absent re-scans
+        will respect the revert and not re-auto-resolve.
+      </p>
+    </section>
+    {% endif %}
+
     {% if finding.evidence.get('intel_match_unverified') %}
     <section class="dark-panel" style="padding:10px 14px;border-left:3px solid #eab308;border-radius:6px;margin-top:14px">
       <strong style="color:#eab308">Unverified intel match — review before acting.</strong>
