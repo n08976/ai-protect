@@ -75,6 +75,14 @@ def enrich_findings(findings: list[Finding]) -> list[Finding]:
             by_cve.setdefault(i.cve_id.upper(), []).append(i)
 
     for f in findings:
+        # intel_match findings already carry their intel context AND are
+        # explicitly capped at HIGH because the match is unverified
+        # token-overlap. Skip them here so the KEV ratchet doesn't
+        # re-promote them to CRITICAL (which would defeat the cap and
+        # re-introduce the false-positive flood from the May 2026
+        # commercial+studio scans).
+        if (f.evidence or {}).get("intel_match"):
+            continue
         cves = _cves_in(f)
         if not cves:
             continue

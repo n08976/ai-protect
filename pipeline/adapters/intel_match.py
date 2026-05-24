@@ -60,6 +60,28 @@ _STOPLIST = {
     "automation", "runners", "runner", "scripts", "script",
     "portal", "studio", "platform", "framework", "library",
     "module", "modules", "package", "packages",
+    # FP tokens observed on real scans (commercial / studio, 2026-05-24):
+    # generic tech English that matches unrelated products (VMware Workspace
+    # ONE matched "workspace" split from "workspace-secret", etc.).
+    "workspace", "workspaces", "secret", "secrets", "encryption", "encrypt",
+    "decrypt", "key", "keys", "auth", "oauth", "token", "tokens",
+    "session", "sessions", "cookie", "cookies",
+    "backend", "frontend", "fullstack", "client", "clients",
+    "billing", "billing-secret", "stripe", "stripe-secret",
+    "tenant", "tenants", "multi-tenant",
+    "param", "params", "parameter", "parameters", "query", "queries",
+    "assembly", "assemble", "compose", "composer",
+    "tasks", "task", "job", "jobs", "queue", "queues",
+    "headers", "header", "body", "request", "requests", "response", "responses",
+    # generic infra words — match dozens of unrelated CVEs
+    "docker", "container", "containers", "image", "images",
+    "nginx", "apache", "gunicorn", "uwsgi", "wsgi", "asgi",
+    "linux", "windows", "macos", "darwin",
+    "github", "gitlab", "bitbucket", "ghactions",
+    # everything-matches words from manifest descriptions
+    "central", "global", "remote", "local", "default", "custom",
+    "config", "configuration", "settings", "options",
+    "admin", "administrator", "root",
 }
 
 # Identifier-like: starts with capital (proper noun) OR contains a digit
@@ -71,24 +93,28 @@ _IDENT_RE = re.compile(r"\b(?:[A-Z][A-Za-z0-9_-]{3,}|[A-Za-z]*[0-9][A-Za-z0-9_-]
 
 def _tokens(s: str | None) -> set[str]:
     """Extract identifier-like tokens (case-insensitive). Drops stoplist hits
-    and anything shorter than 4 chars after lowercasing.
+    and anything shorter than 4 chars (6 for split debris) after lowercasing.
 
-    Hyphenated / underscored tokens are emitted both whole AND split, so a
-    manifest mentioning 'Drupal-based' will still match feed items that say
-    just 'Drupal'.
+    Hyphenated / underscored tokens are emitted whole AND split, so a manifest
+    mentioning 'Drupal-based' will still match feed items that say just
+    'Drupal'. The split parts have a STRICTER length floor (6 chars) than the
+    whole tokens (4 chars) — that's how we kill the 'back' / 'write' / 'secret'
+    false-positive class that flooded the May 2026 commercial+studio scans.
+    Real product names that get split (drupal, supabase, openai, langflow)
+    are all ≥6 chars; common-English debris is ≤5.
     """
     if not s:
         return set()
     out: set[str] = set()
-    def _keep(low: str) -> None:
-        if len(low) >= 4 and low not in _STOPLIST:
+    def _keep(low: str, min_len: int) -> None:
+        if len(low) >= min_len and low not in _STOPLIST:
             out.add(low)
     for m in _IDENT_RE.findall(s):
         low = m.lower()
-        _keep(low)
+        _keep(low, 4)
         if "-" in low or "_" in low:
             for piece in re.split(r"[-_]", low):
-                _keep(piece)
+                _keep(piece, 6)
     return out
 
 
@@ -197,12 +223,24 @@ class IntelMatchAdapter(Adapter):
             feed = feeds_by_id.get(item.source_feed_id)
             feed_name = feed.name if feed else item.source_feed_id
             is_kev = "kev" in feed_name.lower() or "known exploited" in feed_name.lower()
-            severity = (
-                Severity.CRITICAL if is_kev
-                else _INTEL_SEV_TO_FINDING.get(item.severity or "", Severity.MEDIUM)
-            )
-            # Emission gate: KEV always emits (active exploitation in the wild),
-            # otherwise drop anything below the configured min_severity floor.
+            # Severity cap: intel_match is UNVERIFIED token-overlap. We cannot
+            # tell from a feed whether the operator's app actually uses the
+            # affected product — only that a manifest word overlaps a CVE
+            # title word. So we cap at HIGH even for KEV-listed matches.
+            # Real CRITICAL severity should come from the enrichment hook on
+            # scanner findings, where there's ground truth that the package
+            # is present in the codebase (pip_audit / grype / etc.). May 2026
+            # commercial+studio scans produced 605/643 token-overlap FPs at
+            # CRITICAL before this cap; documented as evidence.intel_match_unverified
+            # so the UI can flag them and operators can promote a confirmed
+            # match through the change workflow.
+            raw_severity = _INTEL_SEV_TO_FINDING.get(item.severity or "", Severity.MEDIUM)
+            severity = Severity.HIGH if is_kev else raw_severity
+            if _SEV_RANK[severity] > _SEV_RANK[Severity.HIGH]:
+                severity = Severity.HIGH
+            # Emission gate: KEV always emits at HIGH (still notable even when
+            # unverified — active exploitation in the wild). Otherwise honor
+            # the configured min_severity floor.
             if not is_kev and _SEV_RANK[severity] < min_sev_rank:
                 continue
             cve_label = item.cve_id or item.title[:80]
@@ -211,21 +249,30 @@ class IntelMatchAdapter(Adapter):
                 severity=severity,
                 title=f"Intel match: {cve_label}",
                 description=(
-                    f"External intel feed '{feed_name}' reports a vulnerability that mentions "
-                    f"asset(s) declared in this app's manifest. Matched tokens: "
-                    f"{', '.join(sorted(matched))}. "
-                    + ("[CISA KEV — active exploitation in the wild; severity raised to CRITICAL.] "
+                    f"UNVERIFIED intel match. External feed '{feed_name}' reports a "
+                    f"vulnerability whose title/summary shares a token with this app's "
+                    f"manifest. Matched tokens: {', '.join(sorted(matched))}. "
+                    f"This is text overlap, NOT confirmation that the affected product "
+                    f"is actually in use. Verify by inspecting the product name in the "
+                    f"original advisory below — if the manifest mentions e.g. 'workspace-"
+                    f"secret' and the CVE is about 'VMware Workspace ONE', this is a "
+                    f"false positive and can be dismissed. "
+                    + ("[CISA KEV — active exploitation in the wild. Severity capped at "
+                       "HIGH for unverified matches; promote to CRITICAL via the change "
+                       "workflow once the asset usage is confirmed.] "
                        if is_kev else "")
                     + (item.summary or "")[:600]
                 ),
                 evidence={
-                    "intel_match": True,
+                    "intel_match": True,                     # marker: skip in enrichment
+                    "intel_match_unverified": True,          # operator-facing flag
                     "matched_tokens": sorted(matched),
                     "intel_feed": feed_name,
                     "intel_severity": item.severity,
                     "intel_cvss": item.cvss,
                     "intel_published": item.published,
                     "kev_listed": is_kev,
+                    "severity_capped_at_high": True,
                 },
                 affected={"asset_tokens_matched": sorted(matched)},
                 remediation=(

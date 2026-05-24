@@ -174,7 +174,12 @@
                 <input type="checkbox" class="row-check" name="finding_ids" value="{{ f.finding_id }}">
               {% endif %}
             </td>
-            <td><span class="sev-badge sev-{{ f.severity.value }}">{{ f.severity.value }}</span></td>
+            <td>
+              <span class="sev-badge sev-{{ f.severity.value }}">{{ f.severity.value }}</span>
+              {% if f.evidence.get('intel_match_unverified') %}
+                <span class="sev-badge sev-low" title="Unverified intel match — token overlap with a feed advisory; verify the product actually applies before treating as a real finding.">unverified</span>
+              {% endif %}
+            </td>
             <td class="mono">{{ f.app_name }}</td>
             <td><span class="tier-badge tier-{{ f.tier }}">T{{ f.tier }}</span></td>
             <td class="mono">{{ f.adapter }}</td>

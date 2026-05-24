@@ -18,6 +18,20 @@
       </div>
     </header>
 
+    {% if finding.evidence.get('intel_match_unverified') %}
+    <section class="dark-panel" style="padding:10px 14px;border-left:3px solid #eab308;border-radius:6px;margin-top:14px">
+      <strong style="color:#eab308">Unverified intel match — review before acting.</strong>
+      <p class="small" style="margin:6px 0 0 0">
+        This finding came from <code>intel_match</code>, which cross-references manifest text against external CVE feeds via token overlap.
+        It is <em>not</em> ground truth that the affected product is in use — only that a word in this app's manifest
+        ({{ finding.evidence.get('matched_tokens', [])|join(', ') }}) appeared in the feed's CVE title/summary.
+        Severity is capped at HIGH for unverified matches even when the CVE is on CISA KEV.
+        Verify by opening the advisory below and confirming the product/version matches what's actually deployed —
+        if it doesn't, dismiss this finding.
+      </p>
+    </section>
+    {% endif %}
+
     <section>
       <h2>Description</h2>
       <p>{{ finding.description }}</p>
