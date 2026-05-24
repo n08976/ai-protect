@@ -11,11 +11,11 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
+    <a href="{{ url_for('index') }}" class="brand" title="Back to Findings">
       <span class="brand-mark">●</span>
       <span class="brand-name">ai-protect</span>
       <span class="brand-tag">empirical truth function for AI risk</span>
-    </div>
+    </a>
     <nav>
       <a href="{{ url_for('index') }}">Findings</a>
       <a href="{{ url_for('scan_launcher') }}">Re-scan</a>

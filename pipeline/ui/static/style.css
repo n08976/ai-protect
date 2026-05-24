@@ -36,9 +36,14 @@ body {
   align-items: center;
   justify-content: space-between;
 }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;            /* anchor element — kill the default underline */
+  color: inherit;                   /* topbar already sets white */
+}
+.brand:hover .brand-name { color: var(--accent); }   /* small affordance that it's clickable */
 .brand-mark { color: var(--accent); font-size: 18px; }
-.brand-name { font-weight: 700; font-size: 16px; letter-spacing: 0.5px; }
+.brand-name { font-weight: 700; font-size: 16px; letter-spacing: 0.5px; transition: color 0.15s ease; }
 .brand-tag {
   font-size: 11px;
   color: rgba(255,255,255,0.6);
