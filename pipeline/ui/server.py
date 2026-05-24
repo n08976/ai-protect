@@ -1466,32 +1466,75 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def settings_page():
         from datetime import datetime
         from zoneinfo import ZoneInfo, available_timezones
-        error = None
-        ok = None
+        errors: dict[str, str] = {}
+        ok_msg = None
+        active_section = (request.args.get("section") or request.form.get("section")
+                          or user_settings.SCHEMA[0].key)
+
         if request.method == "POST":
-            tz = (request.form.get("timezone") or "").strip()
-            tz_custom = (request.form.get("timezone_custom") or "").strip()
-            picked = tz_custom or tz
-            fmt = (request.form.get("date_format") or "").strip() or user_settings.DEFAULT_DATE_FORMAT
-            try:
-                user_settings.set_timezone(picked)
-                user_settings.set_date_format(fmt)
-                ok = f"saved · timezone={picked} · format={fmt}"
-            except ValueError as e:
-                error = str(e)
-        current_tz = user_settings.get_timezone()
-        current_fmt = user_settings.get_date_format()
+            # Collect every known field's value from the form. Free-text override
+            # for selects supplies a "<key>_custom" sibling input.
+            updates: dict[str, str] = {}
+            for section in user_settings.SCHEMA:
+                for fld in section.fields:
+                    if fld.kind == "checkbox":
+                        updates[fld.key] = "on" if request.form.get(fld.key) == "on" else ""
+                        continue
+                    if fld.kind == "select" and fld.free_text_override:
+                        custom = (request.form.get(f"{fld.key}_custom") or "").strip()
+                        picked = (request.form.get(fld.key) or "").strip()
+                        updates[fld.key] = custom or picked
+                        continue
+                    if fld.key in request.form:
+                        updates[fld.key] = (request.form.get(fld.key) or "").strip()
+            errors = user_settings.set_many(updates)
+            if not errors:
+                ok_msg = f"saved {len(updates)} setting(s)"
+
+        # Live snapshot for re-render — overlay form values on top of saved
+        # values so an error in one field doesn't clobber edits in others.
+        current = {}
+        for section in user_settings.SCHEMA:
+            for fld in section.fields:
+                if request.method == "POST":
+                    current[fld.key] = request.form.get(fld.key, "") or fld.default
+                else:
+                    current[fld.key] = user_settings.get(fld.key, fld.default)
+
+        # Locale preview — render sample timestamp in the chosen zone / format.
         try:
-            sample = datetime.now(ZoneInfo(current_tz)).strftime(current_fmt)
+            sample = datetime.now(
+                ZoneInfo(current.get("timezone") or "UTC")
+            ).strftime(current.get("date_format") or user_settings.DEFAULT_DATE_FORMAT)
         except Exception:
-            sample = "(invalid format)"
+            sample = "(invalid timezone or format)"
+
+        # JS-side reveal map: { controller_key: { value: [hidden_keys] } }.
+        # Built here (not in the template) because Jinja lacks dict comprehensions.
+        reveal_map = {
+            fld.key: fld.reveal_when
+            for section in user_settings.SCHEMA
+            for fld in section.fields
+            if fld.reveal_when
+        }
+
         return render_template(
             "settings.html",
-            current_tz=current_tz, current_fmt=current_fmt, sample=sample,
-            common_zones=user_settings.COMMON_TIMEZONES,
+            schema=user_settings.SCHEMA,
+            current=current,
+            errors=errors,
+            ok=ok_msg,
+            active_section=active_section,
+            sample=sample,
             all_zones_count=len(available_timezones()),
-            ok=ok, error=error,
+            reveal_map=reveal_map,
         )
+
+    @app.route("/docs")
+    def docs_page():
+        """Step-by-step setup guides for every settings field. Anchors here are
+        referenced by the help bubbles on /settings (field.help_anchor)."""
+        return render_template("docs.html", schema=user_settings.SCHEMA)
 
     return app
 

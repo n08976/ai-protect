@@ -82,15 +82,36 @@ class Orchestrator:
             self.manifest.name, stage, decision.tier, decision.score,
         )
 
-        for call in adapters_for(decision.tier, stage):
-            ar = self._run_adapter(call, stage, decision.tier)
+        # Materialize source ONCE per stage and mutate manifest.source_paths so
+        # every adapter in the stage sees the same materialized tree. On
+        # provider error (clone failed, auth missing) the whole stage fails
+        # gracefully with a single recorded entry — no adapter is invoked.
+        try:
+            with self._materialize_source() as sm:
+                saved_paths = list(self.manifest.source_paths)
+                saved_path = self.manifest.source_path
+                self.manifest.source_paths = list(sm.paths)
+                self.manifest.source_path = None
+                try:
+                    for call in adapters_for(decision.tier, stage):
+                        ar = self._run_adapter(call, stage, decision.tier)
+                        result.adapter_results.append(ar)
+                        if call.blocking and ar.high_or_above > 0:
+                            result.gate_passed = False
+                            result.gate_reason = (
+                                f"{ar.adapter} produced {ar.high_or_above} HIGH-or-above finding(s) "
+                                f"and is marked blocking in the policy table."
+                            )
+                finally:
+                    self.manifest.source_paths = saved_paths
+                    self.manifest.source_path = saved_path
+        except Exception as e:
+            log.exception("source materialization failed for %s", self.manifest.name)
+            ar = AdapterResult(adapter="_source", blocking=True, status="error")
+            ar.error = f"{type(e).__name__}: {e}"
             result.adapter_results.append(ar)
-            if call.blocking and ar.high_or_above > 0:
-                result.gate_passed = False
-                result.gate_reason = (
-                    f"{ar.adapter} produced {ar.high_or_above} HIGH-or-above finding(s) and is "
-                    "marked blocking in the policy table."
-                )
+            result.gate_passed = False
+            result.gate_reason = f"source provider failed: {ar.error}"
 
         log.info(
             "stage %s complete: %d adapter(s); gate=%s",
@@ -99,6 +120,25 @@ class Orchestrator:
             "PASS" if result.gate_passed else "FAIL",
         )
         return result
+
+    def _materialize_source(self):
+        """Resolve and dispatch the source provider for this manifest.
+
+        Provider selection precedence:
+          1. manifest.source_provider (explicit per-app override)
+          2. settings.default_provider (global)
+          3. 'local' (passthrough — preserves pre-2026-05-24 behavior)
+        """
+        # Local import — keeps the orchestrator loadable in environments that
+        # haven't installed the optional source-provider deps (PyJWT etc.).
+        from ..sources import get_provider
+        from . import settings as _settings
+        provider_name = (
+            (self.manifest.source_provider or "").strip()
+            or _settings.get("default_provider", "local")
+            or "local"
+        )
+        return get_provider(provider_name).materialize(self.manifest)
 
     def run_all_stages(self, until_fail: bool = True) -> list[RunResult]:
         results = []

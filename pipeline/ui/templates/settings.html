@@ -5,54 +5,193 @@
 {% block content %}
   <section class="hero">
     <h1 style="margin-bottom:6px">Settings</h1>
-    <p class="muted">Configuration persisted to <code>~/.ai-protect/config.json</code>.</p>
+    <p class="muted">Configuration persisted to <code>~/.ai-protect/config.json</code> (chmod 600 — may contain secrets). Help bubbles link to <a href="{{ url_for('docs_page') }}">/docs</a> for step-by-step setup.</p>
   </section>
 
-  <article class="change-detail" style="margin-top:18px">
-    <header><h2>Locale / time</h2></header>
+  {% if ok %}<div class="sev-badge sev-info" style="margin:14px 0">{{ ok }}</div>{% endif %}
+  {% if errors %}<div class="sev-badge sev-high" style="margin:14px 0">{{ errors|length }} field(s) had errors — see inline messages below</div>{% endif %}
 
-    {% if ok %}<div class="sev-badge sev-info" style="margin-bottom:12px">{{ ok }}</div>{% endif %}
-    {% if error %}<div class="sev-badge sev-high" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+  <form method="POST" action="{{ url_for('settings_page') }}">
+    <input type="hidden" name="section" value="{{ active_section }}">
 
-    <form method="POST" action="{{ url_for('settings_page') }}" class="scan-form">
-      <div class="filter-group" style="margin-bottom:14px">
-        <label>Timezone (pick one)</label>
-        <select name="timezone">
-          {% for z in common_zones %}
-            <option value="{{ z }}" {% if z == current_tz %}selected{% endif %}>{{ z }}</option>
+    <div style="display:flex; gap:18px; margin-top:14px; align-items:flex-start">
+
+      {# Left rail — section navigator #}
+      <aside style="flex:0 0 220px; position:sticky; top:14px">
+        <div class="dark-panel" style="padding:12px; border-radius:8px">
+          <div class="small muted" style="margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em">Sections</div>
+          {% for section in schema %}
+            <a href="#sec-{{ section.key }}" class="settings-rail-link" data-section="{{ section.key }}"
+               style="display:block; padding:6px 10px; border-radius:6px; color:#e6edf5; text-decoration:none; font-size:13px">
+              {{ section.title }}
+            </a>
           {% endfor %}
-        </select>
-        <small class="form-help">
-          {{ common_zones|length }} common zones listed. Free-text below accepts any of the
-          {{ all_zones_count }} IANA names if yours isn't here.
-        </small>
-      </div>
+          <div style="border-top:1px solid #213047; margin-top:10px; padding-top:10px">
+            <a href="{{ url_for('docs_page') }}" class="small" style="color:#9ec5ea">📖 Documentation →</a>
+          </div>
+        </div>
+      </aside>
 
-      <div class="filter-group" style="margin-bottom:14px">
-        <label>Timezone (free-text override)</label>
-        <input type="text" name="timezone_custom" placeholder="e.g. America/Los_Angeles">
-        <small class="form-help">If set, takes precedence over the dropdown. Must be a valid IANA zone name; otherwise the save fails with an error.</small>
-      </div>
+      {# Section bodies — all rendered, all scrollable; left-rail jumps via anchors. #}
+      <div style="flex:1; min-width:0">
+        {% for section in schema %}
+        <article id="sec-{{ section.key }}" class="change-detail" style="margin-bottom:18px">
+          <header>
+            <h2 style="margin:0">{{ section.title }}</h2>
+            <p class="muted small" style="margin:4px 0 0 0">{{ section.description }}</p>
+          </header>
 
-      <div class="filter-group" style="margin-bottom:18px">
-        <label>Date format (strftime)</label>
-        <input type="text" name="date_format" value="{{ current_fmt }}">
-        <small class="form-help">
-          Standard strftime tokens. Default <code>%Y-%m-%d %H:%M:%S %Z</code> renders as
-          <code>{{ sample }}</code> in your current zone.
-        </small>
-      </div>
+          {% for fld in section.fields %}
+            {% set cur = current.get(fld.key, fld.default) %}
+            {% set err = errors.get(fld.key) %}
+            {# A field is initially visible if no reveal-controller hides it.
+               JS below handles dynamic hide/show as the controller changes. #}
+            <div class="filter-group settings-field"
+                 data-field-key="{{ fld.key }}"
+                 style="margin-bottom:16px">
+              <label for="f-{{ fld.key }}" style="display:flex; align-items:center; gap:8px">
+                {{ fld.label }}
+                {% if fld.help or fld.help_anchor %}
+                  <a href="{{ url_for('docs_page') }}#{{ fld.help_anchor or 'top' }}"
+                     class="help-bubble" title="{{ fld.help|e }}" aria-label="help"
+                     target="_blank" rel="noopener">?</a>
+                {% endif %}
+                {% if fld.secret %}<span class="small muted" style="font-weight:normal">(secret — stored locally)</span>{% endif %}
+              </label>
 
-      <button type="submit" class="btn btn-primary">Save settings</button>
-    </form>
+              {# field render — by kind #}
+              {% if fld.kind == "select" %}
+                <select name="{{ fld.key }}" id="f-{{ fld.key }}" class="settings-input"
+                        {% if fld.reveal_when %}data-reveal-controller="1"{% endif %}>
+                  {% for opt in fld.options %}
+                    <option value="{{ opt }}" {% if cur == opt %}selected{% endif %}>{{ opt }}</option>
+                  {% endfor %}
+                  {% if fld.free_text_override and cur and cur not in fld.options %}
+                    <option value="{{ cur }}" selected>{{ cur }} (custom)</option>
+                  {% endif %}
+                </select>
+                {% if fld.free_text_override %}
+                  <input type="text" name="{{ fld.key }}_custom" placeholder="custom value (overrides dropdown)"
+                         style="margin-top:6px; width:100%; max-width:420px">
+                {% endif %}
 
-    <div class="dark-panel" style="margin-top:18px;padding:10px 14px;border-radius:6px">
-      <div class="small muted">Current configuration</div>
-      <div class="mono small" style="margin-top:4px">
-        timezone = <strong>{{ current_tz }}</strong> &nbsp;·&nbsp;
-        date_format = <strong>{{ current_fmt }}</strong> &nbsp;·&nbsp;
-        sample render = <strong>{{ sample }}</strong>
+              {% elif fld.kind == "checkbox" %}
+                <label style="display:flex; align-items:center; gap:8px; margin-top:4px; font-weight:normal">
+                  <input type="checkbox" name="{{ fld.key }}" value="on" {% if cur == "on" %}checked{% endif %}>
+                  <span class="small muted">{{ fld.help }}</span>
+                </label>
+
+              {% elif fld.kind == "textarea" %}
+                <textarea name="{{ fld.key }}" id="f-{{ fld.key }}" rows="4" class="settings-input">{{ cur }}</textarea>
+
+              {% elif fld.kind in ("password",) %}
+                <input type="password" name="{{ fld.key }}" id="f-{{ fld.key }}"
+                       autocomplete="off"
+                       value="{{ cur }}" placeholder="{{ fld.placeholder }}"
+                       class="settings-input">
+
+              {% elif fld.kind == "number" %}
+                <input type="number" name="{{ fld.key }}" id="f-{{ fld.key }}"
+                       value="{{ cur }}" placeholder="{{ fld.placeholder }}"
+                       class="settings-input">
+
+              {% else %}
+                <input type="text" name="{{ fld.key }}" id="f-{{ fld.key }}"
+                       value="{{ cur }}" placeholder="{{ fld.placeholder }}"
+                       class="settings-input">
+              {% endif %}
+
+              {% if fld.help and fld.kind != "checkbox" %}
+                <small class="form-help">{{ fld.help|safe }}</small>
+              {% endif %}
+              {% if err %}<div class="sev-badge sev-high" style="margin-top:6px">{{ err }}</div>{% endif %}
+            </div>
+          {% endfor %}
+
+          {% if section.key == "locale" %}
+            <div class="dark-panel" style="margin-top:10px; padding:10px 14px; border-radius:6px">
+              <div class="small">Preview: <strong>{{ sample }}</strong></div>
+            </div>
+          {% endif %}
+        </article>
+        {% endfor %}
+
+        <div style="position:sticky; bottom:14px; padding:10px; background:rgba(15,29,47,0.95); border-radius:8px; border:1px solid #213047">
+          <button type="submit" class="btn btn-primary">Save all settings</button>
+          <span class="muted small" style="margin-left:10px">Empty fields use defaults from the schema. Hover any <span class="help-bubble" style="cursor:default">?</span> for inline help.</span>
+        </div>
       </div>
     </div>
-  </article>
+  </form>
+
+  <style>
+    .help-bubble {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:16px; height:16px; border-radius:50%;
+      background:#23c45e; color:#0c1421; font-size:11px; font-weight:700;
+      text-decoration:none; cursor:help;
+    }
+    .help-bubble:hover { background:#3df084; }
+    .settings-input { width:100%; max-width:520px; padding:6px 8px; }
+    .settings-rail-link:hover { background:#1b2a3e; }
+    .settings-rail-link.active { background:var(--navy); color:white !important; }
+    .form-help { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.4; }
+    .filter-group.is-hidden { display:none; }
+  </style>
+
+  <script>
+    // Progressive disclosure: select fields with reveal_when control the
+    // visibility of dependent fields. The server emitted reveal_when keys as
+    // data-* attributes on the schema; we re-derive them from the schema JSON
+    // below (kept minimal — just the controller→{value: [hidden_keys]} maps).
+    const REVEAL = {{ reveal_map | tojson }};
+
+    function applyReveals() {
+      // 1. Determine which keys are hidden under each controller's CURRENT value.
+      const hidden = new Set();
+      const allRevealed = new Set();
+      for (const [controllerKey, valueMap] of Object.entries(REVEAL)) {
+        const el = document.querySelector(`[name="${controllerKey}"]`);
+        if (!el) continue;
+        const current = el.value;
+        // Every reveal target across all values starts hidden by default,
+        // then the entries matching the current value get un-hidden.
+        for (const [val, keys] of Object.entries(valueMap)) {
+          for (const k of keys) {
+            allRevealed.add(k);
+            if (val !== current) hidden.add(k);
+          }
+        }
+      }
+      // 2. Apply: any field that's a reveal target AND not matched by current
+      //    controller value is hidden; otherwise visible.
+      document.querySelectorAll('.settings-field').forEach(el => {
+        const key = el.dataset.fieldKey;
+        if (allRevealed.has(key) && hidden.has(key)) {
+          el.classList.add('is-hidden');
+        } else {
+          el.classList.remove('is-hidden');
+        }
+      });
+    }
+
+    // Initial state + react to every controller change.
+    document.querySelectorAll('[data-reveal-controller="1"]').forEach(el => {
+      el.addEventListener('change', applyReveals);
+    });
+    applyReveals();
+
+    // Left-rail "active section" tracking via scroll spy.
+    const sections = Array.from(document.querySelectorAll('[id^="sec-"]'));
+    const links = Array.from(document.querySelectorAll('.settings-rail-link'));
+    function spy() {
+      let best = sections[0];
+      for (const s of sections) {
+        if (s.getBoundingClientRect().top < 100) best = s;
+      }
+      links.forEach(a => a.classList.toggle('active', a.dataset.section === best.id.slice(4)));
+    }
+    document.addEventListener('scroll', spy, { passive: true });
+    spy();
+  </script>
 {% endblock %}

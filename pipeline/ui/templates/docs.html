@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Documentation · ai-protect{% endblock %}
+{% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1 style="margin-bottom:6px">Documentation</h1>
+    <p class="muted">Step-by-step setup for every configurable knob. The <span class="help-bubble" style="cursor:default;background:#23c45e;color:#0c1421;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:11px;font-weight:700">?</span> bubbles on <a href="{{ url_for('settings_page') }}">/settings</a> link directly into the relevant section below.</p>
+  </section>
+
+  <div style="display:flex; gap:18px; margin-top:14px; align-items:flex-start">
+    <aside style="flex:0 0 240px; position:sticky; top:14px">
+      <div class="dark-panel" style="padding:12px; border-radius:8px">
+        <div class="small muted" style="margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em">Contents</div>
+        <a href="#locale" style="display:block; padding:6px 10px; color:#e6edf5; text-decoration:none; font-size:13px">Locale &amp; time</a>
+        <a href="#paths" style="display:block; padding:6px 10px; color:#e6edf5; text-decoration:none; font-size:13px">Paths &amp; storage</a>
+        <a href="#source-default-provider" style="display:block; padding:6px 10px; color:#e6edf5; text-decoration:none; font-size:13px">Source providers</a>
+        <a href="#source-github-pat" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Create a PAT</a>
+        <a href="#source-github-app-id" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Create a GitHub App</a>
+        <a href="#source-github-base-url" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ GHES base URL</a>
+        <a href="#source-github-clone-strategy" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Clone strategy</a>
+        <a href="#intel-poll-seconds" style="display:block; padding:6px 10px; color:#e6edf5; text-decoration:none; font-size:13px">Intel feeds defaults</a>
+      </div>
+    </aside>
+
+    <div style="flex:1; min-width:0">
+
+      <article class="change-detail">
+        <header><h2 id="locale">Locale &amp; time</h2></header>
+
+        <h3 id="locale-timezone">Timezone</h3>
+        <p>Any <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" rel="noopener">IANA timezone name</a> (e.g. <code>America/New_York</code>, <code>Europe/London</code>, <code>Asia/Tokyo</code>). The dropdown shows 28 common ones; the free-text override accepts any of the 600+ IANA names. Wrong names are rejected with a clear error at save time.</p>
+
+        <h3 id="locale-date-format">Date format</h3>
+        <p>Python <a href="https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes" target="_blank" rel="noopener">strftime</a> tokens. Defaults to <code>%Y-%m-%d %H:%M:%S %Z</code>.</p>
+        <ul>
+          <li><code>%Y-%m-%d %H:%M:%S %Z</code> → <code>2026-05-24 14:32:10 EDT</code> (default)</li>
+          <li><code>%a %b %d %I:%M %p</code> → <code>Sat May 24 02:32 PM</code></li>
+          <li><code>%Y-%m-%dT%H:%M:%S%z</code> → <code>2026-05-24T14:32:10-0400</code> (ISO 8601)</li>
+        </ul>
+        <p class="muted small">The format applies everywhere — /feeds last-fetch column, /history rows, /intel fetched-at column, finding evidence timestamps.</p>
+      </article>
+
+      <article class="change-detail" style="margin-top:18px">
+        <header><h2 id="paths">Paths &amp; storage</h2></header>
+
+        <h3 id="paths-findings">Findings file</h3>
+        <p>Append-only JSONL where every finding lands. <strong>Must be outside <code>/tmp</code></strong> — that path is wiped on reboot and the May 2026 scans were lost that way. Default <code>~/.ai-protect/findings.jsonl</code>. The UI launcher's <code>--findings</code> CLI flag overrides this setting at startup.</p>
+
+        <h3 id="paths-manifests">Manifests directory</h3>
+        <p>Directory holding YAML manifest files. Leave blank to use <code>pipeline/manifests/</code> relative to the install. The UI's <code>--manifests-dir</code> CLI flag overrides this at startup.</p>
+
+        <h3 id="paths-cache">Source cache directory</h3>
+        <p>Where the GitHub provider stores persistent clones when the clone strategy is set to <strong>cached</strong>. Default <code>~/.ai-protect/src-cache/</code>; one subdir per <code>&lt;owner&gt;/&lt;repo&gt;</code>. Safe to delete at any time — the next scan will re-clone.</p>
+      </article>
+
+      <article class="change-detail" style="margin-top:18px">
+        <header><h2 id="source-default-provider">Source providers</h2></header>
+
+        <p>A source provider materializes a manifest's code into a local directory before adapter dispatch. Two providers ship today:</p>
+        <ul>
+          <li><strong>local</strong> — read <code>manifest.source_paths</code> from the filesystem (the original behavior). No-op materialization, no cleanup.</li>
+          <li><strong>github</strong> — clone the repo declared on the manifest before each scan. Supports public / private repos, PAT or GitHub App auth, github.com or GHES, per-scan-clone or persistent cache.</li>
+        </ul>
+        <p>Set the global default on /settings, then optionally override per-manifest in the manifest YAML or via /manifests/&lt;name&gt;/edit.</p>
+
+        <h3 id="source-github-base-url">GitHub base URL</h3>
+        <p>For <strong>github.com</strong>: leave as <code>https://github.com</code>. For <strong>GitHub Enterprise Server</strong>: set to your GHES hostname (e.g. <code>https://github.acme.com</code>). The provider derives the API URL automatically (github.com → api.github.com; GHES → <code>&lt;ghes&gt;/api/v3</code>).</p>
+
+        <h3 id="source-github-visibility">Repo visibility</h3>
+        <p>Public repos clone without auth. Private repos require either a PAT or an installed GitHub App with read access. Switching to <strong>private</strong> reveals the auth method picker.</p>
+
+        <h3 id="source-github-auth-method">Authentication method</h3>
+        <p>
+          <strong>PAT</strong> — quick to set up; one token covers every repo the human user can see. Best for single-operator or homelab installs.<br>
+          <strong>GitHub App</strong> — installable on an org or per-repo, fine-grained permissions, short-lived installation tokens minted on demand (auto-rotated; no human token to babysit). Recommended for org-wide deployments. More setup but no rotation churn afterward.
+        </p>
+
+        <h3 id="source-github-pat">Create a fine-grained PAT</h3>
+        <ol>
+          <li>Sign in to GitHub. Top-right avatar → <strong>Settings</strong>.</li>
+          <li>Left rail bottom → <strong>Developer settings</strong>.</li>
+          <li><strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> → <strong>Generate new token</strong>.</li>
+          <li>Name it (e.g. <code>ai-protect-scanner</code>), set an expiration (90 days is reasonable).</li>
+          <li><strong>Resource owner</strong>: your user (or your org if the token can act on org repos).</li>
+          <li><strong>Repository access</strong>: select <em>Only select repositories</em> and pick the ones ai-protect should scan. (Avoid <em>All repositories</em> — narrower scope is safer.)</li>
+          <li><strong>Repository permissions</strong> → <strong>Contents</strong>: <em>Read-only</em>. (Metadata is auto-included as read.) Leave every other permission untouched.</li>
+          <li><strong>Generate token</strong>. Copy the value immediately — GitHub shows it only once.</li>
+          <li>Paste into the <strong>Personal access token</strong> field on /settings. Save.</li>
+        </ol>
+        <p class="muted small">Classic (unscoped) PATs work but are over-privileged for this use case — prefer fine-grained.</p>
+
+        <h3 id="source-github-app-id">Create a GitHub App</h3>
+        <ol>
+          <li>GitHub <strong>Settings → Developer settings → GitHub Apps → New GitHub App</strong> (or under an org's settings if the App should live on an org).</li>
+          <li><strong>Name</strong>: e.g. <code>ai-protect-scanner</code>. <strong>Homepage URL</strong>: anything (required field, not used).</li>
+          <li><strong>Webhook</strong>: uncheck "Active" — we don't use webhooks (yet).</li>
+          <li><strong>Repository permissions → Contents</strong>: <em>Read-only</em>. Leave everything else as <em>No access</em>.</li>
+          <li><strong>Where can this GitHub App be installed?</strong>: <em>Only on this account</em> (or "Any account" if you'll share it).</li>
+          <li><strong>Create GitHub App</strong>.</li>
+          <li>On the created App's page, note the <strong>App ID</strong> at the top.</li>
+          <li>Scroll to <strong>Private keys</strong> → <strong>Generate a private key</strong>. A <code>.pem</code> file downloads. Move it to a stable path (e.g. <code>~/.ai-protect/github-app.pem</code>) and <code>chmod 600</code>.</li>
+        </ol>
+
+        <h3 id="source-github-app-private-key">App private key file</h3>
+        <p>Absolute path to the PEM file from the previous step. <code>chmod 600</code> is required — the file holds the App's signing key.</p>
+
+        <h3 id="source-github-app-installation-id">App installation ID</h3>
+        <ol>
+          <li>From the App's settings page → left rail → <strong>Install App</strong>.</li>
+          <li>Pick the user or organization to install on; choose which repositories.</li>
+          <li>After installing, navigate to <strong>Settings → Integrations → Applications → Installed GitHub Apps</strong> (or for an org: <code>https://github.com/organizations/&lt;org&gt;/settings/installations</code>).</li>
+          <li>Click <strong>Configure</strong> next to your App. The URL bar will show <code>.../installations/&lt;INSTALLATION_ID&gt;</code> — that numeric id is what to paste into <strong>App installation ID</strong> on /settings.</li>
+        </ol>
+
+        <h3 id="source-github-clone-strategy">Clone strategy</h3>
+        <p>
+          <strong>per_scan</strong> — fresh shallow clone (<code>--depth 1</code>) to a temp dir for each scan; deleted after. No persistent state. Slower on the 2nd scan of the same repo because the clone repeats. Best when disk is constrained or you want clean isolation.<br>
+          <strong>cached</strong> — clone once into the source cache dir; on subsequent scans do <code>git fetch + checkout</code>. Much faster on the 2nd+ scan of the same repo. The cache lives at the path configured under <strong>Source cache directory</strong>.
+        </p>
+
+        <h3 id="source-github-default-ref">Default ref</h3>
+        <p>Branch, tag, or commit SHA to scan when the manifest doesn't specify its own. Most repos: <code>main</code> (or <code>master</code> for legacy repos). Tags: <code>v1.2.0</code>. SHAs (7+ hex chars): the provider detects these and uses an explicit checkout step.</p>
+
+        <h3 id="source-github-clone-depth">Clone depth</h3>
+        <p>Number of recent commits to fetch. <strong>1</strong> (shallow) is fastest and sufficient for every SAST / dependency / IaC adapter we ship. Set <strong>0</strong> for full history — needed only if an adapter you wire in does <code>git blame</code> or commit-range analysis.</p>
+      </article>
+
+      <article class="change-detail" style="margin-top:18px">
+        <header><h2 id="intel-poll-seconds">Intel feeds defaults</h2></header>
+
+        <h3>Default polling interval (seconds)</h3>
+        <p>How often the background poller refetches each newly-added feed. Minimum 60s (enforced server-side). 3600 (1h) is reasonable for most CVE feeds; 86400 (daily) is fine for the long-tail tag-feeds. Per-feed override available on /feeds → Edit.</p>
+
+        <h3 id="intel-match-min-severity">intel_match emission floor</h3>
+        <p>The <code>intel_match</code> detection adapter capable of emitting at any severity from <code>info</code> to <code>high</code> (capped — never <code>critical</code> on intel alone since matches are unverified token overlap). This floor drops anything below it. KEV-listed matches always emit regardless, because active exploitation in the wild is significant even when unverified.</p>
+
+        <h3 id="intel-kev-ratchet">Disable KEV ratchet</h3>
+        <p>The orchestrator's enrichment hook bumps any scanner finding whose CVE appears on CISA KEV up to <strong>CRITICAL</strong> severity. Check this box to opt out — useful in test environments where the bump confuses downstream policy gates. Default: ratchet on.</p>
+      </article>
+
+    </div>
+  </div>
+
+  <style>
+    .change-detail h3 { margin-top:18px; }
+    .change-detail ol, .change-detail ul { padding-left:22px; }
+    .change-detail li { margin:4px 0; }
+    .change-detail code { background:#0c1421; color:#e6edf5; padding:1px 5px; border-radius:3px; font-size:12px; }
+  </style>
+{% endblock %}

@@ -102,6 +102,18 @@ class Manifest:
     # but the source under it is the same as the old app.
     app_aliases: list[str] = field(default_factory=list)
 
+    # --- source provider (added 2026-05-24) ---
+    # Where the orchestrator fetches code from before adapter dispatch.
+    # Default '' falls back to settings.default_provider at scan time, so an
+    # operator can pin every existing manifest to local OR to github via one
+    # central setting.
+    source_provider: str = ""                    # '' | 'local' | 'github'
+    # GitHub-specific. github_repo accepts 'owner/name', a full HTTPS URL,
+    # or git@github.com:owner/name.git (the provider normalizes them).
+    github_repo: str = ""
+    github_ref: str = ""                         # branch / tag / SHA; '' uses settings default
+    github_clone_depth: int | None = None        # None uses settings default (typically 1, shallow)
+
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -135,6 +147,10 @@ class Manifest:
             source_paths=list(data.get("source_paths") or []),
             source_excludes=list(data.get("source_excludes") or []),
             app_aliases=list(data.get("app_aliases") or []),
+            source_provider=str(data.get("source_provider") or "").strip(),
+            github_repo=str(data.get("github_repo") or "").strip(),
+            github_ref=str(data.get("github_ref") or "").strip(),
+            github_clone_depth=data.get("github_clone_depth"),
             raw=data,
         )
 
