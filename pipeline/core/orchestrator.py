@@ -60,7 +60,13 @@ class RunResult:
             "gate_passed": self.gate_passed,
             "gate_reason": self.gate_reason,
             "findings_path": self.findings_path,
-            "adapter_results": [a.__dict__ for a in self.adapter_results],
+            # emitted_fingerprints is an internal set (auto-resolve uses it)
+            # and a set isn't JSON-serializable. Strip it from the public dict;
+            # if a consumer ever wants the fingerprints, expose them as a list.
+            "adapter_results": [
+                {k: v for k, v in a.__dict__.items() if k != "emitted_fingerprints"}
+                for a in self.adapter_results
+            ],
         }
 
 
