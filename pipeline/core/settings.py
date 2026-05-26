@@ -233,6 +233,37 @@ SCHEMA: list[Section] = [
         ],
     ),
     Section(
+        key="dast",
+        title="DAST defaults",
+        description="Safety + rate defaults applied to every Live-target (DAST) scan. Per-manifest target.network_allowed_zones can selectively override the internal-IP refusal.",
+        fields=[
+            Field(
+                key="dast_max_rps", label="Max requests per second (per adapter)",
+                kind="number", default="20",
+                help="Soft cap passed to rate-aware adapters (nuclei -rate-limit, ZAP attack strength). Adapters that don't honor this fall back to their own defaults; the timebox below is the universal backstop.",
+                help_anchor="dast-max-rps",
+            ),
+            Field(
+                key="dast_max_concurrency", label="Max concurrent requests (per adapter)",
+                kind="number", default="10",
+                help="Adapter concurrency hint (nuclei -concurrency, ZAP threadsPerHost). Keep low for fragile preprod systems.",
+                help_anchor="dast-max-concurrency",
+            ),
+            Field(
+                key="dast_timebox_seconds", label="Per-adapter hard timebox (seconds)",
+                kind="number", default="1800",
+                help="Universal max duration for any DAST adapter subprocess. Default 30 minutes — the only stop-gap that catches adapters that ignore --rate-limit. 0 = no timebox (not recommended).",
+                help_anchor="dast-timebox",
+            ),
+            Field(
+                key="dast_require_scope_prefix_for_crawlers", label="Require scope prefix for crawlers",
+                kind="checkbox", default="on",
+                help="When checked, crawler-class adapters (ZAP spider, katana, owasp_noir) refuse to run against a bare origin (path = '/' or empty). The operator must supply a scope prefix like https://target/app/ so the crawl doesn't escape into unrelated content. Strongly recommended.",
+                help_anchor="dast-scope-prefix",
+            ),
+        ],
+    ),
+    Section(
         key="remediation",
         title="Remediation behavior",
         description="How the system auto-closes findings after a re-scan.",

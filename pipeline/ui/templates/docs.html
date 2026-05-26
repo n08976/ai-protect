@@ -127,6 +127,34 @@
       </article>
 
       <article class="change-detail" style="margin-top:18px">
+        <header><h2 id="dast-max-rps">DAST defaults</h2></header>
+
+        <h3>Live-target (DAST) scans — safety first</h3>
+        <p>Every DAST scan sends real HTTP requests to a chosen target. The settings below apply universally; per-manifest overrides live on the manifest's <code>target</code> block. Hard-denied IPs (cloud metadata endpoints like <code>169.254.169.254</code> and equivalents) can never be overridden, even by an internal-scan toggle.</p>
+
+        <h3 id="dast-max-rps">Max requests per second (per adapter)</h3>
+        <p>Soft cap that's translated into per-adapter CLI flags:</p>
+        <ul>
+          <li><code>nuclei -rate-limit &lt;n&gt;</code></li>
+          <li><code>ZAP</code> attack-strength / threadsPerHost (best-effort)</li>
+          <li><code>sqlmap --threads</code> (when active mode is allowed)</li>
+        </ul>
+        <p>Adapters that don't expose a rate flag fall back to their own defaults; the <strong>per-adapter timebox</strong> below is the universal backstop.</p>
+
+        <h3 id="dast-max-concurrency">Max concurrent requests (per adapter)</h3>
+        <p>Concurrency hint for adapters with a parallel-worker model (<code>nuclei -concurrency</code>, ZAP <code>threadsPerHost</code>). Keep low (≤10) when scanning preprod systems that don't have production rate-limiting in place.</p>
+
+        <h3 id="dast-timebox">Per-adapter hard timebox (seconds)</h3>
+        <p>Maximum wall-clock duration for any DAST adapter subprocess. Default 30 minutes. This is the universal stop-gap that catches adapters that ignore <code>--rate-limit</code> flags. Set 0 to disable, but you almost certainly don't want to.</p>
+
+        <h3 id="dast-scope-prefix">Require scope prefix for crawlers</h3>
+        <p>When checked, crawler-class adapters (ZAP spider, katana via recon, owasp_noir) refuse to launch against a bare origin — i.e., a URL whose path is <code>/</code> or empty. The operator must supply a scope prefix like <code>https://target.example.com/myapp/</code> so the crawl can't escape into unrelated content (vendor blogs, marketing pages, admin panels).</p>
+        <p>Recommended on. Disable only when scanning a single-purpose host where the entire HTTP surface is in-scope.</p>
+
+        <p class="muted small">Hard-denied IP ranges (always refused): cloud metadata endpoints (<code>169.254.169.254</code> and equivalents), URLs with embedded credentials (<code>user:pass@host</code>), and non-<code>http(s)</code> schemes. Default-denied (overridable with the per-scan <em>Allow internal-network scan</em> typed confirmation or per-manifest <code>target.network_allowed_zones</code>): RFC1918, loopback, link-local, IPv6 ULA / link-local, multicast, documentation ranges, CGNAT, benchmark, reserved.</p>
+      </article>
+
+      <article class="change-detail" style="margin-top:18px">
         <header><h2 id="remediation-auto-resolve">Remediation behavior</h2></header>
 
         <h3>Auto-resolve on re-scan</h3>

@@ -1,101 +1,319 @@
 {% extends "base.html" %}
-{% block title %}Re-scan · ai-protect{% endblock %}
+{% block title %}Scan · ai-protect{% endblock %}
 {% block autorefresh %}window.AI_PROTECT_NO_AUTOREFRESH = true;{% endblock %}
 
 {% block content %}
   <article class="change-detail">
     <header>
-      <h1>Re-scan</h1>
-      <p class="muted">Pick the app (manifest), the SDLC stage, and optionally narrow to a single adapter. Inline help is under each control.</p>
+      <h1>Scan</h1>
+      <p class="muted">Pick where the code lives, what to scan it with, and start. Two flows below — pick one.</p>
     </header>
 
-    <form method="POST" action="{{ url_for('scan_start') }}" class="scan-form">
+    {# ---- Mode segmented control ---- #}
+    <div class="scan-mode-row" role="tablist" aria-label="Scan mode">
+      <a role="tab" aria-selected="{{ 'true' if mode == 'sast' else 'false' }}"
+         class="scan-mode-pill {% if mode == 'sast' %}active{% endif %}"
+         href="{{ url_for('scan_launcher', mode='sast') }}">
+        <strong>Source code (SAST)</strong>
+        <span class="small muted">Read code on disk · {{ sast_adapters|length }} adapters</span>
+      </a>
+      <a role="tab" aria-selected="{{ 'true' if mode == 'dast' else 'false' }}"
+         class="scan-mode-pill scan-mode-pill-dast {% if mode == 'dast' %}active{% endif %}"
+         href="{{ url_for('scan_launcher', mode='dast') }}">
+        <strong>Live target (DAST)</strong>
+        <span class="small muted">Probe a running system · {{ dast_adapters|length }} adapters</span>
+      </a>
+    </div>
+    <p class="muted small" style="margin-top:6px">{{ mode_descriptions[mode] }}</p>
+
+    {# ---- DAST safety banner: persistent, can't be dismissed within a session ---- #}
+    {% if mode == 'dast' %}
+      <div class="dark-panel" style="margin-top:14px;padding:10px 14px;border-left:3px solid #f59e0b;border-radius:6px">
+        <strong style="color:#f59e0b">Live target scan.</strong>
+        <span class="small">This will send real HTTP requests to the chosen system. Verify the target is yours and you're authorized to test it. Hard-denied IPs (cloud metadata, etc.) cannot be overridden even by an internal-scan toggle.</span>
+      </div>
+    {% endif %}
+
+    {# ============================================================
+       SAST flow
+       ============================================================ #}
+    {% if mode == 'sast' %}
+    <form method="POST" action="{{ url_for('scan_start') }}" class="scan-form" style="margin-top:14px">
+      <input type="hidden" name="mode" value="sast">
+
       <div class="filter-group" style="margin-bottom:14px">
         <label>Manifest</label>
         <select name="manifest" required>
-          {% for m in manifests %}
-            <option value="{{ m.path }}">{{ m.name }} — {{ m.path }}</option>
-          {% endfor %}
+          {% for m in manifests %}<option value="{{ m.path }}">{{ m.name }}</option>{% endfor %}
         </select>
-        <small class="form-help">The app to scan. Each manifest declares its tier, data sensitivity, and surfaces — that's what the policy table consults to decide which adapters run.</small>
+        <small class="form-help">The app to scan. Its <em>data_sensitivity</em>, <em>decision_impact</em>, and <em>integration_footprint</em> drive the tier classification and which adapters fire.</small>
       </div>
 
       <div class="filter-group" style="margin-bottom:14px">
         <label>Stage</label>
-        <select name="stage" required>
-          {% for s in stages %}
-            <option value="{{ s }}" {% if s == 'build' %}selected{% endif %}>{{ s }}</option>
-          {% endfor %}
+        <select name="stage">
+          {% for s in stages %}<option value="{{ s }}" {% if s == 'build' %}selected{% endif %}>{{ s }}</option>{% endfor %}
         </select>
-        <small class="form-help">
-          The v2.1 SDLC stage that defines <em>what</em> runs. Each stage maps to a different adapter list per the policy table.
-          <ul class="form-help-list">
-            <li><strong>intake</strong> — manifest validation + shadow-AI recon (subfinder/httpx/naabu/katana) + OWASP Noir endpoint discovery.</li>
-            <li><strong>design</strong> — threat model check (Tier 1/2 required) + IaC scan (Checkov) + guardrails validation.</li>
-            <li><strong>build</strong> — the SAST / secrets / SCA bulk (Semgrep, Bandit, gosec, TruffleHog, Gitleaks, pip-audit, Grype, Syft, ModelScan, Presidio, Agentic Radar, garak/PyRIT lite). Fastest feedback loop.</li>
-            <li><strong>preprod</strong> — the full gate: DAST (ZAP, Burp, Nuclei, sqlmap, Ride), MCP scope (highest-leverage), AI red team (garak/PyRIT full, eval_suite), adversary emulation (Atomic, Caldera), guardrails smoke.</li>
-            <li><strong>production</strong> — telemetry drift + anomaly detection against live AI telemetry.</li>
-          </ul>
-          Default is <strong>build</strong>. Use <strong>preprod</strong> for the full gate before a deployment decision.
-        </small>
+        <small class="form-help">v2.1 SDLC stage. <strong>build</strong> is the fastest SAST loop and is the default.</small>
       </div>
 
       <div class="filter-group" style="margin-bottom:18px">
         <label>Adapter</label>
         <select name="adapter">
-          <option value="all" selected>all adapters in this stage (full scan)</option>
-          {% for a in adapters %}
-            <option value="{{ a }}">{{ a }}</option>
-          {% endfor %}
+          <option value="all" selected>all SAST adapters in this stage</option>
+          {% for a in sast_adapters %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
         </select>
-        <small class="form-help">
-          Scope <em>within</em> the stage you picked above.
-          <ul class="form-help-list">
-            <li><strong>all adapters</strong> — runs every adapter the policy table assigns to this tier × stage. This is the typical full re-scan and what you want when you've changed code, manifest, or want a fresh baseline.</li>
-            <li><strong>single adapter</strong> — runs only that one tool. Faster; use it when you've updated an adapter's config, tuned a noisy rule (e.g. bandit B113), installed a new scanner binary, or want to validate one finding without re-running the whole stage. Adapters that don't fire at the selected stage will graceful-degrade as unavailable.</li>
-          </ul>
-        </small>
+        <small class="form-help">Narrow to one adapter for a focused re-scan, or run the full SAST suite for this stage.</small>
       </div>
 
       <button type="submit" class="btn btn-primary">Start scan</button>
       <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-left:8px">Cancel</a>
     </form>
+    {% endif %}
 
-    {% if scans %}
-      <h2>Recent scans</h2>
-      <table class="findings">
-        <thead>
-          <tr><th>When</th><th>App</th><th>Stage</th><th>Adapter</th><th>Status</th><th>Findings before → after</th><th></th></tr>
-        </thead>
-        <tbody>
-          {% for s in scans %}
-            <tr>
-              <td class="mono small">{{ s.scan_id }}</td>
-              <td class="mono">{{ s.app_name }}</td>
-              <td class="mono">{{ s.stage }}</td>
-              <td class="mono">{{ s.adapter or "all" }}</td>
-              <td>
-                {% if s.status == 'running' %}<span class="sev-badge sev-medium status-running"><span class="status-dot"></span>Running<span class="status-dot"></span></span>
-                {% elif s.status == 'done' %}<span class="sev-badge sev-info">done</span>
-                {% elif s.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
-                {% elif s.status == 'stopped' %}<span class="sev-badge sev-low" title="cancelled by operator">stopped</span>
-                {% else %}<span class="sev-badge sev-low">{{ s.status }}</span>
-                {% endif %}
-              </td>
-              <td class="mono small">
-                {% if s.findings_after is none %}{{ s.findings_before }} → ?
-                {% else %}{{ s.findings_before }} → {{ s.findings_after }}
-                  ({{ s.findings_after - s.findings_before }})
-                {% endif %}
-              </td>
-              <td>
-                <a href="{{ url_for('scan_status', scan_id=s.scan_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">View</a>
-                <a href="{{ url_for('index', app=s.app_name) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px;margin-left:4px" title="Open findings page filtered to {{ s.app_name }}">Findings →</a>
-              </td>
-            </tr>
+    {# ============================================================
+       DAST flow
+       ============================================================ #}
+    {% if mode == 'dast' %}
+    <form method="POST" action="{{ url_for('scan_start') }}" class="scan-form" style="margin-top:14px"
+          id="dast-form" onsubmit="return dastConfirm(this)">
+      <input type="hidden" name="mode" value="dast">
+
+      {# Sub-tab: Known app vs Arbitrary URL (radio group per PAL's design note) #}
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Target</label>
+        <div class="dast-target-radio">
+          <label class="cb"><input type="radio" name="dast_target_kind" value="manifest" checked> Known app (use manifest's <code>target.base_url</code>)</label>
+          <label class="cb"><input type="radio" name="dast_target_kind" value="url"> Arbitrary URL (one-off scan)</label>
+        </div>
+      </div>
+
+      {# Known-app subform #}
+      <div class="filter-group" id="dast-manifest-block" style="margin-bottom:14px">
+        <label>Manifest</label>
+        <select name="manifest">
+          <option value="">— pick a manifest —</option>
+          {% for m in manifests %}<option value="{{ m.path }}" data-target="{{ m.target_base_url }}" data-mutate="{{ m.allow_mutation }}">{{ m.name }}{% if m.target_base_url %} · <span class="mono small">{{ m.target_base_url }}</span>{% endif %}</option>{% endfor %}
+        </select>
+        <small class="form-help">Uses the manifest's <code>target.base_url</code> as the scan target. The manifest's <code>network_allowed_zones</code> override the internal-IP refusal.</small>
+        <div id="dast-manifest-preview" class="small muted" style="margin-top:4px"></div>
+      </div>
+
+      {# Ad-hoc URL subform — hidden when sub-tab is "manifest" #}
+      <div class="filter-group" id="dast-url-block" style="margin-bottom:14px; display:none">
+        <label>Target URL</label>
+        <div style="display:flex; gap:6px">
+          <input type="url" name="target_url" id="dast-url-input"
+                 placeholder="https://target.example.com/app/" style="flex:1">
+          <button type="button" class="btn btn-secondary" id="dast-paste-btn"
+                  style="padding:6px 12px;font-size:12px">Paste</button>
+        </div>
+        <small class="form-help">
+          HTTPS only by default. Hostname is DNS-resolved on each scan; resolved IPs in cloud-metadata ranges (e.g. 169.254.169.254) are <strong>hard-denied</strong> and cannot be overridden. Loopback, RFC1918, link-local etc. are denied by default — see toggles below.
+        </small>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:4px">
+          <label class="cb"><input type="checkbox" name="allow_insecure_http"> Allow insecure HTTP (target serves http://)</label>
+          <label class="cb"><input type="checkbox" name="allow_internal_scan" id="dast-internal"> Allow internal-network scan (RFC1918, loopback)</label>
+          <input type="text" id="dast-internal-confirm" placeholder="Type ALLOW-INTERNAL to confirm" style="display:none;margin-top:4px">
+        </div>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Profile</label>
+        <select name="stage">
+          <option value="intake">intake (light — discovery only)</option>
+          <option value="preprod" selected>preprod (DAST default — gate-eligible)</option>
+        </select>
+        <small class="form-help">DAST is normally run at <strong>preprod</strong>; <strong>intake</strong> limits to discovery (recon + endpoint enumeration). Heavier modes (ZAP active, Burp active, sqlmap, adversary emulation) require the opt-in below.</small>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Adapter</label>
+        <select name="adapter">
+          <option value="all" selected>DAST safe defaults ({% for a in dast_safe_default_adapters %}{{ a }}{% if not loop.last %}, {% endif %}{% endfor %})</option>
+          {% for a in dast_adapters %}
+            {% set heavy = a in dast_heavy_adapters %}
+            <option value="{{ a }}"{% if heavy %} class="adapter-heavy"{% endif %}>{{ a }}{% if heavy %} · heavy / mutating{% endif %}</option>
           {% endfor %}
-        </tbody>
-      </table>
+        </select>
+        <small class="form-help">Safe defaults: passive web scanning, MCP scope checks. Heavy adapters require <em>allow state-changing testing</em> below.</small>
+      </div>
+
+      <div class="filter-group" style="margin-bottom:14px">
+        <label>Risk gates (opt-in)</label>
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <label class="cb"><input type="checkbox" name="allow_active"> Allow state-changing testing (ZAP active, Burp active, sqlmap)</label>
+          <label class="cb"><input type="checkbox" name="allow_adversary"> Allow adversary emulation (Metasploit, Atomic, Caldera)</label>
+        </div>
+        <small class="form-help">Both require the target's <code>allow_mutation=true</code> on its manifest. Ad-hoc URLs cannot enable these — promote to a saved manifest first.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Start DAST scan</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-left:8px">Cancel</a>
+    </form>
+    {% endif %}
+
+    {# ---- Pre-flight checks visible to both modes ---- #}
+    {% if pre_flight_adapters %}
+    <div class="dark-panel" style="margin-top:18px;padding:10px 14px;border-radius:6px">
+      <strong>Always-run policy checks (when applicable):</strong>
+      <div class="small mono" style="margin-top:4px">
+        {% for a in pre_flight_adapters %}<span class="dark-pill" style="padding:3px 8px;border-radius:4px;margin-right:4px">{{ a }}</span>{% endfor %}
+      </div>
+      <p class="small" style="margin:6px 0 0 0">
+        These run alongside whichever mode you chose. <code>manifest_validator</code> and <code>threat_model_check</code> are policy gates (the latter applies to Tier 1/2 design-stage runs); <code>intel_match</code> cross-references manifest assets against the CVE/threat intel feeds. None require any operator action.
+      </p>
+    </div>
     {% endif %}
   </article>
+
+  {# ============================================================
+     Shared Recent scans (visible in both modes)
+     ============================================================ #}
+  {% if scans %}
+  <article class="change-detail" style="margin-top:18px">
+    <header><h2>Recent scans</h2></header>
+    <table class="findings">
+      <thead>
+        <tr><th>When</th><th>App</th><th>Stage</th><th>Adapter</th><th>Status</th><th>Findings before → after</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in scans %}
+          <tr>
+            <td class="mono small">{{ s.scan_id }}</td>
+            <td class="mono">{{ s.app_name }}</td>
+            <td class="mono">{{ s.stage }}</td>
+            <td class="mono">{{ s.adapter or "all" }}</td>
+            <td>
+              {% if s.status == 'running' %}<span class="sev-badge sev-medium">Running</span>
+              {% elif s.status == 'done' %}<span class="sev-badge sev-info">done</span>
+              {% elif s.status == 'failed' %}<span class="sev-badge sev-high">failed</span>
+              {% elif s.status == 'stopped' %}<span class="sev-badge sev-low">stopped</span>
+              {% else %}<span class="sev-badge sev-low">{{ s.status }}</span>
+              {% endif %}
+            </td>
+            <td class="mono small">
+              {% if s.findings_after is none %}{{ s.findings_before }} → ?
+              {% else %}{{ s.findings_before }} → {{ s.findings_after }} ({{ s.findings_after - s.findings_before }})
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('scan_status', scan_id=s.scan_id) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px">View</a>
+              <a href="{{ url_for('index', app=s.app_name) }}" class="btn btn-secondary" style="padding:3px 9px;font-size:11px;margin-left:4px">Findings →</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  {% endif %}
+
+  <style>
+    .scan-mode-row { display:flex; gap:10px; margin-top:10px; }
+    .scan-mode-pill {
+      flex:1; padding:14px 18px; border-radius:8px; border:1px solid var(--border);
+      background:white; color:var(--text); text-decoration:none;
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .scan-mode-pill:hover { border-color:var(--navy); }
+    .scan-mode-pill.active { background:var(--navy); color:white; border-color:var(--navy-dk); }
+    .scan-mode-pill.active .muted { color:rgba(255,255,255,0.75); }
+    .scan-mode-pill-dast.active { background:#92400e; border-color:#7c3010; }
+    .dast-target-radio { display:flex; flex-direction:column; gap:4px; padding:6px 0; }
+    .dast-target-radio .cb { font-weight:normal; }
+    select option.adapter-heavy { color:#c1380e; }
+  </style>
+
+  <script>
+    // ---- DAST sub-tab toggle: Known app vs Arbitrary URL ----
+    const radios = document.querySelectorAll('input[name="dast_target_kind"]');
+    const mBlock = document.getElementById('dast-manifest-block');
+    const uBlock = document.getElementById('dast-url-block');
+    const mSelect = mBlock ? mBlock.querySelector('select[name="manifest"]') : null;
+    const uInput  = uBlock ? uBlock.querySelector('input[name="target_url"]') : null;
+    function syncSubTab() {
+      const v = (document.querySelector('input[name="dast_target_kind"]:checked') || {}).value;
+      if (!mBlock || !uBlock) return;
+      const isUrl = v === 'url';
+      mBlock.style.display = isUrl ? 'none' : '';
+      uBlock.style.display = isUrl ? '' : 'none';
+      // Toggle required attributes so HTML5 validation aligns with the visible sub-form.
+      if (mSelect) mSelect.required = !isUrl;
+      if (uInput)  uInput.required  = isUrl;
+    }
+    radios.forEach(r => r.addEventListener('change', syncSubTab));
+    syncSubTab();
+
+    // ---- Manifest dropdown preview: show base_url + mutation flag ----
+    if (mSelect) {
+      const preview = document.getElementById('dast-manifest-preview');
+      function refresh() {
+        const opt = mSelect.options[mSelect.selectedIndex];
+        if (!opt || !opt.value) { preview.textContent = ''; return; }
+        const target = opt.dataset.target || '(none — manifest has no target.base_url)';
+        const mut = opt.dataset.mutate === 'True' ? ' · <span style="color:#c1380e">allow_mutation=true</span>' : '';
+        preview.innerHTML = 'Target: <code>' + target + '</code>' + mut;
+      }
+      mSelect.addEventListener('change', refresh);
+      refresh();
+    }
+
+    // ---- Paste button: clipboard read on click (gesture-bound, no auto-paste) ----
+    const pasteBtn = document.getElementById('dast-paste-btn');
+    if (pasteBtn && uInput) {
+      pasteBtn.addEventListener('click', async () => {
+        try {
+          const txt = (await navigator.clipboard.readText()).trim();
+          if (txt) { uInput.value = txt; uInput.focus(); }
+        } catch (_e) { /* permission denied / no clipboard — silent */ }
+      });
+    }
+
+    // ---- Internal-scan typed confirmation ----
+    const internalCb = document.getElementById('dast-internal');
+    const internalConfirm = document.getElementById('dast-internal-confirm');
+    if (internalCb && internalConfirm) {
+      internalCb.addEventListener('change', () => {
+        internalConfirm.style.display = internalCb.checked ? '' : 'none';
+        if (!internalCb.checked) internalConfirm.value = '';
+      });
+    }
+
+    // ---- DAST confirmation gate: one-time per host:port per session ----
+    // Block submit unless the typed-confirmation matches when internal-scan is on,
+    // and a session flag is set for this host:port (so the same target only
+    // confirms once per browser session per target class).
+    window.dastConfirm = function(form) {
+      const fd = new FormData(form);
+      const kind = fd.get('dast_target_kind') || 'manifest';
+      // 1. Typed-confirm "ALLOW-INTERNAL" when internal-scan checkbox is on
+      if (internalCb && internalCb.checked) {
+        if (internalConfirm.value.trim() !== 'ALLOW-INTERNAL') {
+          alert("Type ALLOW-INTERNAL into the confirmation box (case-sensitive) to enable an internal-network scan.");
+          internalConfirm.focus();
+          return false;
+        }
+      }
+      // 2. One-time per session "I am authorized to test this target" gate.
+      //    Skip if this is a known-app scan whose manifest is registered —
+      //    those targets are already approved on-disk.
+      if (kind === 'url') {
+        const u = (fd.get('target_url') || '').trim();
+        try {
+          const host = new URL(u).host;
+          const key = 'ai-protect:dast-confirmed:v1:' + host;
+          const now = Date.now();
+          const prev = parseInt(localStorage.getItem(key) || '0', 10);
+          // 24h TTL
+          if (!prev || (now - prev) > 24 * 3600 * 1000) {
+            if (!confirm("DAST: scan " + host + "?\n\nI am authorized to test this target and accept that scans send real requests to it.")) {
+              return false;
+            }
+            localStorage.setItem(key, String(now));
+          }
+        } catch (_e) { /* malformed URL — let server-side validation reject */ }
+      }
+      return true;
+    };
+  </script>
 {% endblock %}

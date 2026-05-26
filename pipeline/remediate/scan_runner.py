@@ -43,53 +43,74 @@ def main():
     log_path = SCAN_LOG_DIR / f"{scan_id}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Resolve app_name from the manifest — used to scope before/after counts.
+    # Detect ad-hoc DAST manifests (synthesized by the UI for arbitrary-URL
+    # scans, written to ~/.ai-protect/adhoc-scans/<scan_id>.yml). We always
+    # delete these in the finally block — even on crash — so the dir doesn't
+    # accumulate cruft. The defense-in-depth janitor on /scan GET handles
+    # the leftover from any runner that died before reaching this point.
+    adhoc_to_delete: Path | None = None
     try:
-        app_name = Manifest.from_yaml(manifest_path).name
-    except Exception:
-        app_name = ""
+        if Path(manifest_path).resolve().parent.name == "adhoc-scans":
+            adhoc_to_delete = Path(manifest_path).resolve()
+    except OSError:
+        pass
 
-    job = get_scan(scan_id)
-    if job:
-        job.status = "running"
-        # Active count for THIS app (deduped + resolved-filtered), not raw store size.
-        # The raw store grows by ~100 rows on every rescan because findings are
-        # append-only; reporting raw counts confuses operators about what the
-        # scan actually changed.
-        job.findings_before = _active_count(findings_path, app_name) if app_name else 0
-        job.log_path = str(log_path)
-        write_scan(job)
+    try:
+        # Resolve app_name from the manifest — used to scope before/after counts.
+        try:
+            app_name = Manifest.from_yaml(manifest_path).name
+        except Exception:
+            app_name = ""
 
-    cmd = [
-        sys.executable, "-m", "pipeline.cli",
-        "--findings", findings_path,
-        "run", manifest_path,
-        "--stage", stage,
-        "--scan-id", scan_id,
-    ]
-    if adapter:
-        cmd += ["--adapter", adapter]
+        job = get_scan(scan_id)
+        if job:
+            job.status = "running"
+            # Active count for THIS app (deduped + resolved-filtered), not raw store size.
+            # The raw store grows by ~100 rows on every rescan because findings are
+            # append-only; reporting raw counts confuses operators about what the
+            # scan actually changed.
+            job.findings_before = _active_count(findings_path, app_name) if app_name else 0
+            job.log_path = str(log_path)
+            write_scan(job)
 
-    # Run the CLI; tee output to log file.
-    with open(log_path, "w") as logf:
-        proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT)
+        cmd = [
+            sys.executable, "-m", "pipeline.cli",
+            "--findings", findings_path,
+            "run", manifest_path,
+            "--stage", stage,
+            "--scan-id", scan_id,
+        ]
+        if adapter:
+            cmd += ["--adapter", adapter]
 
-    findings_after = _active_count(findings_path, app_name) if app_name else 0
-    marker = {
-        "exit_code": proc.returncode,
-        "findings_after": findings_after,
-        "ended_at": time.time(),
-    }
-    Path(str(log_path).replace(".log", ".done")).write_text(json.dumps(marker))
+        # Run the CLI; tee output to log file.
+        with open(log_path, "w") as logf:
+            proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT)
 
-    job = get_scan(scan_id)
-    if job:
-        job.exit_code = proc.returncode
-        job.findings_after = findings_after
-        job.status = "done" if proc.returncode in (0, 2) else "failed"
-        job.ended_at = time.time()
-        write_scan(job)
-        emit_event(job, f"scan.{job.status}")
+        findings_after = _active_count(findings_path, app_name) if app_name else 0
+        marker = {
+            "exit_code": proc.returncode,
+            "findings_after": findings_after,
+            "ended_at": time.time(),
+        }
+        Path(str(log_path).replace(".log", ".done")).write_text(json.dumps(marker))
+
+        job = get_scan(scan_id)
+        if job:
+            job.exit_code = proc.returncode
+            job.findings_after = findings_after
+            job.status = "done" if proc.returncode in (0, 2) else "failed"
+            job.ended_at = time.time()
+            write_scan(job)
+            emit_event(job, f"scan.{job.status}")
+    finally:
+        # Best-effort cleanup of the synthetic adhoc YAML. Ignored if the
+        # file is already gone (concurrent janitor, manual cleanup, etc.).
+        if adhoc_to_delete is not None:
+            try:
+                adhoc_to_delete.unlink()
+            except (FileNotFoundError, OSError):
+                pass
 
 
 if __name__ == "__main__":

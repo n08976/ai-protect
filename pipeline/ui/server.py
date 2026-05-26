@@ -973,41 +973,133 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     # ============================================================
 
     @app.route("/scan")
+    @app.route("/scan/source")
+    @app.route("/scan/live")
     def scan_launcher():
         from ..adapters.registry import REGISTRY
+        from ..core import scan_modes as sm
+        from ..core.adhoc import cleanup_stale_adhoc_manifests
+
+        # Defense-in-depth janitor: prune any ad-hoc temp manifests left
+        # behind by crashed runners (older than 7 days). The runner's own
+        # try/finally handles the happy path.
+        cleanup_stale_adhoc_manifests()
+
+        # Mode: ?mode= takes precedence; /scan/source and /scan/live aliases
+        # set their own default. Falls back to SAST when nothing's specified.
+        rule = (request.url_rule.rule if request.url_rule else "/scan")
+        if rule.endswith("/source"):
+            default_mode = sm.MODE_SAST
+        elif rule.endswith("/live"):
+            default_mode = sm.MODE_DAST
+        else:
+            default_mode = sm.MODE_SAST
+        mode = (request.args.get("mode") or default_mode).lower()
+        if mode not in sm.SCAN_MODES:
+            mode = sm.MODE_SAST
+
         md = Path(app.config["MANIFESTS_DIR"])
         manifests = []
         if md.is_dir():
             for p in sorted(md.glob("*.yml")):
                 try:
                     m = Manifest.from_yaml(p)
-                    manifests.append({"path": str(p), "name": m.name})
+                    # Note: target.base_url surfaced so the UI can preview
+                    # "Known app" DAST scans without re-loading the manifest.
+                    manifests.append({
+                        "path": str(p), "name": m.name,
+                        "target_base_url": (m.target.base_url or "") if m.target else "",
+                        "allow_mutation": bool(m.target and m.target.allow_mutation),
+                    })
                 except Exception:
                     continue
+
+        adapter_names = list(REGISTRY.keys())
+        sast_adapters = sm.adapters_for_mode(sm.MODE_SAST, adapter_names)
+        dast_adapters = sm.adapters_for_mode(sm.MODE_DAST, adapter_names)
+        pre_flight    = sm.pre_flight_adapters(adapter_names)
+
+        # DAST "safe defaults" — opinionated minimal set that won't burn down
+        # a target. Heavy / active / adversary adapters require the explicit
+        # opt-in toggle.
+        DAST_SAFE_ADAPTERS = ["zap", "nuclei", "mcp_scope"]
+        DAST_HEAVY_ADAPTERS = ["zap", "burp", "sqlmap", "metasploit",
+                               "atomic", "caldera"]   # opt-in only
+
         scans = all_scans()
         for s in scans:
             update_status_from_pid(s)
         return render_template(
             "scan.html",
+            mode=mode,
             manifests=manifests,
             stages=["intake", "design", "build", "preprod", "production"],
-            adapters=sorted(REGISTRY.keys()),
+            sast_adapters=sast_adapters,
+            dast_adapters=dast_adapters,
+            dast_safe_default_adapters=[a for a in DAST_SAFE_ADAPTERS if a in dast_adapters],
+            dast_heavy_adapters=[a for a in DAST_HEAVY_ADAPTERS if a in dast_adapters],
+            pre_flight_adapters=pre_flight,
+            mode_labels=sm.MODE_LABELS,
+            mode_descriptions=sm.MODE_DESCRIPTIONS,
             scans=scans[:30],
         )
 
     @app.route("/scan/start", methods=["POST"])
     def scan_start():
         import subprocess as sp
-        manifest_path = request.form.get("manifest")
-        stage = request.form.get("stage", "build")
+        from ..core import scan_modes as sm
+        from ..core import adhoc as adhoc_mod
+        from ..core.url_safety import check_url
+
+        # Mode branching: SAST keeps the original (manifest-path-based) flow.
+        # DAST adds two sub-modes: known-app (= manifest target) and ad-hoc URL.
+        mode = (request.form.get("mode") or sm.MODE_SAST).lower()
+        if mode not in sm.SCAN_MODES:
+            return f"unknown mode {mode!r} — must be one of {sm.SCAN_MODES}", 400
+
+        stage = request.form.get("stage", "build" if mode == sm.MODE_SAST else "preprod")
         adapter = request.form.get("adapter") or None
         if adapter in ("", "all"):
             adapter = None
+
+        manifest_path = request.form.get("manifest")
+        # For DAST with sub-mode=url, build a synthetic manifest in memory and
+        # write it to a temp YAML the scan_runner can read. The runner cleans
+        # the file up in its finally block.
+        dast_sub = (request.form.get("dast_target_kind") or "manifest").lower()
+        if mode == sm.MODE_DAST and dast_sub == "url":
+            target_url = (request.form.get("target_url") or "").strip()
+            allow_internal_scan = (request.form.get("allow_internal_scan") == "on")
+            allow_insecure_http = (request.form.get("allow_insecure_http") == "on")
+            chk = check_url(
+                target_url,
+                allow_internal_scan=allow_internal_scan,
+                allow_insecure_http=allow_insecure_http,
+            )
+            if not chk.ok:
+                marker = "HARD" if chk.hard_deny else "REFUSED"
+                return (f"{marker}: cannot scan {target_url!r}\n  {chk.reason}", 400)
+            scan_id = new_scan_id()
+            manifest_dict = adhoc_mod.build_adhoc_manifest_dict(
+                chk.url, allow_internal_scan=allow_internal_scan,
+                allow_insecure_http=allow_insecure_http,
+                actor=DEFAULT_ACTOR,
+            )
+            manifest_path = str(adhoc_mod.write_adhoc_manifest(manifest_dict, scan_id))
+        else:
+            scan_id = None   # assigned below after the manifest is read
+
         try:
             m = Manifest.from_yaml(manifest_path)
         except Exception as e:
+            # If we already wrote a temp adhoc YAML and it failed to parse,
+            # clean it up before bailing.
+            if mode == sm.MODE_DAST and dast_sub == "url" and scan_id:
+                adhoc_mod.cleanup_one(scan_id)
             return f"Cannot read manifest: {e}", 400
-        scan_id = new_scan_id()
+        # SAST + DAST/manifest paths still need a scan_id; DAST/url got one above.
+        if scan_id is None:
+            scan_id = new_scan_id()
         job = ScanJob(
             scan_id=scan_id,
             manifest_path=manifest_path,
