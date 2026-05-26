@@ -89,6 +89,15 @@ class ZAPAdapter(Adapter):
             raise AdapterUnavailable(
                 f"Unknown ZAP mode {mode!r}. Supported: {', '.join(SUPPORTED_MODES)}"
             )
+        # ZAP spider + active scan both crawl the URL tree below the seed.
+        # Refuse bare-origin targets per the global DAST safety policy so we
+        # don't accidentally crawl every URL on the host (vendor blogs,
+        # marketing pages, admin panels not in scope).
+        from ..core.dast_config import DastConfig
+        dc = DastConfig.from_manifest(self.manifest)
+        refusal = dc.refuse_bare_origin_for(self.name)
+        if refusal:
+            raise AdapterUnavailable(refusal)
 
     def _api(self) -> str:
         return os.environ["ZAP_API_URL"].rstrip("/")
@@ -103,11 +112,26 @@ class ZAPAdapter(Adapter):
 
     def run(self):
         self.preflight()
+        from ..core.dast_config import DastConfig
+        dc = DastConfig.from_manifest(self.manifest)
         target = self.manifest.target.base_url
         mode = self.config.get("mode", "spider").lower()
-        timeout_s = self.config.get("timeout_s", 1200)
+        # Universal timebox: ZAP runs polling-based scans against a daemon,
+        # so we enforce the cap via deadline checks rather than subprocess
+        # timeout. Per-call config can request shorter; never longer than dc.
+        timeout_s = dc.subprocess_timeout(override=self.config.get("timeout_s", 1200)) or 1200
         deadline = time.time() + timeout_s
         tier = classify(self.manifest).tier
+        # Apply concurrency: ZAP exposes threadsPerHost on the active scanner.
+        # Best-effort — older ZAP versions may not honor; ignore on 4xx/5xx.
+        try:
+            requests.get(
+                f"{self._api()}/JSON/ascan/action/setOptionThreadPerHost/",
+                params=self._params(Integer=str(dc.max_concurrency)),
+                timeout=10,
+            )
+        except Exception:
+            pass
 
         if mode == "api":
             self._import_api_spec()

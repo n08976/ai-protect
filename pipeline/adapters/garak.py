@@ -77,6 +77,8 @@ class GarakAdapter(Adapter):
 
     def run(self) -> list[Finding]:
         self.preflight()
+        from ..core.dast_config import DastConfig
+        dc = DastConfig.from_manifest(self.manifest)
         probes = self.config.get("probes", "promptinject,leakreplay,encoding")
         with tempfile.TemporaryDirectory() as td:
             report_prefix = os.path.join(td, "garak_run")
@@ -86,6 +88,9 @@ class GarakAdapter(Adapter):
                 "--probes", probes,
                 "--report_prefix", report_prefix,
                 "--generations", str(self.config.get("generations", 1)),
+                # garak --parallel_requests controls concurrent calls to the
+                # target model — same intent as max_concurrency.
+                "--parallel_requests", str(dc.max_concurrency),
             ]
             env = os.environ.copy()
             for m in self.manifest.models:
@@ -95,16 +100,19 @@ class GarakAdapter(Adapter):
                         raise AdapterUnavailable(
                             f"Auth env var {m.auth_env!r} for model {m.name!r} is not set."
                         )
+            timeout = dc.subprocess_timeout(override=self.config.get("timeout_s", 1800))
             try:
                 subprocess.run(
                     cmd,
                     env=env,
                     check=True,
-                    timeout=self.config.get("timeout_s", 1800),
+                    timeout=timeout,
                     capture_output=True,
                 )
             except subprocess.CalledProcessError as e:
                 raise AdapterUnavailable(f"garak exited non-zero: {e.stderr[:500]}")
+            except subprocess.TimeoutExpired:
+                raise AdapterUnavailable(f"garak exceeded timebox ({timeout}s)")
             report_path = Path(report_prefix + ".report.jsonl")
             if not report_path.exists():
                 # Older / newer garak versions may use a slightly different name.

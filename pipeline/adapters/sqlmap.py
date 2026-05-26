@@ -39,9 +39,13 @@ class SqlmapAdapter(Adapter):
 
     def run(self):
         self.preflight()
+        from ..core.dast_config import DastConfig
+        dc = DastConfig.from_manifest(self.manifest)
         target = self.manifest.target.base_url
         with tempfile.TemporaryDirectory() as td:
             out_dir = Path(td)
+            # --threads honors max_concurrency; sqlmap caps at 10 internally.
+            threads = min(int(dc.max_concurrency), 10)
             cmd = [
                 "sqlmap", "-u", target,
                 "--batch",                  # never prompt
@@ -49,12 +53,16 @@ class SqlmapAdapter(Adapter):
                 "--smart",                  # only deep-test on suspected injectable params
                 "--level", str(self.config.get("level", 2)),
                 "--risk", str(self.config.get("risk", 1)),
+                "--threads", str(threads),
                 "--timeout", str(self.config.get("timeout_s_per_request", 15)),
             ]
             try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900, check=False)
+                proc = subprocess.run(
+                    cmd, capture_output=True, text=True,
+                    timeout=dc.subprocess_timeout(override=900), check=False,
+                )
             except subprocess.TimeoutExpired:
-                raise AdapterUnavailable("sqlmap timed out")
+                raise AdapterUnavailable(f"sqlmap exceeded timebox ({dc.subprocess_timeout(override=900)}s)")
             output = (proc.stdout or "") + "\n" + (proc.stderr or "")
 
         tier = classify(self.manifest).tier

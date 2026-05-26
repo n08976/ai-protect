@@ -109,53 +109,90 @@ class ReconAdapter(Adapter):
                 ))
         return findings
 
-    @staticmethod
-    def _subfinder(apex: str) -> list[str]:
+    # Instance methods (not staticmethods) so each can pull DastConfig from
+    # the manifest — fanout limits + universal timebox come from there.
+
+    def _dc(self):
+        from ..core.dast_config import DastConfig
+        return DastConfig.from_manifest(self.manifest)
+
+    def _subfinder(self, apex: str) -> list[str]:
+        dc = self._dc()
+        # Cap the result set so a hostile apex (or simply a giant brand)
+        # doesn't yield thousands of subdomains we then pipe into the slow
+        # httpx + naabu stages.
+        max_results = int(self.config.get("subfinder_max", 200))
         try:
             proc = subprocess.run(
-                ["subfinder", "-d", apex, "-silent"],
-                capture_output=True, text=True, timeout=120, check=False,
+                ["subfinder", "-d", apex, "-silent", "-max-time", "2"],
+                capture_output=True, text=True,
+                timeout=dc.subprocess_timeout(override=120), check=False,
             )
-            return [l.strip() for l in proc.stdout.splitlines() if l.strip()]
+            return [l.strip() for l in proc.stdout.splitlines() if l.strip()][:max_results]
         except Exception as e:
             log.warning("subfinder failed: %s", e)
             return []
 
-    @staticmethod
-    def _httpx(hosts: list[str]) -> list[dict]:
+    def _httpx(self, hosts: list[str]) -> list[dict]:
         if not hosts:
             return []
+        dc = self._dc()
         try:
             proc = subprocess.run(
-                ["httpx", "-silent", "-json", "-status-code", "-title"],
+                ["httpx", "-silent", "-json", "-status-code", "-title",
+                 "-threads", str(dc.max_concurrency),
+                 "-rate-limit", str(dc.max_rps)],
                 input="\n".join(hosts),
-                capture_output=True, text=True, timeout=180, check=False,
+                capture_output=True, text=True,
+                timeout=dc.subprocess_timeout(override=180), check=False,
             )
             return [json.loads(l) for l in proc.stdout.splitlines() if l.strip()]
         except Exception as e:
             log.warning("httpx failed: %s", e)
             return []
 
-    @staticmethod
-    def _naabu(host: str) -> list[dict]:
+    def _naabu(self, host: str) -> list[dict]:
+        dc = self._dc()
+        # Top-1000 ports by default; the manifest can widen, but the bare
+        # default avoids a /24 sweep on the runner host.
+        ports = str(self.config.get("ports", "top-1000"))
+        # naabu's -rate is packets/sec. Multiply max_rps by 5 since port
+        # scans need bursts but cap at 500 absolute.
+        rate = min(500, dc.max_rps * 5)
         try:
             proc = subprocess.run(
-                ["naabu", "-host", host, "-silent", "-json", "-rate", "100"],
-                capture_output=True, text=True, timeout=300, check=False,
+                ["naabu", "-host", host, "-silent", "-json",
+                 "-rate", str(rate), "-top-ports", ports if ports.startswith("top") else "100",
+                 *(["-p", ports] if not ports.startswith("top") else [])],
+                capture_output=True, text=True,
+                timeout=dc.subprocess_timeout(override=300), check=False,
             )
             return [json.loads(l) for l in proc.stdout.splitlines() if l.strip()]
         except Exception as e:
             log.warning("naabu failed: %s", e)
             return []
 
-    @staticmethod
-    def _katana(url: str) -> list[str]:
+    def _katana(self, url: str) -> list[str]:
+        dc = self._dc()
+        # Katana IS a crawler — bare-origin refusal applies. If the manifest
+        # target is just an origin, we'd crawl everything; honor the global
+        # 'require scope prefix' guard instead.
+        refusal = dc.refuse_bare_origin_for("katana")
+        if refusal:
+            log.info("%s — skipping katana crawl", refusal)
+            return []
+        depth = int(self.config.get("katana_depth", 2))
+        max_urls = int(self.config.get("katana_max_urls", 500))
         try:
             proc = subprocess.run(
-                ["katana", "-u", url, "-silent", "-d", "2"],
-                capture_output=True, text=True, timeout=180, check=False,
+                ["katana", "-u", url, "-silent",
+                 "-d", str(depth),
+                 "-c", str(dc.max_concurrency),
+                 "-rate-limit", str(dc.max_rps)],
+                capture_output=True, text=True,
+                timeout=dc.subprocess_timeout(override=180), check=False,
             )
-            return [l.strip() for l in proc.stdout.splitlines() if l.strip()]
+            return [l.strip() for l in proc.stdout.splitlines() if l.strip()][:max_urls]
         except Exception as e:
             log.warning("katana failed: %s", e)
             return []
