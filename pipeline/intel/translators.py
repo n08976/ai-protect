@@ -108,7 +108,37 @@ def _strip_namespace(tag: str) -> str:
     return tag.split("}", 1)[1] if "}" in tag else tag
 
 
+# Some real-world RSS feeds (e.g. cvedaily.com/feed-tags/kirby.xml on
+# 2026-05-26) embed literal ']]>' sequences inside <![CDATA[ ... ]]> blocks
+# — typically because a CVE description quotes the CDATA syntax itself in a
+# backtick code fragment like `<![CDATA[ ]]>`. Standard XML parsers
+# terminate the outer CDATA at the first ']]>' they see and then choke on
+# the remaining markup ("mismatched tag at line N, column 407" against any
+# adapter that uses xml.etree). We preprocess by escaping inner ']]>' to
+# ']]]]><![CDATA[>' — the canonical split-CDATA escape that XML parsers
+# render back to ']]>' on the way out.
+#
+# Non-greedy + lookahead targets the LAST ']]>' before a closing tag, so
+# a CDATA block with no internal ']]>' rounds-trips unchanged.
+_CDATA_TERMINATOR = re.compile(rb"<!\[CDATA\[(.*?)\]\]>(\s*</)", re.DOTALL)
+
+
+def _escape_inner_cdata(raw: bytes) -> bytes:
+    if b"<![CDATA[" not in raw or b"]]>" not in raw:
+        return raw
+
+    def replace(m):
+        content = m.group(1)
+        if b"]]>" not in content:
+            return m.group(0)
+        safe = content.replace(b"]]>", b"]]]]><![CDATA[>")
+        return b"<![CDATA[" + safe + b"]]>" + m.group(2)
+
+    return _CDATA_TERMINATOR.sub(replace, raw)
+
+
 def translate_rss(raw: bytes, source_feed_id: str) -> list[IntelItem]:
+    raw = _escape_inner_cdata(raw)
     try:
         root = ET.fromstring(raw)
     except ET.ParseError as e:
@@ -150,6 +180,7 @@ _ATOM_NS = {"a": "http://www.w3.org/2005/Atom"}
 
 
 def translate_atom(raw: bytes, source_feed_id: str) -> list[IntelItem]:
+    raw = _escape_inner_cdata(raw)
     try:
         root = ET.fromstring(raw)
     except ET.ParseError as e:
