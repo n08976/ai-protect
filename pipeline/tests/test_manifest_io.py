@@ -211,5 +211,9 @@ def test_browse_listing_outside_sandbox_redirects():
 
 def test_browse_listing_non_existent_path():
     """Non-existent path under HOME (still in sandbox) returns error gracefully."""
-    d = mio.browse_listing("/home/user/does/not/exist/anywhere")
+    # HOME differs across environments — /home/user locally, /home/runner on
+    # the GitHub Actions runner. Expand from ~ so the path is always inside
+    # the BROWSE_ROOTS sandbox; otherwise the function silently resolves to
+    # ~ and returns a successful listing, defeating the assertion.
+    d = mio.browse_listing(os.path.expanduser("~/does/not/exist/anywhere"))
     assert d.get("can_use") is False or d.get("error") is not None
