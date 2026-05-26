@@ -33,10 +33,15 @@ BROWSE_ROOTS = [
 
 
 # Allow-listed enum values — match pipeline/core/manifest.py + tiering.py.
-DATA_SENSITIVITY_OPTIONS = ["phi", "pii", "financial", "confidential", "public"]
-DECISION_IMPACT_OPTIONS = ["irreversible", "clinical_influence", "automated_action", "advisory"]
-INTEGRATION_OPTIONS = ["external_action", "agent_tool_use", "write_back", "read_only"]
-USER_POPULATION_OPTIONS = ["external", "enterprise", "team", "single_user"]
+# "all" is a meta-option: the app has multiple of these characteristics; tier
+# conservatively at the most-restrictive value (handled in pipeline/core/tiering.py).
+# Useful when an app handles both PHI and PII, or takes both irreversible and
+# automated actions, etc. The most-restrictive value wins for classification
+# anyway; "all" just lets the operator state that explicitly on the manifest.
+DATA_SENSITIVITY_OPTIONS = ["all", "phi", "pii", "financial", "confidential", "public"]
+DECISION_IMPACT_OPTIONS = ["all", "irreversible", "clinical_influence", "automated_action", "advisory"]
+INTEGRATION_OPTIONS = ["all", "external_action", "agent_tool_use", "write_back", "read_only"]
+USER_POPULATION_OPTIONS = ["all", "external", "enterprise", "team", "single_user"]
 SIDE_EFFECTS_OPTIONS = ["read_only", "mutating", "irreversible"]
 
 

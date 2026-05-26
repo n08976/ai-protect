@@ -38,71 +38,84 @@
   <form method="POST" class="manifest-form" id="manifest-form"
         action="{{ url_for('manifest_edit', name=original_name) if mode == 'edit' else url_for('manifest_new') }}">
 
+    {# A tiny helper macro keeps the help-bubble pattern uniform across the
+       form. Anchors land at /docs#manifest-<key>. #}
+    {% macro hb(anchor, tooltip) -%}
+      <a href="{{ url_for('docs_page') }}#{{ anchor }}" class="help-bubble"
+         title="{{ tooltip }}" target="_blank" rel="noopener">?</a>
+    {%- endmacro %}
+
     <fieldset class="form-fs">
       <legend>Identity</legend>
       <div class="form-grid">
         <label class="form-row">
-          <span>Name <span class="req">*</span></span>
+          <span>Name <span class="req">*</span> {{ hb('manifest-name', 'Lower-case identifier — becomes the YAML filename and the app_name on every finding. Keep stable.') }}</span>
           <input type="text" name="name" required pattern="[a-z][a-z0-9_-]{1,63}"
                  placeholder="e.g. example-commercial"
                  value="{{ form.get('name', '') }}">
           <small class="form-help">Lower-case letters, digits, dashes, underscores. This is the filename — keep it stable.</small>
         </label>
         <label class="form-row">
-          <span>Owner email <span class="req">*</span></span>
+          <span>Owner email <span class="req">*</span> {{ hb('manifest-owner', 'Accountable owner. Receives findings notifications.') }}</span>
           <input type="email" name="owner" required
                  placeholder="you@example.com"
                  value="{{ form.get('owner', '') }}">
           <small class="form-help">Accountable owner of the app. Receives findings notifications.</small>
         </label>
         <label class="form-row">
-          <span>On-call email</span>
+          <span>On-call email {{ hb('manifest-owner', 'Paged when blocking gates trip during a release. Defaults to Owner.') }}</span>
           <input type="email" name="on_call"
                  placeholder="oncall@example.com (defaults to Owner)"
                  value="{{ form.get('on_call', '') }}">
           <small class="form-help">Optional — defaults to the Owner if blank.</small>
         </label>
         <label class="form-row span-2">
-          <span>Description</span>
+          <span>Description {{ hb('manifest-description', 'Free-text. What the app does + security shape. Tokenized by intel_match to find relevant CVE feeds.') }}</span>
           <textarea name="description" rows="3" placeholder="What does this app do, what's the security shape?">{{ form.get('description', '') }}</textarea>
         </label>
       </div>
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Risk tiering (v2.1 four-dimension scoring)</legend>
+      <legend>
+        Risk tiering (v2.1 four-dimension scoring)
+        {{ hb('manifest-data-sensitivity', 'Each dimension scores 1-4 (riskier higher). Sum + forced rules → Tier 1-4. Use "all" if your app spans every value in a dimension; it resolves to the most-restrictive value.') }}
+      </legend>
       <div class="form-grid form-grid-4">
         <label class="form-row">
-          <span>Data sensitivity</span>
+          <span>Data sensitivity {{ hb('manifest-data-sensitivity', 'Most-sensitive data class the app touches. PHI forces Tier 1.') }}</span>
           {{ select('data_sensitivity', options.data_sensitivity, form.get('data_sensitivity')) }}
-          <small class="form-help">PHI forces Tier 1.</small>
+          <small class="form-help"><strong>all</strong> = app handles multiple classes (e.g. PHI + PII); resolves to <em>phi</em> for tiering. <strong>phi</strong> forces Tier 1. <strong>pii</strong>/<strong>financial</strong> = 3/4. <strong>confidential</strong> = 2/4. <strong>public</strong> = 1/4.</small>
         </label>
         <label class="form-row">
-          <span>Decision impact</span>
+          <span>Decision impact {{ hb('manifest-decision-impact', 'What the worst possible model output could cause. clinical_influence forces Tier 1.') }}</span>
           {{ select('decision_impact', options.decision_impact, form.get('decision_impact')) }}
-          <small class="form-help">clinical_influence forces Tier 1.</small>
+          <small class="form-help"><strong>all</strong> → resolves to <em>irreversible</em>. <strong>irreversible</strong> = uncorrectable downstream (4/4). <strong>clinical_influence</strong> forces Tier 1. <strong>automated_action</strong> = downstream effect but recoverable (3/4). <strong>advisory</strong> = a human decides whether to act (1/4).</small>
         </label>
         <label class="form-row">
-          <span>Integration footprint</span>
+          <span>Integration footprint {{ hb('manifest-integration-footprint', 'How much the app reaches into other systems.') }}</span>
           {{ select('integration_footprint', options.integration_footprint, form.get('integration_footprint')) }}
+          <small class="form-help"><strong>all</strong> → resolves to <em>external_action</em>. <strong>external_action</strong> = third-party API calls (4/4). <strong>agent_tool_use</strong> = model invokes tools/MCPs (3/4). <strong>write_back</strong> = writes to a system of record (3/4). <strong>read_only</strong> = pure inference (1/4).</small>
         </label>
         <label class="form-row">
-          <span>User population</span>
+          <span>User population {{ hb('manifest-user-population', 'Who can talk to the app. external + non-advisory forces Tier 1.') }}</span>
           {{ select('user_population', options.user_population, form.get('user_population')) }}
-          <small class="form-help">external + non-advisory forces Tier 1.</small>
+          <small class="form-help"><strong>all</strong> → resolves to <em>external</em>. <strong>external</strong> = public/customers/partners (4/4). <strong>enterprise</strong>/<strong>team</strong> = internal (2/4). <strong>single_user</strong> = only the owner (1/4). external + non-advisory forces Tier 1.</small>
         </label>
       </div>
       <div class="tier-preview-block">
         Live preview:
         <span id="tier-preview" class="tier-badge tier-3">T?</span>
         <span id="tier-preview-rationale" class="small muted"></span>
+        <a href="{{ url_for('docs_page') }}#manifest-fields" target="_blank" rel="noopener"
+           class="small" style="margin-left:10px">More on what these mean →</a>
       </div>
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Scan scope</legend>
+      <legend>Scan scope {{ hb('manifest-source-paths', 'Where SAST/SCA/IaC adapters look on disk. Required when source_provider=local.') }}</legend>
       <label class="form-row">
-        <span>Source paths <span class="req">*</span></span>
+        <span>Source paths <span class="req">*</span> {{ hb('manifest-source-paths', 'One path per line. Every SAST/SCA adapter scans these. Leave blank when using the GitHub source provider — it materializes the repo and sets this automatically.') }}</span>
         <textarea name="source_paths" id="source_paths" rows="4" required
                   placeholder="/home/user/ExampleAdsApp/commercial&#10;/home/user/ExampleAdsApp/ads-studio">{% for p in (form.get('source_paths') or []) %}{{ p }}
 {% endfor %}</textarea>
@@ -112,7 +125,7 @@
         </small>
       </label>
       <label class="form-row">
-        <span>Source excludes</span>
+        <span>Source excludes {{ hb('manifest-source-excludes', 'One pattern per line. Drops findings whose path matches an absolute prefix, a glob (*.pyc), or a substring (__pycache__).') }}</span>
         <textarea name="source_excludes" rows="4"
                   placeholder="__pycache__&#10;node_modules&#10;*.pyc&#10;/opt/secrets/">{% for e in (form.get('source_excludes') or []) %}{{ e }}
 {% endfor %}</textarea>
@@ -125,7 +138,7 @@
         </small>
       </label>
       <label class="form-row">
-        <span>App aliases (inherit remediation history)</span>
+        <span>App aliases (inherit remediation history) {{ hb('manifest-app-aliases', 'Previous app names this manifest inherits resolution history from. Used when an app was renamed and you want resolved Changes from the old name to apply to this app.') }}</span>
         <textarea name="app_aliases" rows="2"
                   placeholder="ads-automation">{% for a in (form.get('app_aliases') or []) %}{{ a }}
 {% endfor %}</textarea>
@@ -211,7 +224,7 @@
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Model endpoints (optional)</legend>
+      <legend>Model endpoints (optional) {{ hb('manifest-models', 'Every model the app sends prompts to. PHI handling requires via_gateway=true AND baa_covered=true on every model.') }}</legend>
       <small class="form-help" style="display:block;margin-bottom:8px">
         Each model the app sends prompts to. PHI requires <code>via_gateway=true</code> AND <code>baa_covered=true</code> — manifest validation rejects otherwise.
       </small>
@@ -233,7 +246,7 @@
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>MCP servers (optional)</legend>
+      <legend>MCP servers (optional) {{ hb('manifest-mcp-servers', 'MCPs the app calls as tools. The app inherits the most-restrictive tier across its MCPs — a Tier 4 app that calls a Tier 1 MCP is classified Tier 1.') }}</legend>
       <small class="form-help" style="display:block;margin-bottom:8px">
         MCPs the app calls. Tier inheritance: the app's tier is at least as restrictive as the most-restrictive MCP it uses.
       </small>
@@ -261,7 +274,7 @@
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Surfaces (attacker-controlled inputs)</legend>
+      <legend>Surfaces (attacker-controlled inputs) {{ hb('manifest-surfaces', 'Where untrusted input enters the app. The more surfaces, the larger the prompt-injection attack surface — adapters like garak / pyrit probe these.') }}</legend>
       <div class="form-grid form-grid-3">
         <label class="cb"><input type="checkbox" name="surface_user_chat" {% if form.get('surfaces', {}).get('has_user_chat') %}checked{% endif %}> user chat</label>
         <label class="cb"><input type="checkbox" name="surface_email" {% if form.get('surfaces', {}).get('has_email_intake') %}checked{% endif %}> email intake</label>
@@ -272,28 +285,28 @@
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Target environment</legend>
+      <legend>Target environment {{ hb('manifest-target', 'Where DAST scans (ZAP, nuclei, sqlmap, mcp_scope) reach. Also gates state-changing adapters via allow_mutation.') }}</legend>
       <div class="form-grid">
         <label class="form-row">
-          <span>Base URL</span>
+          <span>Base URL {{ hb('manifest-target', 'Primary HTTP endpoint. DAST scans target this URL.') }}</span>
           <input type="text" name="target_base_url" placeholder="https://example.com" value="{{ form.get('target', {}).get('base_url') or '' }}">
         </label>
         <label class="form-row">
-          <span>API URL</span>
+          <span>API URL {{ hb('manifest-target', 'Separate API endpoint if it differs from the base URL.') }}</span>
           <input type="text" name="target_api_url" placeholder="https://example.com/api/" value="{{ form.get('target', {}).get('api_url') or '' }}">
         </label>
         <label class="form-row">
-          <span>Test user token env var</span>
+          <span>Test user token env var {{ hb('manifest-target', 'Env-var name holding a low-privilege test credential. When set, mcp_scope performs a live forbidden-action probe; otherwise static checks only.') }}</span>
           <input type="text" name="target_test_user_token_env" placeholder="TEST_TOKEN" value="{{ form.get('target', {}).get('test_user_token_env') or '' }}">
           <small class="form-help">If set, mcp_scope probes a forbidden action live.</small>
         </label>
         <label class="cb">
           <input type="checkbox" name="target_allow_mutation" {% if form.get('target', {}).get('allow_mutation') %}checked{% endif %}>
-          Allow mutation
+          Allow mutation {{ hb('manifest-target', 'Required true for any adapter that modifies state: Burp active, ZAP active, sqlmap, atomic, caldera, metasploit, ride. Default off.') }}
           <small class="form-help">Required for active DAST + atomic / caldera / metasploit exploits + ride.</small>
         </label>
         <label class="form-row span-2">
-          <span>Network allowed zones</span>
+          <span>Network allowed zones {{ hb('manifest-target', 'CIDR list that pre-approves internal-IP DAST scans for THIS app. Lifts the default refusal of RFC1918/loopback/etc. when the resolved IP is in one of these CIDRs.') }}</span>
           <textarea name="target_network_allowed_zones" rows="2" placeholder="one zone per line">{% for z in (form.get('target', {}).get('network_allowed_zones') or []) %}{{ z }}
 {% endfor %}</textarea>
         </label>
@@ -301,23 +314,28 @@
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Expected behavior (optional)</legend>
+      <legend>Expected behavior (optional) {{ hb('manifest-expected', 'Ground-truth allow-lists. Anything outside these sets is flagged as a scope violation by mcp_scope.') }}</legend>
       <div class="form-grid">
         <label class="form-row">
-          <span>Expected actions</span>
+          <span>Expected actions {{ hb('manifest-expected', 'Allow-list of action / tool names the app is authorized to invoke.') }}</span>
           <textarea name="expected_actions" rows="3" placeholder="one action per line">{% for a in (form.get('expected_actions') or []) %}{{ a }}
 {% endfor %}</textarea>
           <small class="form-help">Ground-truth allow-list. Anything an MCP exposes outside this set is a scope violation.</small>
         </label>
         <label class="form-row">
-          <span>Expected data scopes</span>
+          <span>Expected data scopes {{ hb('manifest-expected', 'Allow-list of data classifications the app is authorized to access. Outside-scope reads are flagged.') }}</span>
           <textarea name="expected_data_scopes" rows="3" placeholder="one scope per line">{% for s in (form.get('expected_data_scopes') or []) %}{{ s }}
 {% endfor %}</textarea>
         </label>
         <label class="form-row span-2">
-          <span>Threat model path</span>
+          <span>Threat model path {{ hb('manifest-threat-model', 'Required for Tier 1/2 at the design stage. See pipeline/fixtures/clinical_assistant_threat_model.yml for the shape.') }}</span>
           <input type="text" name="threat_model_path" placeholder="pipeline/fixtures/your_threat_model.yml" value="{{ form.get('threat_model_path') or '' }}">
           <small class="form-help">Required for Tier 1/2 at design stage.</small>
+        </label>
+        <label class="form-row span-2">
+          <span>Guardrails path {{ hb('manifest-guardrails', 'NeMo Guardrails config. Required for Tier 1/2. See pipeline/fixtures/clinical_assistant_guardrails.yml for the shape.') }}</span>
+          <input type="text" name="guardrails_path" placeholder="pipeline/fixtures/your_guardrails.yml" value="{{ form.get('guardrails_path') or '' }}">
+          <small class="form-help">Required for Tier 1/2. The <code>guardrails</code> adapter fails the gate if missing.</small>
         </label>
       </div>
     </fieldset>

@@ -20,6 +20,10 @@
         <a href="#source-github-base-url" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ GHES base URL</a>
         <a href="#source-github-clone-strategy" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Clone strategy</a>
         <a href="#intel-poll-seconds" style="display:block; padding:6px 10px; color:#e6edf5; text-decoration:none; font-size:13px">Intel feeds defaults</a>
+        <a href="#manifest-fields" style="display:block; padding:6px 10px; color:#e6edf5; text-decoration:none; font-size:13px">Manifest fields</a>
+        <a href="#manifest-data-sensitivity" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Risk tiering dimensions</a>
+        <a href="#manifest-models" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Models &amp; MCPs</a>
+        <a href="#manifest-target" style="display:block; padding:6px 10px 6px 20px; color:#9ec5ea; text-decoration:none; font-size:12px">→ Target environment</a>
       </div>
     </aside>
 
@@ -124,6 +128,122 @@
 
         <h3 id="source-github-clone-depth">Clone depth</h3>
         <p>Number of recent commits to fetch. <strong>1</strong> (shallow) is fastest and sufficient for every SAST / dependency / IaC adapter we ship. Set <strong>0</strong> for full history — needed only if an adapter you wire in does <code>git blame</code> or commit-range analysis.</p>
+      </article>
+
+      <article class="change-detail" style="margin-top:18px">
+        <header><h2 id="manifest-fields">Manifest fields (the /manifests form)</h2></header>
+
+        <p>An <strong>app manifest</strong> declares one AI workload (an agent, an assistant, an automation runner — anything the pipeline scans). The four <em>Risk tiering</em> dimensions feed the classifier in <code>pipeline/core/tiering.py</code>: each one scores 1-4 (riskier is higher); the sum + a few forced rules determine Tier 1-4, which in turn decides which adapters run at which SDLC stage.</p>
+
+        <h3 id="manifest-name">Name</h3>
+        <p>Lower-case identifier (letters, digits, dashes, underscores). This becomes the YAML filename and the <code>app_name</code> on every finding — keep it stable, because renaming requires the <em>App aliases</em> field below to preserve resolution history.</p>
+
+        <h3 id="manifest-owner">Owner email · On-call email</h3>
+        <p>Accountable owner gets findings notifications; on-call is paged when blocking gates trip during a release. If on-call is blank it defaults to the owner.</p>
+
+        <h3 id="manifest-description">Description</h3>
+        <p>Free-text: what the app does + the security shape (where data flows, which surfaces accept user input, what irreversible actions are possible). Also tokenized by the <code>intel_match</code> adapter to find CVE feeds that mention products the app uses.</p>
+
+        <h3 id="manifest-data-sensitivity">Data sensitivity (Risk tier dimension 1 of 4)</h3>
+        <p>The most-sensitive data class the app touches. <strong>PHI handling forces Tier 1</strong> regardless of every other dimension (HIPAA / HITRUST baseline).</p>
+        <ul>
+          <li><strong>all</strong> — the app spans multiple classes (e.g. PHI + PII). The classifier resolves "all" to the most-restrictive value (<em>phi</em>) so tiering is conservative.</li>
+          <li><strong>phi</strong> — protected health information (patient names, MRN, DOB, diagnoses, labs, etc.) → score 4 / 4. <strong>Forces Tier 1.</strong></li>
+          <li><strong>pii</strong> — personally-identifiable information that isn't PHI (employee records, customer contact info) → 3 / 4.</li>
+          <li><strong>financial</strong> — payment, billing, banking data → 3 / 4.</li>
+          <li><strong>confidential</strong> — internal company data not in the categories above (roadmaps, code, internal docs) → 2 / 4.</li>
+          <li><strong>public</strong> — only public-domain or marketing content → 1 / 4.</li>
+        </ul>
+
+        <h3 id="manifest-decision-impact">Decision impact (Risk tier dimension 2 of 4)</h3>
+        <p>What the worst possible model output could cause. <strong>clinical_influence forces Tier 1</strong> (FDA SaMD reclassification risk).</p>
+        <ul>
+          <li><strong>all</strong> → resolves to <em>irreversible</em>.</li>
+          <li><strong>irreversible</strong> — model output can trigger an action that can't be undone (sent message, posted comment, deleted record) → 4 / 4.</li>
+          <li><strong>clinical_influence</strong> — output may shape a clinical decision (diagnosis, dosage, treatment selection) → 4 / 4. <strong>Forces Tier 1.</strong></li>
+          <li><strong>automated_action</strong> — output triggers a downstream action that has effects but is recoverable (ticket created, email drafted) → 3 / 4.</li>
+          <li><strong>advisory</strong> — output is shown to a human who decides whether to act on it (summary, recommendation, draft text) → 1 / 4.</li>
+        </ul>
+
+        <h3 id="manifest-integration-footprint">Integration footprint (Risk tier dimension 3 of 4)</h3>
+        <p>How much the app reaches into other systems.</p>
+        <ul>
+          <li><strong>all</strong> → resolves to <em>external_action</em>.</li>
+          <li><strong>external_action</strong> — calls third-party APIs that affect external state (post to Slack, push to GitHub, call a partner's API) → 4 / 4.</li>
+          <li><strong>agent_tool_use</strong> — model invokes tools / MCP servers internally; tools may call out → 3 / 4.</li>
+          <li><strong>write_back</strong> — writes to a system of record (EHR, CRM, the company DB) → 3 / 4.</li>
+          <li><strong>read_only</strong> — reads from systems but never writes; pure inference → 1 / 4.</li>
+        </ul>
+
+        <h3 id="manifest-user-population">User population (Risk tier dimension 4 of 4)</h3>
+        <p>Who can talk to the app. <strong>external + non-advisory forces Tier 1</strong> (an outside user driving consequential output is the highest-blast-radius shape).</p>
+        <ul>
+          <li><strong>all</strong> → resolves to <em>external</em>.</li>
+          <li><strong>external</strong> — public internet, customers, partners → 4 / 4.</li>
+          <li><strong>enterprise</strong> — anyone with a company SSO login → 2 / 4.</li>
+          <li><strong>team</strong> — a specific named team / org unit → 2 / 4.</li>
+          <li><strong>single_user</strong> — only the app's owner uses it (CLI tools, personal automation) → 1 / 4.</li>
+        </ul>
+
+        <h3 id="manifest-models">Model endpoints</h3>
+        <p>Every model the app sends prompts to. Each row:</p>
+        <ul>
+          <li><strong>name</strong> — short label you use to refer to this endpoint elsewhere.</li>
+          <li><strong>provider</strong> — <code>anthropic</code> / <code>openai</code> / <code>azure</code> / <code>internal</code> / etc.</li>
+          <li><strong>model</strong> — the model id (e.g. <code>claude-sonnet-4-6</code>, <code>gpt-4o</code>).</li>
+          <li><strong>auth env</strong> — the environment variable name holding the API key (e.g. <code>ANTHROPIC_API_KEY</code>). The pipeline reads from <code>os.environ</code>; this manifest field declares which var to read.</li>
+          <li><strong>via gateway</strong> — model traffic flows through your sanctioned gateway (Bedrock, a homegrown proxy, etc.) rather than direct provider calls. <strong>PHI handling REQUIRES this to be true.</strong></li>
+          <li><strong>BAA covered</strong> — the provider has signed a Business Associate Agreement covering this app. <strong>PHI handling REQUIRES this to be true.</strong></li>
+        </ul>
+
+        <h3 id="manifest-mcp-servers">MCP servers</h3>
+        <p>MCP (Model Context Protocol) servers the app's model can invoke as tools. Each row:</p>
+        <ul>
+          <li><strong>name</strong> — the MCP server's identifier.</li>
+          <li><strong>tier</strong> (1-4) — risk tier of the MCP itself. The app's tier inherits the most-restrictive MCP tier — so a Tier 4 app that calls a Tier 1 MCP is auto-classified Tier 1.</li>
+          <li><strong>data_scope</strong> — <code>phi</code> / <code>pii</code> / <code>internal</code> / <code>public</code> — what the MCP touches.</li>
+          <li><strong>actions</strong> — comma-separated allowed tool names. Anything outside this list is a <em>scope violation</em>.</li>
+          <li><strong>side_effects</strong> — <code>read_only</code> / <code>mutating</code> / <code>irreversible</code>.</li>
+          <li><strong>third_party</strong> — checked if the MCP is operated by an external vendor (additional review burden).</li>
+        </ul>
+
+        <h3 id="manifest-surfaces">Surfaces</h3>
+        <p>Attacker-controlled inputs the app exposes:</p>
+        <ul>
+          <li><strong>user chat</strong> — interactive chat input (human types prompts).</li>
+          <li><strong>email intake</strong> — emails the app ingests for processing.</li>
+          <li><strong>document ingest</strong> — file uploads, RAG corpora the user can add to.</li>
+          <li><strong>webhook</strong> — HTTP webhooks invoked by external systems.</li>
+          <li><strong>voice</strong> — speech-to-text ingress.</li>
+        </ul>
+        <p>The more surfaces are checked, the larger the prompt-injection attack surface — adapters like <code>garak</code> + <code>pyrit</code> probe these.</p>
+
+        <h3 id="manifest-target">Target environment</h3>
+        <ul>
+          <li><strong>Base URL</strong> — primary HTTP endpoint the app exposes. DAST scans (ZAP, nuclei, sqlmap) target this.</li>
+          <li><strong>API URL</strong> — separate API endpoint if it differs from the base URL.</li>
+          <li><strong>Test user token env var</strong> — env-var name holding a credential for a low-privilege test user. When set, <code>mcp_scope</code> performs a live probe to confirm forbidden actions are actually refused (vs static-only checks otherwise).</li>
+          <li><strong>Allow mutation</strong> — required <em>true</em> for any adapter that modifies state (Burp active, ZAP active, sqlmap, atomic, caldera, metasploit, ride). Default off.</li>
+          <li><strong>Network allowed zones</strong> — CIDR list that pre-approves internal-IP DAST scans for this app. The DAST URL safety guard refuses RFC1918/loopback/etc. by default; CIDRs listed here lift the refusal for this manifest's target.</li>
+        </ul>
+
+        <h3 id="manifest-expected">Expected actions · Expected data scopes</h3>
+        <p>Ground-truth allow-list of what the app's MCPs / tools should be exposing. Anything an MCP exposes outside the <em>expected_actions</em> list is flagged as a <em>scope violation</em> by <code>mcp_scope</code>. Same idea for data scopes.</p>
+
+        <h3 id="manifest-threat-model">Threat model path</h3>
+        <p>Path to a signed-off threat-model YAML artifact. <strong>Required for Tier 1 / 2</strong> at the design stage; the <code>threat_model_check</code> adapter fails the gate if missing. See <code>pipeline/fixtures/clinical_assistant_threat_model.yml</code> for the shape.</p>
+
+        <h3 id="manifest-guardrails">Guardrails path</h3>
+        <p>Path to a NeMo Guardrails config (input + output rails). <strong>Required for Tier 1 / 2</strong>; <code>guardrails</code> adapter fails the gate if missing. See <code>pipeline/fixtures/clinical_assistant_guardrails.yml</code> for the shape.</p>
+
+        <h3 id="manifest-source-paths">Source paths</h3>
+        <p>One path per line. Every SAST / SCA / IaC adapter scans these. Used by Source-provider <code>local</code> (the default). For GitHub-clone provider, leave blank — the orchestrator materializes the repo and sets this automatically.</p>
+
+        <h3 id="manifest-source-excludes">Source excludes</h3>
+        <p>One pattern per line. Filters findings post-hoc: <code>/abs/prefix</code> (absolute prefix match), <code>*.pyc</code> (glob), or <code>__pycache__</code> (substring of path). Common defaults are already skipped by most adapters; use this for app-specific excludes (e.g. vendored deps, generated code).</p>
+
+        <h3 id="manifest-app-aliases">App aliases</h3>
+        <p>Previous <code>name</code>s this manifest inherits resolution history from, one per line. When a manifest is renamed (<code>old_name</code> → <code>new_name</code>), list <code>old_name</code> here so the dashboard treats this app's same logical findings (same adapter + category + title) as resolved when the predecessor's Change has been applied. Re-keys fingerprints at view time; no data is modified on disk.</p>
       </article>
 
       <article class="change-detail" style="margin-top:18px">

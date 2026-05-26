@@ -577,6 +577,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             "expected_actions":     _split_lines(form.get("expected_actions") or ""),
             "expected_data_scopes": _split_lines(form.get("expected_data_scopes") or ""),
             "threat_model_path":    (form.get("threat_model_path") or "").strip() or None,
+            "guardrails_path":      (form.get("guardrails_path") or "").strip() or None,
             "source_paths":         _split_lines(form.get("source_paths") or ""),
             "source_excludes":      _split_lines(form.get("source_excludes") or ""),
             "app_aliases":          _split_lines(form.get("app_aliases") or ""),

@@ -67,43 +67,68 @@ class TierDecision:
         }
 
 
+def _resolve_all(value: str | None, scores: dict[str, int]) -> str:
+    """If the operator declared 'all' (the meta-option meaning 'this dimension
+    spans every value'), resolve to the highest-risk concrete value so the
+    forced-Tier-1 rules and the score arithmetic see something meaningful.
+    Any other value passes through unchanged."""
+    if value != "all":
+        return value or ""
+    # Highest-scoring value in this dim — i.e. the most-restrictive label.
+    return max(scores.items(), key=lambda kv: kv[1])[0]
+
+
 def classify(manifest: Manifest) -> TierDecision:
-    """Classify a manifest into a tier 1-4. Force to Tier 1 on PHI or clinical impact."""
+    """Classify a manifest into a tier 1-4. Force to Tier 1 on PHI or clinical impact.
+
+    'all' on any dimension is resolved to that dimension's most-restrictive
+    value before scoring — it means 'this app spans every value here; tier
+    conservatively at the top'.
+    """
+    ds = _resolve_all(manifest.data_sensitivity, DATA_SENSITIVITY_SCORES)
+    di = _resolve_all(manifest.decision_impact, DECISION_IMPACT_SCORES)
+    fp = _resolve_all(manifest.integration_footprint, INTEGRATION_SCORES)
+    up = _resolve_all(manifest.user_population, USER_POPULATION_SCORES)
+
     dims = {
-        "data_sensitivity": DATA_SENSITIVITY_SCORES.get(manifest.data_sensitivity, 2),
-        "decision_impact": DECISION_IMPACT_SCORES.get(manifest.decision_impact, 2),
-        "integration_footprint": INTEGRATION_SCORES.get(manifest.integration_footprint, 2),
-        "user_population": USER_POPULATION_SCORES.get(manifest.user_population, 2),
+        "data_sensitivity": DATA_SENSITIVITY_SCORES.get(ds, 2),
+        "decision_impact": DECISION_IMPACT_SCORES.get(di, 2),
+        "integration_footprint": INTEGRATION_SCORES.get(fp, 2),
+        "user_population": USER_POPULATION_SCORES.get(up, 2),
     }
     score = sum(dims.values())
 
     rationale: list[str] = []
+    # Show the resolved value alongside 'all' so the audit trail explains the
+    # tier without referencing the meta-option.
+    def _label(declared: str | None, resolved: str) -> str:
+        return f"{declared} (→ {resolved})" if declared == "all" else (declared or "")
     rationale.append(
-        f"data_sensitivity={manifest.data_sensitivity} "
+        f"data_sensitivity={_label(manifest.data_sensitivity, ds)} "
         f"({dims['data_sensitivity']}/4)"
     )
     rationale.append(
-        f"decision_impact={manifest.decision_impact} "
+        f"decision_impact={_label(manifest.decision_impact, di)} "
         f"({dims['decision_impact']}/4)"
     )
     rationale.append(
-        f"integration_footprint={manifest.integration_footprint} "
+        f"integration_footprint={_label(manifest.integration_footprint, fp)} "
         f"({dims['integration_footprint']}/4)"
     )
     rationale.append(
-        f"user_population={manifest.user_population} "
+        f"user_population={_label(manifest.user_population, up)} "
         f"({dims['user_population']}/4)"
     )
 
     forced = False
     forced_reason = None
-    if manifest.data_sensitivity == "phi":
+    if ds == "phi":
         forced = True
         forced_reason = "PHI handling forces Tier 1 regardless of score (HIPAA/HITRUST baseline)."
-    elif manifest.decision_impact == "clinical_influence":
+    elif di == "clinical_influence":
         forced = True
         forced_reason = "Clinical decision influence forces Tier 1 (FDA SaMD reclassification risk)."
-    elif manifest.user_population == "external" and manifest.decision_impact != "advisory":
+    elif up == "external" and di != "advisory":
         forced = True
         forced_reason = "External-facing with non-advisory impact forces Tier 1."
 
