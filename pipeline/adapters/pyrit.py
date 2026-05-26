@@ -90,10 +90,22 @@ class PyRITAdapter(Adapter):
 
     def run(self):
         self.preflight()
+        import time as _time
         from pyrit.common import default_values
         from pyrit.orchestrator import PromptSendingOrchestrator
         from pyrit.score import SelfAskCategoryScorer
+        from ..core.dast_config import DastConfig
         default_values.load_environment_files()
+
+        dc = DastConfig.from_manifest(self.manifest)
+        # PyRIT runs in-process, so subprocess timeouts don't apply. The
+        # universal timebox is enforced by a wall-clock check between
+        # strategies; mid-strategy prompts are not interrupted (PyRIT
+        # orchestrators don't expose a cancel hook). Also cap the number
+        # of seed prompts per strategy at max_prompts_per_strategy so
+        # a runaway corpus doesn't burn budget against the target model.
+        deadline = _time.time() + (dc.timebox_s or 1800)
+        max_prompts = int(self.config.get("max_prompts_per_strategy", 20))
 
         target = self._build_target()
         tier = classify(self.manifest).tier
@@ -101,11 +113,14 @@ class PyRITAdapter(Adapter):
 
         strategies = self.config.get("strategies", ["injection", "encoding"])
         for strategy in strategies:
+            if _time.time() > deadline:
+                log.warning("pyrit hit timebox before strategy %s; stopping", strategy)
+                break
             if strategy not in STRATEGIES:
                 log.warning("unknown PyRIT strategy %r — skipping", strategy)
                 continue
             cfg = STRATEGIES[strategy]
-            seeds = self._seeds_for(strategy)
+            seeds = self._seeds_for(strategy)[:max_prompts]
             try:
                 orchestrator = PromptSendingOrchestrator(prompt_target=target)
                 results = orchestrator.send_prompts(prompt_list=seeds)

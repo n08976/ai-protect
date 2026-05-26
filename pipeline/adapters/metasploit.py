@@ -74,8 +74,11 @@ class MetasploitAdapter(Adapter):
 
     def run(self):
         self.preflight()
+        import time as _time
         from pymetasploit3.msfrpc import MsfRpcClient
+        from ..core.dast_config import DastConfig
 
+        dc = DastConfig.from_manifest(self.manifest)
         client = MsfRpcClient(
             os.environ["MSF_RPC_PASSWORD"],
             server=os.environ["MSF_RPC_HOST"],
@@ -86,15 +89,28 @@ class MetasploitAdapter(Adapter):
         rhosts = target.split("//", 1)[-1].split("/", 1)[0]
         tier = classify(self.manifest).tier
 
+        # Universal wall-clock cap across the whole module loop. Per-module
+        # job-wait timeout is the smaller of (config.timeout_s, the global
+        # cap divided by however many modules remain) — prevents one
+        # hanging module from eating the entire stage budget.
+        stage_deadline = _time.time() + (dc.timebox_s or 1800)
+
         findings = []
-        for module_name in self._modules():
+        modules = self._modules()
+        for i, module_name in enumerate(modules):
+            if _time.time() > stage_deadline:
+                log.warning("metasploit hit timebox; %d modules unrun", len(modules) - i)
+                break
+            remaining = max(1, len(modules) - i)
+            per_module_budget = max(30, int((stage_deadline - _time.time()) / remaining))
+            module_timeout = min(int(self.config.get("timeout_s", 60)), per_module_budget)
             kind, _, name = module_name.partition("/")
             try:
                 mod = client.modules.use(kind, "/".join(module_name.split("/")[1:]))
                 mod["RHOSTS"] = rhosts
                 cid = mod.execute()
                 # Wait briefly for the job to complete (auxiliary scanners are short).
-                self._wait_for_job(client, cid.get("job_id"), timeout_s=self.config.get("timeout_s", 60))
+                self._wait_for_job(client, cid.get("job_id"), timeout_s=module_timeout)
                 # Read the console for output.
                 output = self._drain_consoles(client)
             except Exception as e:

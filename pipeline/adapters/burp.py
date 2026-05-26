@@ -67,6 +67,13 @@ class BurpAdapter(Adapter):
             raise AdapterUnavailable(
                 "BURP_API_URL not set. Configure the Burp Enterprise / Professional REST endpoint."
             )
+        # Burp's scan crawls the URL tree under the seed (and active mode
+        # injects payloads). Refuse bare-origin URLs per the global DAST
+        # safety policy — see /docs#dast-scope-prefix.
+        from ..core.dast_config import DastConfig
+        refusal = DastConfig.from_manifest(self.manifest).refuse_bare_origin_for(self.name)
+        if refusal:
+            raise AdapterUnavailable(refusal)
 
     def _api(self) -> str:
         return os.environ["BURP_API_URL"].rstrip("/")
@@ -82,11 +89,16 @@ class BurpAdapter(Adapter):
 
     def run(self):
         self.preflight()
+        from ..core.dast_config import DastConfig
+        dc = DastConfig.from_manifest(self.manifest)
         scan_type = self.config.get("scan", "passive").lower()
         target_url = self.manifest.target.base_url
         tier = classify(self.manifest).tier
 
-        # 1. Start a scan
+        # 1. Start a scan — scope.include locks the crawler to the same
+        #    URL prefix we authorized (Burp interprets `rule` as a prefix
+        #    match unless a regex is supplied). Belt-and-suspenders with
+        #    the bare-origin refusal in preflight.
         body = {"urls": [target_url], "scope": {"include": [{"rule": target_url}]}}
         if scan_type == "passive":
             body["scan_configurations"] = [{"name": "Crawl strategy - fastest", "type": "NamedConfiguration"}]
@@ -96,8 +108,10 @@ class BurpAdapter(Adapter):
         if not scan_id:
             raise AdapterUnavailable("Burp scan did not return an id.")
 
-        # 2. Poll until done (or hit the timeout)
-        deadline = time.time() + self.config.get("timeout_s", 1800)
+        # 2. Poll until done (or hit the global DAST timebox). The polling
+        #    deadline never exceeds dc.timebox_s even if the per-call config
+        #    requests longer — that's the universal cap.
+        deadline = time.time() + (dc.subprocess_timeout(override=self.config.get("timeout_s", 1800)) or 1800)
         while time.time() < deadline:
             r = requests.get(f"{self._api()}/scan/{scan_id}", headers=self._headers(), timeout=30)
             r.raise_for_status()
