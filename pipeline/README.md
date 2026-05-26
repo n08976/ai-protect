@@ -84,12 +84,12 @@ python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
 
 **Findings**
 
-- `/` — findings table with severity / app / adapter / category / fixable filters and the system-status lamp.
+- `/` — findings table with severity / app / adapter / category / fixable filters and the system-status lamp. Findings auto-resolved by a re-scan show a green "auto-resolved" provenance callout on `/finding/<id>` linking to the synthetic Change record.
 - `/finding/<id>` — per-finding drill-down with description, remediation, evidence, affected, compliance tags (HIPAA · HITRUST · NIST AI RMF · MITRE ATLAS), references, and a **Related intel** section that lists any CVE matches the intel feeds have for the same vuln (post-scan cross-reference).
 - `/findings.pdf`, `/findings.csv` — filter-aware exports.
-- `/manifests`, `/manifests/new`, `/manifests/<name>/edit` — manifest CRUD with live tier preview.
-- `/history` — append-only timeline of every scan / change / finding event. Scan events include the app name (`app_name`) and the lifecycle phase (`scan.started` → `scan.done` / `scan.failed` / `scan.crashed` / `scan.stopped`); orphan transitions from power loss surface as `scan.crashed`.
-- `/scan`, `/scan/<id>`, `/scan/<id>/stop` — launch a scan, follow its log, cancel it (SIGTERM → grace → SIGKILL on the process group).
+- `/manifests`, `/manifests/new`, `/manifests/<name>/edit` — manifest CRUD with live tier preview. The edit form exposes the source-provider fields (see **Scanning from GitHub** below) and an `app_aliases` field that re-keys resolved Changes from a renamed predecessor onto the renaming inheritor's fingerprint namespace.
+- `/history` — append-only timeline of every scan / change / finding event. Scan events include the app name (`app_name`) and the lifecycle phase (`scan.started` → `scan.done` / `scan.failed` / `scan.crashed` / `scan.stopped`); orphan transitions from power loss surface as `scan.crashed`; auto-resolutions surface as `scan.auto_resolved`.
+- `/scan`, `/scan/<id>`, `/scan/<id>/stop` — launch a scan, follow its log, cancel it (SIGTERM → grace → SIGKILL on the process group). The launcher splits into SAST and DAST modes — see **Scan modes** below.
 - `/remediations`, `/change/<id>` — approve / apply / revert proposed code changes.
 
 **Intel feeds**
@@ -102,7 +102,14 @@ python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
 
 **Settings**
 
-- `/settings` — operator-configurable preferences in `~/.ai-protect/config.json`. Today: `timezone` (any IANA name, with a curated dropdown of common zones) and `date_format` (strftime). A Jinja `localtime` filter renders every epoch in the configured zone — feeds, history, intel rows all flip when you switch zones.
+- `/settings` — schema-driven configuration persisted to `~/.ai-protect/config.json` (chmod 600 — holds PATs / GitHub App keys). Sections (each generated from `pipeline/core/settings.py`'s `SCHEMA` — adding a knob is one Field append, no template edits):
+  - **Locale & time** — IANA timezone (free-text or curated dropdown), strftime date format. A Jinja `localtime` filter renders every epoch in the configured zone — feeds, history, intel rows, finding evidence all flip when you switch zones.
+  - **Paths & storage** — findings file (default `~/.ai-protect/findings.jsonl`), manifests dir, source cache dir.
+  - **Source providers** — default provider (local / github), GitHub base URL (github.com or GHES), visibility (public / private), auth method (PAT / GitHub App), clone strategy (per-scan / cached), default ref, clone depth. Progressive disclosure: pick `github` and the GitHub fields appear; pick `github_app` auth and the App ID / private-key-path / installation-id fields appear.
+  - **DAST defaults** — max requests-per-second, max concurrent requests, per-adapter hard timebox (default 30 min), require-scope-prefix-for-crawlers (default on). See **Scan modes** below.
+  - **Intel feeds defaults** — default polling interval, `intel_match` emission floor, disable-KEV-ratchet toggle.
+  - **Remediation behavior** — auto-resolve-on-rescan toggle (default on). See **Auto-resolve on re-scan absence** below.
+- `/docs` — step-by-step setup walkthroughs anchored from every settings field's `?` help bubble (PAT creation, GitHub App + installation-id retrieval, GHES URL format, DAST safety matrix, auto-resolve guards, etc.).
 
 **System status lamp**
 
@@ -122,6 +129,94 @@ The same payload is available at `/api/status` as JSON for external monitoring.
 - `/api/scan/<id>` — scan-status poll endpoint (used by the live scan page).
 
 Visual style mirrors the v2.1 doc family — navy header, accent-orange rule, takeaway-blue pills, navy-banded tables; dark callouts (status lamp, additive-feeds banner, collapsible feed groups) use a navy panel class with light text.
+
+## Scan modes (SAST vs DAST)
+
+The `/scan` launcher splits into two distinct flows so static code analysis can't accidentally fire dynamic probes (and vice-versa), and so first-time DAST users can't accidentally aim heavy mutating tooling at a live system.
+
+```
+[ Source code (SAST) ]  [ Live target (DAST) ]
+       23 adapters             14 adapters
+```
+
+**Classification** (`pipeline/core/scan_modes.py`): every adapter is bucketed using its catalog `kind` (static/dynamic/ai/policy) with a small set of explicit overrides for shape mismatches (`agentic_radar` reads agent source → SAST; `mcp_scope` probes a live MCP → DAST; `intel_match` is enrichment → pre-flight). Three always-run pre-flight adapters (`manifest_validator`, `threat_model_check`, `intel_match`) appear alongside both modes in a small "Pre-flight policy checks (when applicable)" callout so the audit story is honest about what runs.
+
+**SAST mode** keeps the original manifest + stage + adapter form. The adapter dropdown filters to the SAST-only set.
+
+**DAST mode** has a radio sub-tab — **Known app** (use the manifest's `target.base_url`) vs **Arbitrary URL** (one-off). The Arbitrary URL path builds a synthetic ephemeral Manifest in memory (`app_name = adhoc:<host>[:<port>]`, Tier 4, `target.allow_mutation=false`), serializes it to `~/.ai-protect/adhoc-scans/<scan_id>.yml` so the existing scan_runner subprocess can read it, and deletes the temp file via `try/finally` after the run completes (with a periodic janitor on every `/scan` GET as defense-in-depth).
+
+The DAST adapter dropdown leads with "safe defaults" (`zap baseline + nuclei + mcp_scope`) so a first-time scan can't accidentally fire heavy mutating tools. Heavy options are tagged `· heavy / mutating` and require explicit `allow_active` / `allow_adversary` checkboxes.
+
+**URL safety guards** (`pipeline/core/url_safety.py`):
+
+- **Hard-deny** (never overridable, not even via `allow_internal_scan`):
+  - `169.254.169.254` and named cloud-metadata hosts (`metadata.google.internal`, `metadata.azure.internal`, `metadata.oraclecloud.internal`).
+  - URLs with embedded credentials (`user:pass@host`) — refused to keep tokens out of logs.
+  - Non-`http(s)` schemes.
+- **Default-deny** (overridable via per-manifest `target.network_allowed_zones` CIDR list, or per-scan `allow_internal_scan` typed-confirmation):
+  - `127.0.0.0/8`, RFC1918 (`10/8`, `172.16/12`, `192.168/16`), CGNAT (`100.64/10`), link-local (`169.254/16`, `fe80::/10`), multicast (`224/4`, `ff00::/8`), IPv6 ULA (`fc00::/7`), reserved / docs / benchmark ranges.
+- **DNS** is resolved fresh on every check (no cache), and the check rejects if **any** resolved A/AAAA matches a denied range — defeats DNS rebinding.
+- **HTTPS-only by default**; an `allow_insecure_http` toggle exists for known internal targets that don't serve TLS.
+- **Typed confirmation** required to enable an internal-network scan — checkbox + `Type ALLOW-INTERNAL` (case-sensitive) keystroke rather than a single click. PAL flagged checkboxes as too easy to toggle accidentally for this risk class.
+- **One-time-per-host gate** in localStorage (24 h TTL) so the "I'm authorized to test this target" confirmation shows once per session per target host:port rather than every scan.
+
+**DAST execution policies** (`pipeline/core/dast_config.py`): a typed `DastConfig` dataclass carries the intent — `max_rps`, `max_concurrency`, `timebox_s`, `scope_prefix`, `require_scope_prefix`, `allow_active`, `allow_adversary`. Built from `settings + manifest.target` overrides. Each adapter translates the dataclass to its native CLI flags via a small in-adapter mapping:
+
+| Adapter | Flags from DastConfig |
+| --- | --- |
+| `nuclei` | `-rate-limit`, `-c`, subprocess timeout, **bare-origin refusal** |
+| `zap` | `ascan threadsPerHost` via REST, polling deadline ← timebox, **bare-origin refusal** |
+| `recon/subfinder` | result-cap (200), subprocess timeout |
+| `recon/httpx` | `-threads`, `-rate-limit`, subprocess timeout |
+| `recon/naabu` | `-rate` scaled (×5, capped 500/s), `-top-ports 100` |
+| `recon/katana` | `-d` depth, `-c`, `-rate-limit`, `max_urls` cap, **bare-origin refusal** |
+| `sqlmap` | `--threads` (≤10), subprocess timeout |
+| `garak` | `--parallel_requests`, subprocess timeout |
+| `burp` | scope.include rule + poll-deadline ← timebox, **bare-origin refusal** |
+| `pyrit` | wall-clock between-strategies cap, `max_prompts_per_strategy` (in-process, no subprocess) |
+| `metasploit` | two-level timebox (stage + per-module budget) |
+
+**Bare-origin refusal** fires in the preflight of every crawler-class adapter (nuclei, ZAP, katana, burp) when `dast_require_scope_prefix_for_crawlers` is on (default) AND the target's path is `/` or empty. Bypass by scoping the manifest's `target.base_url` (e.g. `https://target.example.com/myapp/`) or unchecking the setting. Prevents "scan the whole domain" accidents.
+
+## Scanning from GitHub (`pipeline/sources/`)
+
+Each manifest can declare a **source provider** so the orchestrator materializes code from a remote repo before adapter dispatch. Two providers ship today:
+
+| Provider | What it does |
+| --- | --- |
+| `local` | (default) passthrough — adapters scan `manifest.source_paths` on disk |
+| `github` | shallow-clone the declared repo before each scan to a temp dir (or persistent cache); cleanup on exit, even on adapter errors |
+
+Manifest fields added for GitHub: `source_provider`, `github_repo` (accepts `owner/name`, full HTTPS URL, or `git@github.com:owner/name.git`), `github_ref` (branch / tag / SHA — provider detects SHAs and uses explicit checkout), `github_clone_depth` (1 = shallow, default; 0 = full history).
+
+**Auth methods** (configured on `/settings → Source providers`, persisted to `~/.ai-protect/config.json` chmod 600):
+
+- **none** — public repos only.
+- **PAT** — fine-grained personal access token, injected as `https://x-access-token:<TOKEN>@github.com/...`. Best for single-operator / homelab installs. See `/docs#source-github-pat` for the step-by-step (PAT scope: `Contents: Read` on selected repos).
+- **GitHub App** — installable on an org, fine-grained per-repo permissions, **short-lived installation tokens auto-minted on demand** via JWT → `/app/installations/<id>/access_tokens`. Recommended for organizations. Requires PyJWT (`pip install PyJWT cryptography`).
+
+**Clone strategies**:
+
+- **per_scan** — shallow clone to a temp dir, removed on exit. No persistent state, slower on the 2nd scan.
+- **cached** — clone once into `~/.ai-protect/src-cache/<owner>/<repo>`, `git fetch + checkout` on subsequent runs. Much faster on re-scans of the same repo.
+
+**GHES** is supported: set `GitHub base URL` in settings to your enterprise hostname; the provider derives the API URL automatically (`github.com → api.github.com`; GHES → `<ghes>/api/v3`).
+
+**Orchestrator hook**: `Orchestrator.run_stage()` wraps adapter dispatch with the provider's context manager: clone on enter, set `manifest.source_paths` to the materialized path, scan, **restore + cleanup on exit even on adapter errors**. Provider failure (clone failed, auth missing, etc.) records a single `_source` adapter result and gates the stage — no other adapters run when there's nothing to scan.
+
+## Auto-resolve on re-scan absence
+
+When a re-scan's `status=ok` adapters don't re-emit a fingerprint they previously emitted, the system automatically writes a Change with `state=applied` and `strategy=auto_resolve_absent`. The scanner is treated as ground truth: if it can't reproduce a vuln, the vuln is fixed/gone. Manual marking defeats the point of automation.
+
+Implementation: `pipeline/core/auto_resolve.py:compute_and_apply()`, called by `Orchestrator.run_stage()` after the adapter loop completes. Guards (each prevents a real false-positive class):
+
+- **Adapter scope** — only adapters with `status=ok` in this scan can auto-resolve their own fingerprints. If `garak` was `unavailable` (tool not installed), garak findings stay open — absence isn't evidence when the adapter didn't look.
+- **Stage scope** — a `build`-stage scan can't auto-resolve `preprod` findings.
+- **Honor revert** — if the operator manually reverted a Change for a fingerprint, that revert is a "leave it open" signal; no new auto-resolution Change is written until the operator re-engages through the normal workflow.
+- **Skip already-resolved** — fingerprints whose latest Change is already `applied / validated / deployed` aren't duplicated.
+- **Toggle** — `auto_resolve_on_rescan` in `~/.ai-protect/config.json` (default `on`). Off falls back to manual marking.
+
+Provenance: every auto-resolved Change carries `actor="auto-resolve"`, a summary noting the scan id and adapter, plus an EventStore `scan.auto_resolved` row per fingerprint so the audit story is fully recoverable. The `/finding/<id>` page surfaces a green "auto-resolved by re-scan" callout when applicable, linking to the Change record and explaining how to override (revert the Change).
 
 ## Intel feeds (`pipeline/intel/`)
 
@@ -342,6 +437,9 @@ This pipeline orchestrates dual-use security tools against AI workloads. Default
 - **Atomic Red Team** requires the techniques to be enumerated explicitly; there is no "run everything" mode.
 - **Token probes** in `mcp_scope` only execute if the manifest declares `target.test_user_token_env`. Without it the adapter performs static checks only.
 - **`--dry-run`** lists what would run without invoking adapters.
+- **URL safety** for DAST scans — see **Scan modes** above. Cloud-metadata IPs are hard-denied (non-overridable); RFC1918 / loopback / link-local / etc. are default-denied with typed-confirmation override. DNS re-resolved on every check. HTTPS-only by default.
+- **Universal DAST timebox** — `dast_timebox_seconds` (default 30 min) is the wall-clock cap applied to every DAST adapter subprocess. Per-adapter `timeout_s` config can request shorter; longer is clamped.
+- **Bare-origin refusal** — crawler-class adapters (`nuclei`, `zap`, `katana`, `burp`) refuse to launch when the manifest's `target.base_url` path is `/` or empty. Prevents accidentally crawling the whole host. Bypass by scoping the URL or unchecking `dast_require_scope_prefix_for_crawlers` on `/settings`.
 
 ## Layout
 
@@ -351,42 +449,57 @@ pipeline/
 ├── cli.py                          # python -m pipeline.cli ...
 ├── requirements.txt
 ├── core/
-│   ├── manifest.py                 # YAML schema → Manifest dataclass
+│   ├── manifest.py                 # YAML schema → Manifest dataclass (source_provider / github_*)
 │   ├── tiering.py                  # 4-dim scoring, forced rules, MCP inheritance
 │   ├── findings.py                 # Finding, Severity, Category, FindingStore
 │   ├── compliance.py               # category → control identifiers
 │   ├── policy.py                   # tier × stage → adapter list (the operating model)
-│   ├── orchestrator.py             # ties it all together; calls intel_enrichment before persist
+│   ├── orchestrator.py             # ties it all together; materializes source, calls
+│   │                               # intel_enrichment, calls auto_resolve at end of stage
 │   ├── intel_enrichment.py         # stamps intel-feed context onto findings (KEV ratchet)
-│   └── settings.py                 # ~/.ai-protect/config.json (timezone, date_format)
+│   ├── auto_resolve.py             # detect + persist auto-resolutions for re-scan absence
+│   ├── scan_modes.py               # SAST / DAST / pre-flight taxonomy + adapter classification
+│   ├── url_safety.py               # DAST URL validator (hard/default deny lists + DNS resolve)
+│   ├── adhoc.py                    # synthetic ephemeral manifest for ad-hoc DAST URLs
+│   ├── dast_config.py              # DastConfig dataclass: per-adapter intent carrier
+│   └── settings.py                 # schema-driven ~/.ai-protect/config.json
 ├── adapters/
 │   ├── base.py                     # Adapter base class + exceptions
 │   ├── registry.py                 # name → class
 │   ├── manifest_validator.py
 │   ├── threat_model_check.py
 │   ├── intel_match.py              # cross-refs manifest tokens vs intel feeds (detection)
-│   ├── garak.py
-│   ├── pyrit.py
+│   ├── garak.py                    # DastConfig: --parallel_requests, subprocess timeout
+│   ├── pyrit.py                    # DastConfig: wall-clock + max_prompts_per_strategy
 │   ├── atomic.py
-│   ├── burp.py
-│   ├── metasploit.py
+│   ├── burp.py                     # DastConfig: scope.include + bare-origin refusal
+│   ├── metasploit.py               # DastConfig: two-level timebox (stage + per-module)
 │   ├── mcp_scope.py
-│   ├── nuclei.py
+│   ├── nuclei.py                   # DastConfig: -rate-limit, -c, bare-origin refusal
+│   ├── zap.py                      # DastConfig: threadsPerHost + bare-origin refusal
+│   ├── recon.py                    # DastConfig: subfinder cap, httpx/naabu/katana flags
+│   ├── sqlmap.py                   # DastConfig: --threads, subprocess timeout
 │   ├── trufflehog.py
 │   ├── eval_suite.py
 │   └── telemetry_drift.py
+├── sources/                        # remote-source providers (the orchestrator clones before scan)
+│   ├── base.py                     # SourceProvider ABC + SourceMaterialization context manager
+│   ├── local.py                    # passthrough (default — read manifest.source_paths from disk)
+│   └── github.py                   # github.com / GHES; PAT or App auth; per-scan or cached clone
 ├── intel/                          # external CVE / threat feed ingestion
 │   ├── feeds.py                    # Feed / IntelItem dataclasses + JSONL stores
 │   ├── translators.py              # atom / rss / xml / json + detect_format
 │   ├── fetcher.py                  # fetch_feed, validate_feed, background poller
 │   └── status.py                   # green/yellow/red lamp computation
-├── ui/                             # Flask app — findings dashboard + feeds + settings
-│   ├── server.py                   # routes (findings, feeds, intel, settings, history, scan, api)
+├── ui/                             # Flask app — findings dashboard + feeds + settings + docs
+│   ├── server.py                   # routes (findings, feeds, intel, settings, docs, history, scan, api)
+│   ├── manifest_io.py              # YAML manifest CRUD + load-by-yaml-name fallback
 │   ├── catalog.py                  # adapter catalog metadata for /about
 │   ├── pdf_report.py               # /findings.pdf generator
 │   ├── static/                     # style.css + favicon.svg
 │   └── templates/                  # index, finding, feeds, feeds_discover, feed_edit, intel,
-│                                   # settings, history, scan, scan_status, manifests, manifest_form, ...
+│                                   # settings, docs, history, scan (SAST/DAST), scan_status,
+│                                   # manifests, manifest_form, ...
 ├── reporting/
 │   ├── technical.py                # per-app, per-adapter detail
 │   └── executive.py                # board-style rollup

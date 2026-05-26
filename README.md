@@ -155,12 +155,16 @@ python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
 
 The pipeline ships with three example manifests covering the spread: Tier 1 clinical assistant, Tier 3 HR-policy advisor, Tier 4 single-user code summarizer. Adapters that need an external tool (garak, nuclei, etc.) raise `AdapterUnavailable` and are skipped non-fatally — install the tools you actually plan to exercise.
 
-**Web UI + intel feeds + scan integration.** The Flask app under `pipeline/ui/` is more than a dashboard: it runs a background poller for external CVE / threat feeds (CISA KEV, cvedaily.com per-tag feeds, cvefeed.io, custom JSON/Atom/RSS/XML), surfaces an overall green/yellow/red system status lamp on the home page, and feeds the intel back into scans on two paths:
+**Web UI.** The Flask app under `pipeline/ui/` is more than a dashboard:
 
-- **Enrichment** — every adapter's findings get intel context stamped on them before persist. CVEs that appear on CISA KEV ratchet up to CRITICAL severity (active exploitation).
-- **Detection** — an `intel_match` adapter cross-references manifest-declared assets against the intel store and emits findings for matches that the structured scanners (pip_audit, grype, osv_scanner) didn't catch.
+- **Scan modes (SAST / DAST split)** — `/scan` has a top-level segmented control. Source code (SAST) keeps the original manifest + stage + adapter form; Live target (DAST) adds a Known-app / Arbitrary-URL sub-tab with URL safety guards (hard-deny cloud metadata + non-`http(s)` schemes + embedded creds; default-deny RFC1918 / loopback / link-local etc. with typed-confirmation override; DNS re-resolved every check; HTTPS by default). DAST execution is constrained by a typed `DastConfig` carrier — rate-limit, concurrency, hard timebox, scope-prefix enforcement for crawlers (ZAP, nuclei, katana, burp).
+- **Scanning from GitHub** — `/settings → Source providers` configures public / PAT / GitHub-App auth, per-scan or cached clone, github.com or GHES. Manifest declares `source_provider: github` + `github_repo` + `github_ref`; the orchestrator clones to a temp dir or persistent cache before adapter dispatch and cleans up via try/finally even on adapter errors.
+- **Intel feeds + system status lamp** — background poller fetches external CVE / threat feeds (CISA KEV, cvedaily.com per-tag feeds, cvefeed.io, custom JSON/Atom/RSS/XML). Overall green/yellow/red lamp on the home page (worst-of feeds, scans, findings-store health).
+- **Intel-scan integration** — feeds participate in scans two ways: (a) **Enrichment** stamps intel context onto every scanner finding before persist; CVEs on CISA KEV ratchet up to CRITICAL. (b) **Detection** — an `intel_match` adapter cross-references manifest-declared assets against the intel store and emits findings the structured scanners didn't catch.
+- **Auto-resolve on re-scan absence** — when a re-scan's `status=ok` adapters don't re-emit a previously-emitted fingerprint, the system automatically writes a Change with `state=applied` and `strategy=auto_resolve_absent`. Scanner is treated as ground truth. Guards: adapter scope, stage scope, honor-revert, skip-already-resolved.
+- **Schema-driven settings + /docs** — `/settings` is generated from `pipeline/core/settings.py`'s `SCHEMA` (5 sections / 20+ fields, progressive disclosure for nested choices). Every help bubble links to a step-by-step setup walkthrough on `/docs` (PAT creation, GitHub App + installation-id retrieval, GHES URL format, DAST safety matrix, auto-resolve guards, etc.).
 
-See [`pipeline/README.md`](pipeline/README.md) → **Web UI**, **Intel feeds**, and **Intel-scan integration** for the full picture, including the `/feeds`, `/feeds/discover`, `/intel`, `/settings`, and `/api/status` routes.
+See [`pipeline/README.md`](pipeline/README.md) for the full picture: routes, classification, URL safety, source providers, auto-resolve, intel feeds, scan-mode tools, and the JSON API.
 
 ---
 
@@ -175,13 +179,17 @@ ai-protect/
 │   ├── cli.py
 │   ├── requirements.txt
 │   ├── core/                       # manifest, tiering, findings, compliance, policy, orchestrator,
-│   │                               # intel_enrichment (KEV ratchet), settings (timezone/locale)
+│   │                               # intel_enrichment (KEV ratchet), auto_resolve (re-scan absence),
+│   │                               # scan_modes (SAST/DAST), url_safety, adhoc, dast_config, settings
 │   ├── adapters/                   # garak, pyrit, atomic, burp, metasploit, mcp_scope, nuclei,
-│   │                               # trufflehog, intel_match (manifest×intel cross-ref), ...
+│   │                               # zap, recon, sqlmap, trufflehog, intel_match (manifest×intel), ...
+│   ├── sources/                    # remote-source providers — local (passthrough) + github
+│   │                               # (PAT or App, github.com or GHES, per-scan or cached clone)
 │   ├── intel/                      # CVE / threat feed ingestion: feeds, translators (atom/rss/xml/json),
 │   │                               # fetcher + background poller, status (green/yellow/red lamp)
 │   ├── ui/                         # Flask dashboard: findings, /feeds, /feeds/discover, /intel,
-│   │                               # /settings, /history, /scan, /api/status, /api/findings
+│   │                               # /settings (schema-driven), /docs (step-by-step setup),
+│   │                               # /history, /scan (SAST/DAST split), /api/status, /api/findings
 │   ├── reporting/                  # technical + executive dashboards
 │   ├── manifests/                  # example app declarations (Tier 1 / 3 / 4)
 │   ├── fixtures/                   # threat-model exemplars
