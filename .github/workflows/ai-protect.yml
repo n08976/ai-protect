@@ -53,12 +53,16 @@ jobs:
       - name: Discover manifests
         id: discover
         run: |
-          manifests=$(ls pipeline/manifests/example_*.yml | jq -R -s -c 'split("\n")[:-1]')
+          # CI scans the SAMPLE-*.yml manifests (committed examples used as
+          # gate-coverage smoke tests). User-owned production manifests
+          # (example-ads_*, opt_ads, etc.) are scanned via /scan in the UI;
+          # CI deliberately doesn't run against them on every push.
+          manifests=$(ls pipeline/manifests/SAMPLE-*.yml | jq -R -s -c 'split("\n")[:-1]')
           echo "manifests=$manifests" >> "$GITHUB_OUTPUT"
 
       - name: Print tier for each manifest
         run: |
-          for m in pipeline/manifests/example_*.yml; do
+          for m in pipeline/manifests/SAMPLE-*.yml; do
             echo "::group::Tier classification — $m"
             python -m pipeline.cli tier "$m"
             echo "::endgroup::"

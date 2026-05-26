@@ -693,11 +693,21 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 original_name=name,
             ), 400
         warnings = mio.validate_path_warnings(data)
-        # Renaming: if the form changed the name, delete the old file after saving the new.
+        # Renaming: if the form changed the name, delete the old file after
+        # saving the new. mio.delete() uses the same load-by-yaml-name fallback
+        # that load_raw does, so it still finds the backing file when the
+        # filename diverges from the YAML 'name' field (every shipped example
+        # manifest has this — e.g. example_clinical_assistant.yml carries
+        # name: clinical-assistant-prototype). FileNotFoundError is suppressed
+        # so a missing-source case doesn't roll back the new file we just
+        # wrote.
         try:
             mio.save(data["name"], data, overwrite=True)
-            if data["name"] != name and name in mio.list_existing_names():
-                mio.delete(name)
+            if data["name"] != name:
+                try:
+                    mio.delete(name)
+                except FileNotFoundError:
+                    pass   # old file already gone, e.g. concurrent edit
         except (ValueError, FileNotFoundError) as e:
             errors.append(str(e))
             return render_template(
