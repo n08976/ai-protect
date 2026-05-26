@@ -136,7 +136,8 @@
         <p>An <strong>app manifest</strong> declares one AI workload (an agent, an assistant, an automation runner — anything the pipeline scans). The four <em>Risk tiering</em> dimensions feed the classifier in <code>pipeline/core/tiering.py</code>: each one scores 1-4 (riskier is higher); the sum + a few forced rules determine Tier 1-4, which in turn decides which adapters run at which SDLC stage.</p>
 
         <h3 id="manifest-name">Name</h3>
-        <p>Lower-case identifier (letters, digits, dashes, underscores). This becomes the YAML filename and the <code>app_name</code> on every finding — keep it stable, because renaming requires the <em>App aliases</em> field below to preserve resolution history.</p>
+        <p>Identifier — letters (mixed case allowed), digits, dashes, underscores; must start with a letter. This becomes the YAML filename and the <code>app_name</code> on every finding, so keep it stable: renaming requires the <em>App aliases</em> field below to preserve resolution history.</p>
+        <p>Two names that differ only by case (<code>MyApp</code> vs <code>myapp</code>) are refused on save — they'd resolve to the same file on case-insensitive filesystems (macOS HFS+, Windows NTFS). String comparisons elsewhere in the pipeline (dashboard filter, change-store lookup, intel cross-ref, auto-resolve) are case-sensitive, so pick one canonical form per app and stick to it.</p>
 
         <h3 id="manifest-owner">Owner email · On-call email</h3>
         <p>Accountable owner gets findings notifications; on-call is paged when blocking gates trip during a release. If on-call is blank it defaults to the owner.</p>

@@ -17,8 +17,11 @@ from ..core.manifest import Manifest
 from ..core.tiering import classify
 
 
-# Filenames are sanitized to [a-z0-9_-] + .yml. UI rejects anything else.
-NAME_RE = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
+# Manifest names allow mixed case ([A-Za-z]) — operators reasonably want to
+# write "Example-Commercial" instead of "example-commercial". The
+# case-fold uniqueness check in validate_for_save() prevents file-system
+# collisions on case-insensitive filesystems (macOS HFS+ / Windows NTFS).
+NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{1,63}$")
 
 # Sandbox for /api/browse — anything outside these roots is invisible.
 # Aligned with the user's stated scan targets (ExampleAdsApp, /opt/app)
@@ -100,7 +103,12 @@ def load_raw(name: str) -> dict:
 
 
 def save(name: str, data: dict, *, overwrite: bool = True) -> Path:
-    """Serialize `data` to YAML at the manifest path. Validates first."""
+    """Serialize `data` to YAML at the manifest path. Validates first.
+
+    Underscore-prefixed keys (e.g. _original_name, used by the case-fold
+    uniqueness check in validate_for_save to skip self-collisions on
+    edit-in-place) are private — they reach the validator but are stripped
+    before YAML serialization."""
     p = path_for(name)
     if p.exists() and not overwrite:
         raise FileExistsError(f"manifest {name!r} already exists at {p}")
@@ -110,7 +118,8 @@ def save(name: str, data: dict, *, overwrite: bool = True) -> Path:
         raise ValueError("validation errors:\n  " + "\n  ".join(errors))
 
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(_render_yaml(data))
+    on_disk = {k: v for k, v in data.items() if not k.startswith("_")}
+    p.write_text(_render_yaml(on_disk))
     return p
 
 
@@ -148,8 +157,26 @@ def validate_for_save(data: dict) -> list[str]:
 
     name = data.get("name", "")
     if name and not NAME_RE.match(name):
-        errs.append(f"name must match {NAME_RE.pattern} (lower-case letters / "
-                    "digits / dashes / underscores; starts with a letter)")
+        errs.append(f"name must match {NAME_RE.pattern} "
+                    "(letters / digits / dashes / underscores; starts with a letter)")
+    # Case-fold uniqueness — refuse only when a DIFFERENT existing manifest
+    # casefolds to the same name (e.g. trying to save "MyApp" while "myapp"
+    # already exists; on macOS HFS+ / Windows NTFS they'd resolve to the
+    # same file). An exact-name match is a normal save/overwrite — that
+    # concern is handled by the overwrite= flag in save().
+    if name:
+        original = data.get("_original_name") or ""
+        for existing in list_existing_names():
+            if existing == name or existing == original:
+                continue   # same file — not a collision
+            if existing.lower() == name.lower():
+                errs.append(
+                    f"manifest name {name!r} would collide on a "
+                    f"case-insensitive filesystem with the existing "
+                    f"manifest {existing!r}. Pick a name that differs by "
+                    f"more than just case."
+                )
+                break
 
     for f, opts in (("data_sensitivity", DATA_SENSITIVITY_OPTIONS),
                     ("decision_impact",  DECISION_IMPACT_OPTIONS),

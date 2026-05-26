@@ -678,6 +678,11 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 original_name=name,
             )
         data = _form_to_manifest_data(request.form)
+        # Tell the validator we're editing this specific manifest so its
+        # case-fold uniqueness check doesn't flag the manifest as colliding
+        # with itself. Underscore-prefixed keys are stripped by save() before
+        # YAML serialization, so this stays out of the on-disk file.
+        data["_original_name"] = name
         errors = mio.validate_for_save(data)
         if errors:
             return render_template(

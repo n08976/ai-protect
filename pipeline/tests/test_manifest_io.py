@@ -52,8 +52,10 @@ def test_path_for_accepts_normal_name(manifests_tmp):
 
 
 @pytest.mark.parametrize("bad", [
-    "Uppercase",
-    "starts_with_underscore",   # actually allowed by regex... let me check
+    # Uppercase used to be rejected; allowed since 2026-05-26 — operators
+    # may write CamelCase manifest names. Case-fold uniqueness check in
+    # validate_for_save guards filesystem collisions.
+    "starts_with_underscore",
     "123starts-with-digit",
     "has spaces",
     "has/slash",

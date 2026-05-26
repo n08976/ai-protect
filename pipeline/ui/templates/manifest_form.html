@@ -50,10 +50,10 @@
       <div class="form-grid">
         <label class="form-row">
           <span>Name <span class="req">*</span> {{ hb('manifest-name', 'Lower-case identifier — becomes the YAML filename and the app_name on every finding. Keep stable.') }}</span>
-          <input type="text" name="name" required pattern="[a-z][a-z0-9_-]{1,63}"
-                 placeholder="e.g. example-commercial"
+          <input type="text" name="name" required pattern="[A-Za-z][A-Za-z0-9_-]{1,63}"
+                 placeholder="e.g. Example-Commercial or example-commercial"
                  value="{{ form.get('name', '') }}">
-          <small class="form-help">Lower-case letters, digits, dashes, underscores. This is the filename — keep it stable.</small>
+          <small class="form-help">Letters (mixed case OK), digits, dashes, underscores; starts with a letter. This is the YAML filename and the <code>app_name</code> on every finding — keep it stable. Names that differ only by case are refused on save (collide on case-insensitive filesystems).</small>
         </label>
         <label class="form-row">
           <span>Owner email <span class="req">*</span> {{ hb('manifest-owner', 'Accountable owner. Receives findings notifications.') }}</span>
