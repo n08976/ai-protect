@@ -113,14 +113,24 @@
     </fieldset>
 
     <fieldset class="form-fs">
-      <legend>Scan scope {{ hb('manifest-source-paths', 'Where SAST/SCA/IaC adapters look on disk. Required when source_provider=local.') }}</legend>
+      <legend>Scan scope {{ hb('manifest-source-paths', 'Where SAST/SCA/IaC adapters look on disk. Optional when source_provider=github (the orchestrator sets it after cloning).') }}</legend>
       <label class="form-row">
-        <span>Source paths <span class="req">*</span> {{ hb('manifest-source-paths', 'One path per line. Every SAST/SCA adapter scans these. Leave blank when using the GitHub source provider — it materializes the repo and sets this automatically.') }}</span>
-        <textarea name="source_paths" id="source_paths" rows="4" required
-                  placeholder="/home/user/ExampleAdsApp/commercial&#10;/home/user/ExampleAdsApp/ads-studio">{% for p in (form.get('source_paths') or []) %}{{ p }}
+        <span>Source paths {{ hb('manifest-source-paths', 'One path per line. Every SAST/SCA adapter scans these. Leave blank when using the GitHub source provider — it materializes the repo and sets this automatically.') }}</span>
+        {# Pre-fill priority:
+             1. source_paths (canonical, plural — what the form writes back)
+             2. source_path  (legacy singular — every existing manifest in
+                pipeline/manifests uses this form, so we have to surface it
+                or editing pre-existing manifests starts with a blank field).
+           NOT required: the validator only checks individual entries are
+           non-empty; an empty list is accepted (matters for github source
+           provider, which materializes paths at scan time). #}
+        {% set _existing_paths = form.get('source_paths') or ([form.get('source_path')] if form.get('source_path') else []) %}
+        <textarea name="source_paths" id="source_paths" rows="4"
+                  placeholder="/home/user/ExampleAdsApp/commercial&#10;/home/user/ExampleAdsApp/ads-studio">{% for p in _existing_paths %}{{ p }}
 {% endfor %}</textarea>
         <small class="form-help">
           One path per line. Each is scanned by every SAST/SCA adapter the policy table assigns to this tier × stage; findings from all paths are aggregated.
+          Leave blank when using the GitHub source provider.
           <button type="button" class="btn-link" id="browse-btn">⇲ Browse for a path…</button>
         </small>
       </label>
