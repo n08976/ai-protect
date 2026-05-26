@@ -12,7 +12,7 @@ MANIFESTS = REPO / "pipeline" / "manifests"
 
 
 def test_dry_run_clinical_all_stages(tmp_path):
-    m = Manifest.from_yaml(MANIFESTS / "example_clinical_assistant.yml")
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
     store = FindingStore(tmp_path / "f.jsonl")
     orc = Orchestrator(m, store, dry_run=True)
     results = orc.run_all_stages()
@@ -26,7 +26,7 @@ def test_dry_run_clinical_all_stages(tmp_path):
 
 def test_intake_validates_phi_without_baa_blocks(tmp_path):
     """A manifest declaring PHI but a non-BAA model should fail intake."""
-    m = Manifest.from_yaml(MANIFESTS / "example_clinical_assistant.yml")
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
     # Strip BAA coverage to force the manifest_validator to fail.
     m.models[0].baa_covered = False
     store = FindingStore(tmp_path / "f.jsonl")
@@ -38,7 +38,7 @@ def test_intake_validates_phi_without_baa_blocks(tmp_path):
 
 def test_mcp_scope_runs_without_external_tools(tmp_path):
     """MCP scope adapter is policy-as-code; should always run."""
-    m = Manifest.from_yaml(MANIFESTS / "example_clinical_assistant.yml")
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
     store = FindingStore(tmp_path / "f.jsonl")
     orc = Orchestrator(m, store, dry_run=False)
     result = orc.run_stage("preprod")
@@ -49,7 +49,7 @@ def test_mcp_scope_runs_without_external_tools(tmp_path):
 
 
 def test_low_risk_tier_4_minimal_pipeline(tmp_path):
-    m = Manifest.from_yaml(MANIFESTS / "example_low_risk_assistive.yml")
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-dev-code-summarizer.yml")
     store = FindingStore(tmp_path / "f.jsonl")
     orc = Orchestrator(m, store, dry_run=True)
     result = orc.run_stage("build")

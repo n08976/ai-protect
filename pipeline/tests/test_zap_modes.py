@@ -15,7 +15,7 @@ MANIFESTS = REPO / "pipeline" / "manifests"
 
 
 def _clinical(allow_mutation: bool = False) -> Manifest:
-    m = Manifest.from_yaml(MANIFESTS / "example_clinical_assistant.yml")
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
     m.target.allow_mutation = allow_mutation
     # Give the test target a non-root path so the bare-origin refusal added
     # in ZAP's preflight (crawlers refuse to walk a whole origin without an

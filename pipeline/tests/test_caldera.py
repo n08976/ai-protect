@@ -21,7 +21,7 @@ MANIFESTS = REPO / "pipeline" / "manifests"
 
 
 def _clinical_manifest(allow_mutation: bool = True) -> Manifest:
-    m = Manifest.from_yaml(MANIFESTS / "example_clinical_assistant.yml")
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
     m.target.allow_mutation = allow_mutation
     return m
 
