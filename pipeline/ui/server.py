@@ -543,7 +543,16 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 "name": mname,
                 "tier": tier,
                 "data_scope": (form.get(f"mcp-{i}-data_scope") or "internal").strip(),
-                "actions": _split_lines(form.get(f"mcp-{i}-actions") or ""),
+                # MCP actions are a single text input where the operator
+                # types "action1, action2, action3" — split on both commas
+                # AND newlines so either separator works. Previous behavior
+                # (newline-only) stored ["action1, action2, action3"] as ONE
+                # string, which then tripped mcp_scope's per-action checks.
+                "actions": [
+                    a.strip() for a in
+                    (form.get(f"mcp-{i}-actions") or "").replace("\n", ",").split(",")
+                    if a.strip()
+                ],
                 "side_effects": (form.get(f"mcp-{i}-side_effects") or "read_only").strip(),
                 "third_party": form.get(f"mcp-{i}-third_party") == "on",
             })
@@ -678,6 +687,17 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 original_name=name,
             )
         data = _form_to_manifest_data(request.form)
+        # Preserve YAML keys the form doesn't render (e.g. step_up_auth,
+        # data_flow, contact_methods — fields shipped by the example
+        # manifests but not surfaced by the UI). Without this, every save
+        # via /edit silently drops them.
+        try:
+            existing = mio.load_raw(name)
+            for k, v in existing.items():
+                if k not in data and not k.startswith("_"):
+                    data[k] = v
+        except (FileNotFoundError, ValueError):
+            pass   # new file or unreadable; nothing to preserve
         # Tell the validator we're editing this specific manifest so its
         # case-fold uniqueness check doesn't flag the manifest as colliding
         # with itself. Underscore-prefixed keys are stripped by save() before
