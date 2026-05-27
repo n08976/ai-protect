@@ -84,7 +84,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def index():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None  # always re-read
-        findings = _active_findings(store)
+        include_unverified = _include_unverified(request)
+        findings = _dashboard_findings(store, include_unverified=include_unverified)
         # Mark each finding with whether ACTUALLY-FIXABLE — not just "has a
         # remediator class". If propose() returns None (e.g. existing pin
         # already satisfies the fix, or no published fix version), the Fix
@@ -117,7 +118,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         adapter_filter = request.args.get("adapter")
         fixable_filter = request.args.get("fixable")
 
-        all_findings = _active_findings(store)
+        all_findings = _dashboard_findings(store, include_unverified=include_unverified)
 
         # Pill counts shouldn't change based on the filter the pill itself
         # represents — otherwise clicking "critical" under an app filter
@@ -170,6 +171,16 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         # has-fix pill count: items in base_no_fix that have a remediator.
         pill_fixable_count = sum(1 for f in base_no_fix if fixable.get(f.finding_id))
 
+        # Count of hidden unverified intel findings so the toggle pill can
+        # show "Show unverified intel (N)". Cheap — we already have all
+        # active findings via _active_findings; just count the ones the
+        # dashboard filter removed.
+        hidden_unverified_count = 0
+        if not include_unverified:
+            hidden_unverified_count = sum(
+                1 for f in _active_findings(store)
+                if (f.evidence or {}).get("intel_match_unverified")
+            )
         return render_template(
             "index.html",
             findings=findings,
@@ -191,6 +202,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             severities=["critical", "high", "medium", "low", "info"],
             catalog=CATALOG,
             system_status=overall_status(app.config["FINDINGS_PATH"]),
+            include_unverified=include_unverified,
+            hidden_unverified_count=hidden_unverified_count,
         )
 
     @app.route("/finding/<finding_id>")
@@ -254,10 +267,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
         # Active dashboard view: deduped by fingerprint + resolved filtered.
-        # Pass ?include_resolved=1 to get the full append-only history instead.
+        # ?include_resolved=1 → full append-only history (no dedup, no filter)
+        # ?include_unverified=1 → include intel_match_unverified findings
+        # (hidden by default to keep automated callers in sync with the UI)
         if request.args.get("include_resolved"):
             return jsonify([f.to_dict() for f in store.all()])
-        return jsonify([f.to_dict() for f in _active_findings(store)])
+        out = _dashboard_findings(store, include_unverified=_include_unverified(request))
+        return jsonify([f.to_dict() for f in out])
 
     @app.route("/findings.pdf")
     def findings_pdf():
@@ -265,7 +281,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         from .pdf_report import generate_pdf
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        findings = _active_findings(store)
+        findings = _dashboard_findings(store, include_unverified=_include_unverified(request))
         sev_filter = request.args.get("severity")
         cat_filter = request.args.get("category")
         app_filter = request.args.get("app")
@@ -326,7 +342,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def findings_csv():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        findings = _active_findings(store)
+        findings = _dashboard_findings(store, include_unverified=_include_unverified(request))
         # Honor the same filters the index page uses so the download matches
         # what the operator is currently looking at.
         sev_filter = request.args.get("severity")
@@ -410,7 +426,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def api_stats():
         store = FindingStore(app.config["FINDINGS_PATH"])
         store._cache = None
-        return jsonify(_stats(_active_findings(store)))
+        return jsonify(_stats(_dashboard_findings(store, include_unverified=_include_unverified(request))))
 
     @app.route("/about")
     def about():
@@ -1805,6 +1821,32 @@ from ..core.dashboard import (
     resolved_fingerprints as _resolved_fingerprints,
     active_findings as _active_findings,
 )
+
+
+def _dashboard_findings(store, *, include_unverified: bool) -> list:
+    """Dashboard-facing wrapper around _active_findings that hides
+    intel_match_unverified findings unless the caller opts back in.
+
+    Why: token-overlap intel matches are unverified by construction and
+    grow into 100s per app — drowning out real scanner signal. Hiding by
+    default keeps the dashboard scannable. The findings are still in the
+    store (audit), still reachable by direct URL (/finding/<id>), and
+    still seen by scan_runner / auto_resolve. The "Show unverified
+    intel" toggle on /index re-includes them when an operator wants
+    to triage.
+    """
+    out = _active_findings(store)
+    if not include_unverified:
+        out = [f for f in out if not (f.evidence or {}).get("intel_match_unverified")]
+    return out
+
+
+def _include_unverified(request) -> bool:
+    """Read the ?include_unverified= query param; default False so the
+    dashboard hides by default. Accepts '1' / 'on' / 'true' (case
+    insensitive)."""
+    v = (request.args.get("include_unverified") or "").lower()
+    return v in ("1", "on", "true", "yes")
 
 
 def _stats(findings) -> dict:
