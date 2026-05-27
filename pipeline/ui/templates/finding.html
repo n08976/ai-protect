@@ -44,6 +44,14 @@
         Verify by opening the advisory below and confirming the product/version matches what's actually deployed —
         if it doesn't, dismiss this finding.
       </p>
+      <form method="POST" action="{{ url_for('finding_dismiss', finding_id=finding.finding_id) }}"
+            style="margin-top:10px;display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap"
+            onsubmit="return confirm('Dismiss this finding? A Change with state=applied will be written and recorded under your actor name. To undo: revert that Change from its detail page.')">
+        <input type="text" name="reason" required minlength="3"
+               placeholder="Why dismiss? (e.g. 'manifest mentions Kirby but we don\'t run it')"
+               style="flex:1;min-width:300px;padding:5px 8px;background:#13202f;color:#e6edf5;border:1px solid #213047;border-radius:4px">
+        <button type="submit" class="btn btn-secondary" style="padding:5px 14px">Dismiss</button>
+      </form>
     </section>
     {% endif %}
 

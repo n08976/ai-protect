@@ -974,6 +974,100 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             return f"Cannot propose: {e}", 400
         return redirect(url_for("change_detail", change_id=change.change_id))
 
+    @app.route("/finding/<finding_id>/dismiss", methods=["POST"])
+    def finding_dismiss(finding_id):
+        """Operator-driven dismissal — synthesizes an applied Change with
+        strategy=manual_dismiss. Reason required (recorded in the audit trail).
+        Used for unverified intel matches, confirmed false positives, accepted
+        risks the change-workflow shouldn't fix."""
+        from ..remediate.dismissal import dismiss_finding
+        reason = (request.form.get("reason") or "").strip()
+        if not reason:
+            return "reason is required", 400
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        finding = next((f for f in store.all() if f.finding_id == finding_id), None)
+        if not finding:
+            return "Finding not found", 404
+        try:
+            written = dismiss_finding(finding, reason=reason, actor=DEFAULT_ACTOR)
+        except ValueError as e:
+            return f"Cannot dismiss: {e}", 400
+        # JSON for API callers; redirect for form submits.
+        if (request.headers.get("Accept") or "").startswith("application/json") \
+                or request.form.get("response") == "json":
+            return jsonify({"dismissed": bool(written),
+                            "finding_id": finding_id,
+                            "fingerprint": finding.fingerprint,
+                            "already_resolved": not written})
+        return redirect(url_for("finding_detail", finding_id=finding_id))
+
+    @app.route("/findings/bulk-dismiss", methods=["POST"])
+    def findings_bulk_dismiss():
+        """Bulk dismissal. Accepts either:
+          - finding_ids: comma-separated list of finding ids
+          - filter spec: adapter / app / severity / category / unverified=on
+                         (matches the active-findings view)
+        Reason required. Returns JSON {dismissed, candidates, skipped} for
+        scripted callers; redirects back to /index for form submits.
+
+        Designed for the "385 unverified intel matches" use case: filter to
+        adapter=intel_match&unverified=on and dismiss the lot with one
+        well-documented reason."""
+        from ..remediate.dismissal import dismiss_finding
+        reason = (request.form.get("reason") or "").strip()
+        if not reason:
+            return jsonify({"error": "reason is required"}), 400
+
+        store = FindingStore(app.config["FINDINGS_PATH"])
+        store._cache = None
+        candidates = _active_findings(store)
+
+        # Either explicit id list OR filter spec — not both. Explicit list wins
+        # when both are supplied so a scripted caller's intent is unambiguous.
+        explicit = [t.strip() for t in (request.form.get("finding_ids") or "").split(",") if t.strip()]
+        if explicit:
+            wanted = set(explicit)
+            candidates = [f for f in candidates if f.finding_id in wanted]
+        else:
+            if (a := (request.form.get("adapter") or "").strip()):
+                candidates = [f for f in candidates if f.adapter == a]
+            if (a := (request.form.get("app") or "").strip()):
+                candidates = [f for f in candidates if f.app_name == a]
+            if (s := (request.form.get("severity") or "").strip()):
+                candidates = [f for f in candidates if f.severity.value == s]
+            if (c := (request.form.get("category") or "").strip()):
+                candidates = [f for f in candidates if f.category.value == c]
+            if request.form.get("unverified") == "on":
+                candidates = [f for f in candidates if (f.evidence or {}).get("intel_match_unverified")]
+
+        dismissed = 0
+        skipped = 0
+        for f in candidates:
+            try:
+                if dismiss_finding(f, reason=reason, actor=DEFAULT_ACTOR):
+                    dismissed += 1
+                else:
+                    skipped += 1   # already resolved
+            except ValueError:
+                skipped += 1
+            except Exception:
+                skipped += 1
+
+        result = {"dismissed": dismissed, "candidates": len(candidates), "skipped": skipped}
+        if (request.headers.get("Accept") or "").startswith("application/json") \
+                or request.form.get("response") == "json":
+            return jsonify(result)
+        # Preserve the operator's filter on redirect so they see the result
+        # in the same view they triggered from.
+        passthrough = {k: v for k, v in (
+            ("severity", request.form.get("severity")),
+            ("category", request.form.get("category")),
+            ("app", request.form.get("app")),
+            ("adapter", request.form.get("adapter")),
+        ) if v}
+        return redirect(url_for("index", **passthrough))
+
     @app.route("/change/<change_id>/<action>", methods=["POST"])
     def change_action(change_id, action):
         store = ChangeStore()

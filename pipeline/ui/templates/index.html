@@ -21,14 +21,39 @@
   {% endif %}
   <section class="hero">
     {% if stats_scope == "filtered" %}
-      <div class="hero-scope">
-        Showing <strong>filtered</strong> view
-        {% if filter_app %} · app <span class="mono">{{ filter_app }}</span>{% endif %}
-        {% if filter_severity %} · severity <span class="mono">{{ filter_severity }}</span>{% endif %}
-        {% if filter_adapter %} · adapter <span class="mono">{{ filter_adapter }}</span>{% endif %}
-        {% if filter_category %} · category <span class="mono">{{ filter_category }}</span>{% endif %}
-        {% if filter_fixable %} · ⚡ has fix{% endif %}
-        · numbers below reflect this filter ({{ global_total }} total across all apps · <a href="{{ url_for('index') }}">clear</a>)
+      <div class="hero-scope" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="flex:1">
+          Showing <strong>filtered</strong> view
+          {% if filter_app %} · app <span class="mono">{{ filter_app }}</span>{% endif %}
+          {% if filter_severity %} · severity <span class="mono">{{ filter_severity }}</span>{% endif %}
+          {% if filter_adapter %} · adapter <span class="mono">{{ filter_adapter }}</span>{% endif %}
+          {% if filter_category %} · category <span class="mono">{{ filter_category }}</span>{% endif %}
+          {% if filter_fixable %} · ⚡ has fix{% endif %}
+          · numbers below reflect this filter ({{ global_total }} total across all apps · <a href="{{ url_for('index') }}">clear</a>)
+        </span>
+        {# Bulk-dismiss: writes a manual_dismiss Change per finding in the
+           current filter. Reason required. Useful for the unverified-intel
+           cleanup case: filter to adapter=intel_match&app=X then dismiss
+           the lot with one well-documented reason. #}
+        <details style="margin-left:auto">
+          <summary class="btn btn-secondary" style="cursor:pointer;display:inline-block">Bulk-dismiss {{ stats.total }} filtered</summary>
+          <form method="POST" action="{{ url_for('findings_bulk_dismiss') }}"
+                style="margin-top:8px;padding:10px;background:#0c1421;border:1px solid #213047;border-radius:6px;min-width:360px"
+                onsubmit="return confirm('Dismiss {{ stats.total }} finding(s)? Each gets an applied manual_dismiss Change recorded under your actor name. Use case: clearing unverified intel matches you have eyeballed and confirmed do not apply.')">
+            {% if filter_app %}<input type="hidden" name="app" value="{{ filter_app }}">{% endif %}
+            {% if filter_severity %}<input type="hidden" name="severity" value="{{ filter_severity }}">{% endif %}
+            {% if filter_adapter %}<input type="hidden" name="adapter" value="{{ filter_adapter }}">{% endif %}
+            {% if filter_category %}<input type="hidden" name="category" value="{{ filter_category }}">{% endif %}
+            <input type="text" name="reason" required minlength="3"
+                   placeholder="Reason (recorded on every Change)"
+                   style="width:100%;padding:6px 8px;margin-bottom:6px;color:#e6edf5;background:#13202f;border:1px solid #213047;border-radius:4px">
+            <label class="small muted" style="display:block;margin:4px 0">
+              <input type="checkbox" name="unverified" value="on">
+              limit to <code>intel_match_unverified</code> only (skip verified intel + scanner findings)
+            </label>
+            <button type="submit" class="btn btn-primary" style="margin-top:6px">Dismiss filtered</button>
+          </form>
+        </details>
       </div>
     {% endif %}
     <div class="hero-stats">
