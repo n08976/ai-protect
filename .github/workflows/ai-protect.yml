@@ -39,8 +39,8 @@ jobs:
     outputs:
       manifests: ${{ steps.discover.outputs.manifests }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -77,8 +77,8 @@ jobs:
       matrix:
         manifest: ${{ fromJson(needs.tier-classify.outputs.manifests) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -140,7 +140,7 @@ jobs:
 
       - name: Upload findings + reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-protect-${{ github.run_id }}-${{ strategy.job-index }}
           path: findings/
@@ -157,8 +157,8 @@ jobs:
     name: pipeline unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
