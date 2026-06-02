@@ -67,7 +67,13 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("burp", config={"scan": "active"}),
             AdapterCall("zap", config={"mode": "full"}),
             AdapterCall("zap", config={"mode": "api"}),
+            AdapterCall("nikto"),
+            AdapterCall("dalfox"),
+            AdapterCall("wpscan"),  # no-op on non-WordPress targets
             AdapterCall("sqlmap"),
+            AdapterCall("commix"),  # requires target.allow_mutation
+            AdapterCall("nosqli"),  # requires target.allow_mutation
+            AdapterCall("tplmap"),  # requires target.allow_mutation
             AdapterCall("dockle"),
             AdapterCall("metasploit"),  # auxiliary scanners by default; exploits opt-in per adapter config
             AdapterCall("ride"),  # configurable Ride suite hook

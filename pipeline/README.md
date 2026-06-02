@@ -68,6 +68,36 @@ python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
 # open http://localhost:3005/
 ```
 
+### External DAST tool install (HexStrike-mined batch)
+
+The six web/injection adapters mined from the [HexStrike-AI MCP](https://github.com/0x4m4/hexstrike-ai)
+tool list are plain CLI binaries — install only the ones you'll exercise; the
+rest raise `AdapterUnavailable` and are skipped non-fatally. Reference install
+(Ubuntu 24.04, x86_64; binaries land on `PATH`, sources under `/opt/ai-protect-tools`):
+
+```bash
+sudo apt-get install -y nikto                                   # nikto  -> /usr/bin/nikto
+sudo gem install wpscan --no-document                           # wpscan -> /usr/local/bin/wpscan (needs ruby)
+# dalfox v3 prebuilt (Rust rewrite — JSON wrapper schema):
+curl -fsSL -o /tmp/d.tgz https://github.com/hahwul/dalfox/releases/latest/download/dalfox-v3.0.2-linux-x86_64.tar.gz \
+  && tar xzf /tmp/d.tgz -C /tmp && sudo install -m755 /tmp/dalfox-*/dalfox /usr/local/bin/dalfox
+# nosqli prebuilt (Go; replaces NoSQLMap):
+curl -fsSL -o /tmp/nosqli https://github.com/Charlie-belmer/nosqli/releases/latest/download/nosqli_linux_x64_v0.5.4 \
+  && sudo install -m755 /tmp/nosqli /usr/local/bin/nosqli
+# commix + tplmap run on python3 from a clone; wrap each as a PATH shim:
+sudo git clone --depth 1 https://github.com/commixproject/commix /opt/ai-protect-tools/commix
+sudo git clone --depth 1 https://github.com/epinna/tplmap        /opt/ai-protect-tools/tplmap
+printf '#!/usr/bin/env bash\nexec python3 /opt/ai-protect-tools/commix/commix.py "$@"\n' | sudo tee /usr/local/bin/commix >/dev/null
+printf '#!/usr/bin/env bash\nexec python3 /opt/ai-protect-tools/tplmap/tplmap.py "$@"\n' | sudo tee /usr/local/bin/tplmap >/dev/null
+sudo chmod +x /usr/local/bin/commix /usr/local/bin/tplmap
+```
+
+> **Why nosqli, not NoSQLMap?** The slot was originally scoped to NoSQLMap, but
+> NoSQLMap is Python-2-only (uninstallable on Ubuntu 24.04) and interactive
+> menu-driven (`raw_input` throughout) — it cannot run headless in a scan.
+> `nosqli` is a maintained single-binary, non-interactive scanner with
+> deterministic stdout, so it fits the adapter contract cleanly.
+
 ## Web UI
 
 `pipeline/ui/` is a Flask app that reads the FindingStore on every request, so you can run a scan in one terminal and watch findings stream into the browser in another. The UI also runs the **intel feed poller** (a daemon thread that fetches CVE / threat feeds at each feed's configured interval) and surfaces an **overall system status lamp** on the home page (worst-of-three across feeds, scans, and findings-store health).
@@ -171,12 +201,18 @@ The DAST adapter dropdown leads with "safe defaults" (`zap baseline + nuclei + m
 | `recon/naabu` | `-rate` scaled (×5, capped 500/s), `-top-ports 100` |
 | `recon/katana` | `-d` depth, `-c`, `-rate-limit`, `max_urls` cap, **bare-origin refusal** |
 | `sqlmap` | `--threads` (≤10), subprocess timeout |
+| `nikto` | `-maxtime` ← timebox, subprocess timeout, **bare-origin refusal** |
+| `dalfox` | `--workers` ← concurrency, `--delay` ← rps, `--scan-timeout` ← timebox, **bare-origin refusal** |
+| `wpscan` | `--max-threads` ← concurrency, `--request-timeout`, subprocess timeout, **bare-origin refusal** |
+| `commix` | subprocess timeout (no native rate/concurrency flags) |
+| `nosqli` | subprocess timeout (no native rate/concurrency flags) |
+| `tplmap` | subprocess timeout (no native rate/concurrency flags) |
 | `garak` | `--parallel_requests`, subprocess timeout |
 | `burp` | scope.include rule + poll-deadline ← timebox, **bare-origin refusal** |
 | `pyrit` | wall-clock between-strategies cap, `max_prompts_per_strategy` (in-process, no subprocess) |
 | `metasploit` | two-level timebox (stage + per-module budget) |
 
-**Bare-origin refusal** fires in the preflight of every crawler-class adapter (nuclei, ZAP, katana, burp) when `dast_require_scope_prefix_for_crawlers` is on (default) AND the target's path is `/` or empty. Bypass by scoping the manifest's `target.base_url` (e.g. `https://target.example.com/myapp/`) or unchecking the setting. Prevents "scan the whole domain" accidents.
+**Bare-origin refusal** fires in the preflight of every crawler-class adapter (nuclei, ZAP, katana, burp, nikto, dalfox, wpscan, nosqli) when `dast_require_scope_prefix_for_crawlers` is on (default) AND the target's path is `/` or empty. Bypass by scoping the manifest's `target.base_url` (e.g. `https://target.example.com/myapp/`) or unchecking the setting. Prevents "scan the whole domain" accidents.
 
 ## Scanning from GitHub (`pipeline/sources/`)
 
@@ -324,6 +360,12 @@ Every adapter implements the same interface (`pipeline/adapters/base.py`): prefl
 | `nuclei` | [Nuclei](https://github.com/projectdiscovery/nuclei) | build / preprod | Template-driven web vuln scan. |
 | `zap` | [OWASP ZAP](https://github.com/zaproxy/zaproxy) | preprod | Free Burp Pro substitute via REST API. Modes: `spider`, `baseline` (1-min + passive), `active`, `full`, `api` (OpenAPI/SOAP/GraphQL spec-driven). The `api` mode imports a spec then drives the scan, ideal for AI gateway and MCP server surfaces. |
 | `sqlmap` | [sqlmap](https://github.com/sqlmapproject/sqlmap) | preprod | SQL injection confirmation + characterization. Confirms what Nuclei/ZAP detect. |
+| `nikto` | [Nikto](https://github.com/sullo/nikto) | preprod | Web-server misconfig / known-vuln / dangerous-file / header scan. Fills a gap Nuclei/ZAP/Burp cover poorly. |
+| `dalfox` | [Dalfox](https://github.com/hahwul/dalfox) | preprod | XSS scanner w/ parameter mining + DOM (AST) analysis. v3 (Rust); parses the `{"meta","findings"}` JSON wrapper. |
+| `wpscan` | [WPScan](https://github.com/wpscanteam/wpscan) | preprod | WordPress core/plugin/theme CVE enumeration. No-op on non-WP targets. Optional `api_token` config for full WPVulnDB CVEs. |
+| `commix` | [commix](https://github.com/commixproject/commix) | preprod | OS command-injection confirmation. **Mutation-required.** |
+| `nosqli` | [nosqli](https://github.com/Charlie-belmer/nosqli) | preprod | NoSQL (Mongo operator / error / boolean / timing) injection confirmation. **Mutation-required.** Replaces NoSQLMap (Py2, interactive — can't run headless). |
+| `tplmap` | [tplmap](https://github.com/epinna/tplmap) | preprod | Server-side template injection (SSTI → RCE) confirmation across Jinja2/Twig/Freemarker/ERB/etc. **Mutation-required.** |
 | `dockle` | [dockle](https://github.com/goodwithtech/dockle) | preprod | Container image hygiene scanner — different focus than Trivy (image best practices). |
 | `recon` | [subfinder](https://github.com/projectdiscovery/subfinder) + [httpx](https://github.com/projectdiscovery/httpx) + [naabu](https://github.com/projectdiscovery/naabu) + [katana](https://github.com/projectdiscovery/katana) | intake (Tier 1) | Shadow-AI discovery chain — subdomains → HTTP services → ports → URLs. |
 | `promptfoo` | [promptfoo](https://github.com/promptfoo/promptfoo) / [DeepEval](https://github.com/confident-ai/deepeval) | preprod | AI eval frameworks complementary to PyRIT (correctness, safety, refusal). |

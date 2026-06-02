@@ -10,6 +10,8 @@ from .burp import BurpAdapter
 from .caldera import CalderaAdapter
 from .checkov import CheckovAdapter
 from .codeql import CodeQLAdapter
+from .commix import CommixAdapter
+from .dalfox import DalfoxAdapter
 from .dependency_check import DependencyCheckAdapter
 from .detect_secrets import DetectSecretsAdapter
 from .dockle import DockleAdapter
@@ -25,7 +27,9 @@ from .manifest_validator import ManifestValidatorAdapter
 from .mcp_scope import MCPScopeAdapter
 from .metasploit import MetasploitAdapter
 from .modelscan import ModelScanAdapter
+from .nikto import NiktoAdapter
 from .njsscan import NjsscanAdapter
+from .nosqli import NosqliAdapter
 from .nuclei import NucleiAdapter
 from .osv_scanner import OSVScannerAdapter
 from .owasp_noir import OWASPNoirAdapter
@@ -40,8 +44,10 @@ from .sqlmap import SqlmapAdapter
 from .syft import SyftAdapter
 from .telemetry_drift import AnomalyDetectorAdapter, TelemetryDriftAdapter
 from .threat_model_check import ThreatModelCheckAdapter
+from .tplmap import TplmapAdapter
 from .trivy import TrivyAdapter
 from .trufflehog import TruffleHogAdapter
+from .wpscan import WPScanAdapter
 from .zap import ZAPAdapter
 
 
@@ -78,6 +84,12 @@ REGISTRY: dict[str, type[Adapter]] = {
     "dockle": DockleAdapter,
     "sqlmap": SqlmapAdapter,
     "zap": ZAPAdapter,
+    "nikto": NiktoAdapter,
+    "dalfox": DalfoxAdapter,
+    "wpscan": WPScanAdapter,
+    "commix": CommixAdapter,
+    "nosqli": NosqliAdapter,
+    "tplmap": TplmapAdapter,
     "recon": ReconAdapter,
     "promptfoo": PromptfooAdapter,
     "agentic_radar": AgenticRadarAdapter,

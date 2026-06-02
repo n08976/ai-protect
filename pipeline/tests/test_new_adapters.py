@@ -94,3 +94,123 @@ def test_new_adapters_in_policy():
     assert "gosec" in t1_build
     assert "agentic_radar" in t1_build
     assert "ride" in t1_preprod
+
+
+# ---- HexStrike-list DAST batch: nikto / dalfox / wpscan / commix / nosqlmap / tplmap ----
+
+from pipeline.adapters.commix import CommixAdapter
+from pipeline.adapters.dalfox import DalfoxAdapter
+from pipeline.adapters.nikto import NiktoAdapter
+from pipeline.adapters.nosqli import NosqliAdapter
+from pipeline.adapters.tplmap import TplmapAdapter
+from pipeline.adapters.wpscan import WPScanAdapter
+
+
+@pytest.mark.parametrize("name,cls", [
+    ("nikto", NiktoAdapter),
+    ("dalfox", DalfoxAdapter),
+    ("wpscan", WPScanAdapter),
+    ("commix", CommixAdapter),
+    ("nosqli", NosqliAdapter),
+    ("tplmap", TplmapAdapter),
+])
+def test_dast_batch_registered(name, cls):
+    assert name in REGISTRY
+    assert REGISTRY[name] is cls
+
+
+@pytest.mark.parametrize("cls,bin_name", [
+    (NiktoAdapter, "nikto"),
+    (DalfoxAdapter, "dalfox"),
+    (WPScanAdapter, "wpscan"),
+])
+def test_dast_scanners_unavailable_when_cli_missing(cls, bin_name):
+    """Non-mutating scanners must raise AdapterUnavailable when the CLI is absent."""
+    if shutil.which(bin_name):
+        pytest.skip(f"{bin_name} present on PATH; skipping unavailable check")
+    m = _clinical(allow_mutation=True)
+    adapter = cls(m, stage="preprod", config={})
+    with pytest.raises(AdapterUnavailable):
+        adapter.preflight()
+
+
+@pytest.mark.parametrize("cls", [CommixAdapter, NosqliAdapter, TplmapAdapter])
+def test_injectors_require_mutation(cls):
+    """Active injectors must refuse before touching the target when mutation is off.
+
+    The mutation gate lives in base.preflight() and fires regardless of whether
+    the CLI binary is installed."""
+    assert cls.requires_mutation is True
+    m = _clinical(allow_mutation=False)
+    adapter = cls(m, stage="preprod", config={})
+    with pytest.raises(AdapterAuthorizationRequired):
+        adapter.preflight()
+
+
+def test_dast_batch_in_tier1_preprod_policy():
+    from pipeline.core.policy import adapters_for
+    t1_preprod = {c.adapter for c in adapters_for(1, "preprod")}
+    for name in ("nikto", "dalfox", "wpscan", "commix", "nosqli", "tplmap"):
+        assert name in t1_preprod
+
+
+# ---- Parser contract tests: pin the tool output schemas these adapters rely on ----
+
+def _scoped_mut() -> Manifest:
+    m = _clinical(allow_mutation=True)
+    m.target.base_url = "http://127.0.0.1:9/app/?id=1"  # scoped so bare-origin policy passes
+    return m
+
+
+def test_dalfox_v3_wrapper_parses(monkeypatch):
+    """dalfox v3 emits {"meta":..., "findings":[...]} — confirm we read the wrapper."""
+    import shutil as _sh
+    import subprocess
+    # Parser test, not a preflight test: make the CLI look installed so preflight
+    # passes whether or not dalfox is actually on PATH (e.g. CI runners).
+    monkeypatch.setattr(_sh, "which", lambda name, *a, **k: "/usr/local/bin/" + name)
+    sample = (
+        '{"meta": {"dalfox_version": "3.0.2", "findings_count": 1}, "findings": ['
+        '{"type": "V", "inject_type": "inHTML", "method": "GET", '
+        '"data": "http://127.0.0.1:9/app/?id=1", "param": "id", '
+        '"payload": "<script>alert(1)</script>", "evidence": "12 line", '
+        '"cwe": "CWE-79", "severity": "High", "message_id": 1, '
+        '"message_str": "reflected XSS", "location": "Query"}]}'
+    )
+
+    class P:
+        stdout, stderr = sample, ""
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: P())
+    adapter = DalfoxAdapter(_scoped_mut(), stage="preprod", config={})
+    findings = adapter.run()
+    assert len(findings) == 1
+    f = findings[0]
+    assert f.severity.name == "HIGH"
+    assert "id" in f.title
+    assert f.evidence["cwe"] == "CWE-79"
+    assert "verified XSS" in f.title  # FindingType "V" decoded
+
+
+def test_nosqli_block_parses(monkeypatch):
+    """nosqli prints 'Found <type>:\\n\\tURL:..\\n\\tparam:..\\n\\tInjection:..' per hit."""
+    import shutil as _sh
+    import subprocess
+    monkeypatch.setattr(_sh, "which", lambda name, *a, **k: "/usr/local/bin/" + name)
+    sample = (
+        "Running Error based scan...\n"
+        "Running GET parameter scan...\n"
+        "Found Error based NoSQL Injection:\n"
+        "\tURL: http://127.0.0.1:9/app/?id=1\n"
+        "\tparam: id\n"
+        "\tInjection: id=1'\n\n"
+    )
+
+    class P:
+        stdout, stderr = sample, ""
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: P())
+    adapter = NosqliAdapter(_scoped_mut(), stage="preprod", config={})
+    findings = adapter.run()
+    assert len(findings) == 1
+    assert "Error based NoSQL Injection" in findings[0].title
+    assert findings[0].evidence["param"] == "id"
+    # The 'Running ... scan...' progress lines must NOT produce findings.

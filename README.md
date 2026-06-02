@@ -340,6 +340,17 @@ Curated awesome-list / red-team-tradecraft repositories the user referenced. Pic
 | irredteam.github.io | https://github.com/irredteam/irredteam.github.io |
 | RedTeam-Tools | https://github.com/A-poc/RedTeam-Tools |
 | Red-Teaming-Toolkit (infosecn1nja) | https://github.com/infosecn1nja/Red-Teaming-Toolkit |
+| HexStrike-AI MCP (150+ offensive tools as MCP) | https://github.com/0x4m4/hexstrike-ai |
+
+> **HexStrike-AI MCP evaluation (2026-06).** Reviewed as a possible integration.
+> Verdict: do **not** wire the MCP server itself — it's an autonomous LLM-driven
+> orchestrator that shells out over an HTTP command-execution surface and returns
+> raw tool output, which conflicts with this pipeline's manifest-gated, scope-safe,
+> normalized-`Finding` model (it would duplicate the orchestrator and bypass the
+> safety gates). Its SAST/DAST tools were already largely covered here (Checkov,
+> Trivy, Nuclei, SQLMap, ZAP, Burp). We mined it for the genuine DAST gaps and
+> wired those as local adapters instead: `nikto`, `dalfox`, `wpscan`, `commix`,
+> `nosqli` (subbed for NoSQLMap), `tplmap` — see the Dynamic·web·network table above.
 
 ### Wired-in adapters (current state)
 
@@ -393,7 +404,23 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 | `ride` (Adobe) | https://github.com/adobe/ride |
 | `recon` chain | https://github.com/projectdiscovery/subfinder · https://github.com/projectdiscovery/httpx · https://github.com/projectdiscovery/naabu · https://github.com/projectdiscovery/katana |
 | `sqlmap` | https://github.com/sqlmapproject/sqlmap |
+| `nikto` | https://github.com/sullo/nikto |
+| `dalfox` | https://github.com/hahwul/dalfox |
+| `wpscan` | https://github.com/wpscanteam/wpscan |
+| `commix` | https://github.com/commixproject/commix |
+| `nosqli` | https://github.com/Charlie-belmer/nosqli |
+| `tplmap` | https://github.com/epinna/tplmap |
 | `dockle` | https://github.com/goodwithtech/dockle |
+
+> The six rows above (`nikto` … `tplmap`) were added after evaluating the
+> **[HexStrike-AI MCP server](https://github.com/0x4m4/hexstrike-ai)** (150+ offensive
+> tools exposed to an LLM agent). We did **not** integrate the MCP server itself —
+> it's a parallel autonomous orchestrator returning raw output over an HTTP
+> command-execution surface, which conflicts with this pipeline's manifest-gated,
+> normalized-`Finding` model. Instead we mined its tool list for genuine DAST gaps
+> and wrote thin local adapters on the existing contract. The NoSQL slot was scoped
+> to NoSQLMap but swapped to **nosqli** (NoSQLMap is Python-2-only and interactive,
+> so it cannot run headless in a scan). See `pipeline/README.md` for install paths.
 
 #### AI red team · eval
 
