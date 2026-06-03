@@ -63,7 +63,8 @@
 <rect x="45" y="288" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
 <text x="105.0" y="301" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Armis (assets)</text>
 <rect x="182" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="247.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">OPA policy</text>
+<rect x="187" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="247.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">OPA policy</text>
 <text x="247.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
 <rect x="187" y="244" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="247.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Tier scoring</text>
@@ -110,7 +111,8 @@
 <rect x="755" y="266" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="815.0" y="279" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">NeMo Guard</text>
 <rect x="892" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="957.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Telemetry</text>
+<rect x="897" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="957.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Telemetry</text>
 <rect x="897" y="222" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="957.0" y="235" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Drift det.</text>
 <rect x="897" y="244" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>

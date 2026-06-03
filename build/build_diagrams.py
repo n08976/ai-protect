@@ -65,12 +65,12 @@ def diagram_1(highlight=False):
           "Burp Suite", "Rapid7 InsightVM", "WAF (Palo Alto)", "Teams",
           "Azure Boards / Jira"} if highlight else set()
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"  # new tools introduced by ai-protect
-    HL_NEW = {"Tier scoring",
+    HL_NEW = {"OPA policy", "Tier scoring",
               "Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog",
               "Nuclei", "ZAP", "Schemathesis",
               "garak", "PyRIT", "ART", "PromptFoo",
               "Auto-PR (AzDO/GH)", "Llama Guard", "NeMo Guard",
-              "Drift det.", "Re-scan cron", "Report card"} if highlight else set()
+              "Telemetry", "Drift det.", "Re-scan cron", "Report card"} if highlight else set()
     # Title strip
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
     title = ("AI Security Assurance Pipeline — Environment Tooling Highlighted"
