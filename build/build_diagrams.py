@@ -813,7 +813,7 @@ def diagram_7():
 # DIAGRAM 8: Empowered AI building on the ai-protect paved road
 # ============================================================
 def diagram_8():
-    W, H = 1240, 752
+    W, H = 1240, 766
     PURPLE = "#6D52C9"; PURPLE_LT = "#ECE6FA"
     s = [hdr(W, H), arrow_def()]
     s.append('<defs>'
@@ -970,6 +970,14 @@ def diagram_8():
         s.append(text(lx+19, yy+12, lab, 9, TEXT, "start"))
         lx += w_est
     s.append(text(margin, ly + (row+1)*18 + 12, "Rows = WHO acts (Builder · AppSec · Governance · ai-protect)", 9, TEXT_LT, "start"))
+
+    # --- Tier key (app risk tier that drives the fork) ---
+    tky = ly + (row+2)*18 + 6
+    s.append(box(margin, tky, W-2*margin, 20, GRAY_LT, GRAY, 1, 4))
+    s.append(text(margin+8, tky+14, "TIER = app risk, drives the fork:", 9, NAVY_DK, "start", "bold"))
+    s.append(text(margin+200, tky+14,
+                  "1 = PHI / clinical / external-facing (highest)   ·   2 = sensitive internal action / write-back   ·   "
+                  "3 = internal advisory, broad reach   ·   4 = low-impact assistive (lowest)", 9, TEXT, "start"))
 
     s.append("</svg>")
     return "\n".join(s)
