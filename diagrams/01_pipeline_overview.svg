@@ -48,10 +48,11 @@
 <text x="1099.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 7</text>
 <text x="1099.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Reporting &amp;</text>
 <text x="1099.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Notification</text>
-<rect x="40" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="40" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <text x="105.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ServiceNow</text>
 <text x="105.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CASB egress</text>
-<text x="105.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">GitHub scan</text>
+<text x="105.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Azure Repos scan</text>
+<text x="105.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">GitHub scan</text>
 <rect x="182" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <text x="247.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">OPA policy</text>
 <text x="247.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
@@ -73,7 +74,7 @@
 <text x="673.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ART</text>
 <text x="673.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">PromptFoo</text>
 <rect x="750" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="815.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Auto-PR</text>
+<text x="815.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Auto-PR (AzDO/GH)</text>
 <text x="815.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">WAF push</text>
 <text x="815.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Llama Guard</text>
 <text x="815.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">NeMo Guard</text>
@@ -83,11 +84,11 @@
 <text x="957.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Re-scan cron</text>
 <rect x="1034" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <text x="1099.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Slack/Teams</text>
-<text x="1099.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Jira</text>
+<text x="1099.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Azure Boards / Jira</text>
 <text x="1099.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Report card</text>
 <rect x="40" y="430" width="1120" height="70" fill="#FFF4E5" stroke="#E0A555" stroke-width="1.5" rx="8" ry="8"/>
 <text x="60" y="455" font-size="12" fill="#15293F" text-anchor="start" font-weight="bold">ORCHESTRATION &amp; DATA PLANE</text>
-<text x="60" y="480" font-size="12" fill="#222222" text-anchor="start" font-weight="normal">Argo Workflows (or Tekton)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault (secrets)  •  OPA (deploy gates)</text>
+<text x="60" y="480" font-size="12" fill="#222222" text-anchor="start" font-weight="normal">Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)</text>
 <rect x="40" y="530" width="1120" height="90" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="8" ry="8"/>
 <text x="60" y="554" font-size="13" fill="#FFFFFF" text-anchor="start" font-weight="bold">SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)</text>
 <rect x="65.0" y="568" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
@@ -114,7 +115,7 @@
 <rect x="796.6666666666666" y="645" width="363.3333333333333" height="80" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1.5" rx="6" ry="6"/>
 <text x="978.3333333333333" y="669" font-size="13" fill="#15293F" text-anchor="middle" font-weight="bold">Compliance Evidence</text>
 <text x="978.3333333333333" y="695" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">HIPAA / HITRUST control mapping, audit query</text>
-<line x1="105.0" y1="275" x2="105.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="105.0" y1="297" x2="105.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="247.0" y1="275" x2="247.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="389.0" y1="319" x2="389.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="531.0" y1="297" x2="531.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
