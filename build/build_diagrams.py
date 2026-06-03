@@ -84,14 +84,14 @@ def diagram_1():
 
     # Tool layer (per-stage tools)
     tools = [
-        ["ServiceNow", "CASB egress", "GitHub scan"],
+        ["ServiceNow", "CASB egress", "Azure Repos scan", "GitHub scan"],
         ["OPA policy", "CMDB tag", "Tier scoring"],
         ["Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog"],
         ["Burp Suite", "Nuclei", "ZAP", "Schemathesis"],
         ["garak", "PyRIT", "ART", "PromptFoo"],
-        ["Auto-PR", "WAF push", "Llama Guard", "NeMo Guard"],
+        ["Auto-PR (AzDO/GH)", "WAF push", "Llama Guard", "NeMo Guard"],
         ["Telemetry", "Drift det.", "Re-scan cron"],
-        ["Slack/Teams", "Jira", "Report card"],
+        ["Slack/Teams", "Azure Boards / Jira", "Report card"],
     ]
     ty0 = 195; tslot = 22
     for i, items in enumerate(tools):
@@ -104,7 +104,7 @@ def diagram_1():
     oy = 430; oh = 70
     s.append(box(40, oy, W-80, oh, ORANGE, ORANGE_DK, 1.5, 8))
     s.append(text(60, oy+25, "ORCHESTRATION & DATA PLANE", 12, NAVY_DK, "start", "bold"))
-    s.append(text(60, oy+50, "Argo Workflows (or Tekton)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault (secrets)  •  OPA (deploy gates)", 12, TEXT))
+    s.append(text(60, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT))
 
     # Sanctioned infrastructure layer (v2.1)
     iy = 530; ih = 90
@@ -662,7 +662,7 @@ def diagram_7():
     ]
     # content per (vertical, phase)
     content = {
-        ("AppSec", 0): ["Prompt-injection Semgrep ruleset", "Llama Guard PoC at gateway", "Paved-road template v0", "ModelScan in CI"],
+        ("AppSec", 0): ["Prompt-injection Semgrep ruleset", "Llama Guard PoC at gateway", "Paved-road template v0", "ModelScan in CI (Azure Pipelines)"],
         ("AppSec", 1): ["Burp Enterprise API integration", "Custom RAG threat-modeling guide", "Auto-PR remediation for deps", "Healthcare prompt linter v1"],
         ("AppSec", 2): ["Self-service threat-modeling assistant", "Inherited-controls report card", "Continuous SBOM + attestation"],
 
