@@ -59,12 +59,12 @@ def diagram_1(highlight=False):
     # Two highlight sets for the health- variant:
     #   HL      = environment tooling ALREADY in place (orange accent). The whole
     #             "ENTERPRISE SECURITY ENVIRONMENT" band + dashboards are also orange.
-    #   HL_NEW  = tools ai-protect INTRODUCES (teal accent) — the new SAST/DAST/
+    #   HL_NEW  = tools ai-protect INTRODUCES (green accent) — the new SAST/DAST/
     #             AI-red-team/remediation capabilities this brings.
     HL = {"GitHub scan", "Azure Repos scan", "Armis (assets)", "Mend.io (SAST/SCA)",
           "Burp Suite", "Rapid7 InsightVM", "WAF (Palo Alto)", "Teams",
           "Azure Boards / Jira"} if highlight else set()
-    TEAL = "#0F7A66"; TEAL_FILL = "#D5F0EA"; TEAL_TXT = "#0B5F50"
+    GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"  # new tools introduced by ai-protect
     HL_NEW = {"Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog",
               "Nuclei", "ZAP", "Schemathesis",
               "garak", "PyRIT", "ART", "PromptFoo",
@@ -75,10 +75,11 @@ def diagram_1(highlight=False):
              if highlight else "AI Security Assurance Pipeline — End-to-End")
     s.append(text(W/2, 28, title, 18, WHITE, "middle", "bold"))
     if highlight:
-        s.append(box(40, 54, 14, 13, ORANGE, ACCENT, 1.4, 2))
-        s.append(text(60, 65, "Already in place — environment tooling", 11, TEXT, "start"))
-        s.append(box(372, 54, 14, 13, TEAL_FILL, TEAL, 1.4, 2))
-        s.append(text(392, 65, "Introduced by ai-protect", 11, TEXT, "start"))
+        s.append(text(40, 65, "KEY:", 11, TEXT, "start", "bold"))
+        s.append(box(80, 54, 14, 13, GRN_FILL, GRN, 1.4, 2))
+        s.append(text(100, 65, "New tools introduced with ai-protect", 11, TEXT, "start"))
+        s.append(box(380, 54, 14, 13, ORANGE, ACCENT, 1.4, 2))
+        s.append(text(400, 65, "Existing systems for integration", 11, TEXT, "start"))
 
     # Pipeline stages (top row)
     stages = [
@@ -121,9 +122,9 @@ def diagram_1(highlight=False):
             if it in HL:                 # already in place — orange
                 s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, ORANGE, ACCENT, 1, 3))
                 tcol, tw = ACCENT, "bold"
-            elif it in HL_NEW:           # introduced by ai-protect — teal
-                s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, TEAL_FILL, TEAL, 1, 3))
-                tcol, tw = TEAL_TXT, "bold"
+            elif it in HL_NEW:           # introduced by ai-protect — green
+                s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, GRN_FILL, GRN, 1, 3))
+                tcol, tw = GRN_TXT, "bold"
             else:
                 tcol, tw = TEXT, "normal"
             s.append(text(x+sw/2, ty0+18+j*tslot, it, 11, tcol, "middle", tw))
