@@ -82,6 +82,7 @@ def diagram_1(highlight=False):
         s.append(text(100, 65, "New tools introduced with ai-protect", 11, TEXT, "start"))
         s.append(box(380, 54, 14, 13, ORANGE, ACCENT, 1.4, 2))
         s.append(text(400, 65, "Existing systems for integration", 11, TEXT, "start"))
+        s.append(text(W-40, 65, "within a stage: grouped by category, not sequential", 9, TEXT_LT, "end"))
 
     # Pipeline stages (top row)
     stages = [
@@ -116,20 +117,33 @@ def diagram_1(highlight=False):
         ["Telemetry", "Drift det.", "Re-scan cron"],
         ["Slack", "Teams", "Azure Boards / Jira", "Report card"],
     ]
-    ty0 = 195; tslot = 22
+    ty0 = 195; tslot = 22; ggap = 7
+    def _grp(it):                        # green (new) -> orange (existing) -> plain
+        return 0 if it in HL_NEW else (1 if it in HL else 2)
+    box_bottoms = []
     for i, items in enumerate(tools):
         x = sx0 + i*(sw+gap)
-        s.append(box(x, ty0, sw, len(items)*tslot+14, WHITE, GRAY_DK, 1, 4))
+        if highlight:                    # group chips by category for a cleaner read
+            items = sorted(items, key=_grp)
+        ntrans = sum(1 for k in range(1, len(items)) if _grp(items[k]) != _grp(items[k-1])) if highlight else 0
+        bh = len(items)*tslot + 14 + ntrans*ggap
+        box_bottoms.append(ty0 + bh)
+        s.append(box(x, ty0, sw, bh, WHITE, GRAY_DK, 1, 4))
+        yoff = 0; prev = None
         for j, it in enumerate(items):
+            if highlight and prev is not None and _grp(it) != prev:
+                yoff += ggap            # small gap between category groups
+            prev = _grp(it)
+            yy = ty0 + 18 + j*tslot + yoff
             if it in HL:                 # already in place — orange
-                s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, ORANGE, ACCENT, 1, 3))
+                s.append(box(x+5, yy-13, sw-10, 18, ORANGE, ACCENT, 1, 3))
                 tcol, tw = ACCENT, "bold"
             elif it in HL_NEW:           # introduced by ai-protect — green
-                s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, GRN_FILL, GRN, 1, 3))
+                s.append(box(x+5, yy-13, sw-10, 18, GRN_FILL, GRN, 1, 3))
                 tcol, tw = GRN_TXT, "bold"
             else:
                 tcol, tw = TEXT, "normal"
-            s.append(text(x+sw/2, ty0+18+j*tslot, it, 11, tcol, "middle", tw))
+            s.append(text(x+sw/2, yy, it, 11, tcol, "middle", tw))
 
     # Orchestrator + Findings + Notify lane
     oy = 430; oh = 70
@@ -202,7 +216,7 @@ def diagram_1(highlight=False):
     # Connector lines from stages to orchestrator
     for i in range(len(stages)):
         x = sx0 + i*(sw+gap) + sw/2
-        s.append(f'<line x1="{x}" y1="{ty0+len(tools[i])*tslot+14}" x2="{x}" y2="{oy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+        s.append(f'<line x1="{x}" y1="{box_bottoms[i]}" x2="{x}" y2="{oy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
     # Connectors orchestrator -> infra
     for i in range(len(parts)):
         x = px0 + i*pw + pw/2

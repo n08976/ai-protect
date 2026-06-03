@@ -14,6 +14,7 @@
 <text x="100" y="65" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">New tools introduced with ai-protect</text>
 <rect x="380" y="54" width="14" height="13" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
 <text x="400" y="65" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Existing systems for integration</text>
+<text x="1160" y="65" font-size="9" fill="#555555" text-anchor="end" font-weight="normal">within a stage: grouped by category, not sequential</text>
 <rect x="40" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="105.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 0</text>
 <text x="105.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Discovery &amp;</text>
@@ -53,22 +54,22 @@
 <text x="1099.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 7</text>
 <text x="1099.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Reporting &amp;</text>
 <text x="1099.0" y="148" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Notification</text>
-<rect x="40" y="195" width="130" height="124" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="105.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ServiceNow</text>
-<text x="105.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CASB egress</text>
+<rect x="40" y="195" width="130" height="131" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="45" y="200" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="105.0" y="213" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Repos scan</text>
+<rect x="45" y="222" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="105.0" y="235" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">GitHub scan</text>
 <rect x="45" y="244" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="105.0" y="257" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Repos scan</text>
-<rect x="45" y="266" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="105.0" y="279" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">GitHub scan</text>
-<rect x="45" y="288" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="105.0" y="301" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Armis (assets)</text>
-<rect x="182" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<text x="105.0" y="257" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Armis (assets)</text>
+<text x="105.0" y="286" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ServiceNow</text>
+<text x="105.0" y="308" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CASB egress</text>
+<rect x="182" y="195" width="130" height="87" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="187" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="247.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">OPA policy</text>
-<text x="247.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
-<rect x="187" y="244" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="247.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Tier scoring</text>
-<rect x="324" y="195" width="130" height="146" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="187" y="222" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="247.0" y="235" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Tier scoring</text>
+<text x="247.0" y="264" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
+<rect x="324" y="195" width="130" height="153" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="329" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="389.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Semgrep</text>
 <rect x="329" y="222" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
@@ -79,19 +80,19 @@
 <text x="389.0" y="279" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ModelScan</text>
 <rect x="329" y="288" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="389.0" y="301" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">TruffleHog</text>
-<rect x="329" y="310" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="389.0" y="323" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Mend.io (SAST/SCA)</text>
-<rect x="466" y="195" width="130" height="124" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<rect x="471" y="200" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="531.0" y="213" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Burp Suite</text>
+<rect x="329" y="317" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="330" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Mend.io (SAST/SCA)</text>
+<rect x="466" y="195" width="130" height="131" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="471" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Nuclei</text>
 <rect x="471" y="222" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="531.0" y="235" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Nuclei</text>
+<text x="531.0" y="235" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ZAP</text>
 <rect x="471" y="244" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="531.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ZAP</text>
-<rect x="471" y="266" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="531.0" y="279" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Schemathesis</text>
-<rect x="471" y="288" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="531.0" y="301" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Rapid7 InsightVM</text>
+<text x="531.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Schemathesis</text>
+<rect x="471" y="273" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="286" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Burp Suite</text>
+<rect x="471" y="295" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="308" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Rapid7 InsightVM</text>
 <rect x="608" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="613" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="673.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">garak</text>
@@ -101,15 +102,15 @@
 <text x="673.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ART</text>
 <rect x="613" y="266" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="673.0" y="279" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">PromptFoo</text>
-<rect x="750" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="750" y="195" width="130" height="109" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="755" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="815.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Auto-PR (AzDO/GH)</text>
-<rect x="755" y="222" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="815.0" y="235" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">WAF (Palo Alto)</text>
+<rect x="755" y="222" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="235" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Llama Guard</text>
 <rect x="755" y="244" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="815.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Llama Guard</text>
-<rect x="755" y="266" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="815.0" y="279" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">NeMo Guard</text>
+<text x="815.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">NeMo Guard</text>
+<rect x="755" y="273" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="286" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">WAF (Palo Alto)</text>
 <rect x="892" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="897" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="957.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Telemetry</text>
@@ -117,14 +118,14 @@
 <text x="957.0" y="235" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Drift det.</text>
 <rect x="897" y="244" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="957.0" y="257" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Re-scan cron</text>
-<rect x="1034" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="1099.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Slack</text>
-<rect x="1039" y="222" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="1099.0" y="235" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Teams</text>
-<rect x="1039" y="244" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
-<text x="1099.0" y="257" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Boards / Jira</text>
-<rect x="1039" y="266" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="1099.0" y="279" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Report card</text>
+<rect x="1034" y="195" width="130" height="116" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="1039" y="200" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="213" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Report card</text>
+<rect x="1039" y="229" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="242" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Teams</text>
+<rect x="1039" y="251" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="264" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Boards / Jira</text>
+<text x="1099.0" y="293" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Slack</text>
 <rect x="40" y="430" width="1120" height="70" fill="#FFF4E5" stroke="#E0A555" stroke-width="1.5" rx="8" ry="8"/>
 <text x="60" y="455" font-size="12" fill="#15293F" text-anchor="start" font-weight="bold">ORCHESTRATION &amp; DATA PLANE</text>
 <text x="60" y="480" font-size="12" fill="#222222" text-anchor="start" font-weight="normal">Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)</text>
@@ -180,14 +181,14 @@
 <rect x="796.6666666666666" y="765" width="363.3333333333333" height="80" fill="#EAF3FA" stroke="#7BA8CC" stroke-width="1.5" rx="6" ry="6"/>
 <text x="978.3333333333333" y="789" font-size="13" fill="#15293F" text-anchor="middle" font-weight="bold">Compliance Evidence</text>
 <text x="978.3333333333333" y="815" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">HIPAA / HITRUST control mapping, audit query</text>
-<line x1="105.0" y1="319" x2="105.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
-<line x1="247.0" y1="275" x2="247.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
-<line x1="389.0" y1="341" x2="389.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
-<line x1="531.0" y1="319" x2="531.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="105.0" y1="326" x2="105.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="247.0" y1="282" x2="247.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="389.0" y1="348" x2="389.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="531.0" y1="326" x2="531.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="673.0" y1="297" x2="673.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
-<line x1="815.0" y1="297" x2="815.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="815.0" y1="304" x2="815.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="957.0" y1="275" x2="957.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
-<line x1="1099.0" y1="297" x2="1099.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="1099.0" y1="311" x2="1099.0" y2="430" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="168.0" y1="500" x2="168.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="384.0" y1="500" x2="384.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="600.0" y1="500" x2="600.0" y2="530" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
