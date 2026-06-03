@@ -885,7 +885,7 @@ def diagram_8():
     ay = 208; ah = 64
     s.append(text(cx(1), ay+30, "no human gate on most of the road", 9, TEXT_LT, "middle", "italic"))
     node(3, ay, ah, "Manual AI red team", "forced for Tier 1-2", "normal", "appsec")
-    node(4, ay, ah, "Approve / reject change", "HUMAN gate · Teams sign-off", "gate", "appsec")
+    node(4, ay, ah, "Approve / reject change", "human OR automated-policy approval · Teams", "gate", "appsec")
     node(5, ay, ah, "Triage Defender/Sentinel", "act on prod signal", "normal", "appsec")
 
     # --- Platform & AI Governance lane ---
@@ -900,7 +900,7 @@ def diagram_8():
     s.append(text(cx(0), 474, "8-stage pipeline runs", 9, "#2E6B45", "middle", "bold"))
     s.append(text(cx(0), 487, "on every commit  →", 9, "#2E6B45", "middle", "bold"))
     node(2, r1, rh, "Discovery / Intake", "manifest validator · G1", "gate")
-    node(2, r2, rh, "Triage → Tier 1-4", "classify() · ★ THE FORK", "highlight")
+    node(2, r2, rh, "Triage → Tier 1-4", "app RISK tier (1=highest) · ★ FORK", "highlight")
     node(3, r1, rh, "Static SAST + secrets", "blocks high findings · G2", "gate")
     node(3, r2, rh, "Dynamic DAST + AI Red Team", "garak / PyRIT · G3", "gate")
     node(4, r1, rh, "Auto-remediate", "findings → proposed changes", "ai")
@@ -941,7 +941,7 @@ def diagram_8():
     # --- Legend ---
     ly = 678
     leg = [(GREEN_LT, GREEN, "AUTO gate (machine-enforced)"),
-           (ORANGE, ORANGE_DK, "HUMAN approval — Tier 1-2"),
+           (ORANGE, ORANGE_DK, "Human / auto-policy approval — Tier 1-2"),
            (PURPLE_LT, PURPLE, "AI surface (Claude / Copilot)"),
            (ORANGE, ACCENT, "key callout / tier fork")]
     lx = margin
