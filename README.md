@@ -326,7 +326,7 @@ The enterprise security stack this pipeline plugs into in the target (Microsoft-
 | Armis | Asset visibility | Discovery & Intake — asset/device inventory for scope |
 | Rapid7 (InsightVM) | Vuln management | Dynamic AppSec — infra/host vulnerability scanning |
 | Palo Alto (NGFW / Prisma) | Network / Cloud | Remediation (WAF push) + network/cloud guardrails |
-| MEND.io | SCA | Static / build — dependency + license scanning (alongside Trivy/Grype/OSV) |
+| MEND.io | SAST / SCA | Static / build — SAST + dependency & license scanning (alongside Semgrep/Trivy/Grype/OSV) |
 | Abnormal | Email security | Email-intake surface protection (anti-phishing/BEC) |
 | GitHub (+ Advanced Security) | Source / SAST | Source-repo scan (Stage 0) + CodeQL code scanning |
 | M365 / GitHub Copilot | AI surface | Monitored AI surface — target for red-team + telemetry |
