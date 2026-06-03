@@ -117,7 +117,7 @@ Every recommendation in this repo assumes the healthcare context. These constrai
 
 The runnable counterpart to v2.1 and the technical companion. An AI app or agent registers a YAML manifest, the pipeline tier-classifies it, then routes it to the right tools at the right tier × stage. Every adapter normalizes output to the same finding schema; every finding auto-tags HIPAA / HITRUST / NIST AI RMF / MITRE ATLAS controls. See **[`pipeline/README.md`](pipeline/README.md)** for the full architecture and adapter catalog.
 
-**Tools wired in today** (`pipeline/adapters/`):
+**Tools wired in today** — 48 adapters: **SAST 23 · DAST 20 · pre-flight policy 3 · production telemetry 2** (`pipeline/adapters/`):
 
 - **AI-native:** [NVIDIA garak](https://github.com/NVIDIA/garak), [Microsoft PyRIT](https://github.com/Azure/PyRIT), built-in `mcp_scope` validator (the highest-leverage control in v2.1), built-in `eval_suite` (hallucination / bias / jailbreak gates).
 - **Classical pen test:** [PortSwigger Burp Suite](https://portswigger.net/burp) (REST), [Rapid7 Metasploit](https://github.com/rapid7/metasploit-framework) (RPC, auxiliary by default), [Red Canary Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) (MITRE ATT&CK technique emulation against the agent runtime host).
