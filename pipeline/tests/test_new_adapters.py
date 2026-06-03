@@ -154,6 +154,24 @@ def test_dast_batch_in_tier1_preprod_policy():
         assert name in t1_preprod
 
 
+def test_every_registered_adapter_has_catalog_entry():
+    """Registry and UI catalog must not drift: a missing catalog entry makes
+    mode_for() fall back to SAST, silently misclassifying the adapter in the
+    /scan SAST/DAST split."""
+    from pipeline.adapters.registry import REGISTRY
+    from pipeline.ui.catalog import CATALOG
+    missing = sorted(set(REGISTRY) - set(CATALOG))
+    assert not missing, f"adapters missing from pipeline/ui/catalog.py: {missing}"
+
+
+def test_dast_batch_classified_as_dast():
+    """The HexStrike-mined web/injection adapters must classify as DAST, not SAST."""
+    from pipeline.core import scan_modes as sm
+    for name in ("nikto", "dalfox", "wpscan", "commix", "nosqli", "tplmap"):
+        assert sm.is_dast_adapter(name), f"{name} should be DAST, got {sm.mode_for(name)}"
+        assert not sm.is_sast_adapter(name)
+
+
 # ---- Parser contract tests: pin the tool output schemas these adapters rely on ----
 
 def _scoped_mut() -> Manifest:
