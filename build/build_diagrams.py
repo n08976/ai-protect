@@ -775,6 +775,166 @@ def diagram_7():
 
 
 # ============================================================
+# DIAGRAM 8: Empowered AI building on the ai-protect paved road
+# ============================================================
+def diagram_8():
+    W, H = 1240, 730
+    PURPLE = "#6D52C9"; PURPLE_LT = "#ECE6FA"
+    s = [hdr(W, H), arrow_def()]
+    s.append('<defs>'
+             '<marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#3D8C5C"/></marker>'
+             '<marker id="arrAm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#E0A555"/></marker>'
+             '<marker id="arrP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6D52C9"/></marker>'
+             '</defs>')
+    # Title + subtitle
+    s.append(box(0, 0, W, 50, NAVY, NAVY, 0, 0))
+    s.append(text(W/2, 22, "The Paved Road: Empowered AI Building, Governed by ai-protect", 17, WHITE, "middle", "bold"))
+    s.append(text(W/2, 40, "Citizen builders take an idea to production with Claude — ai-protect auto-scans every SDLC stage and escalates to a human only when the risk tier earns it.   “Paved road > gates.”", 10, BLUE, "middle"))
+
+    margin = 18; lane_w = 192; flow_x0 = margin + lane_w + 6
+    flow_w = W - margin - flow_x0
+    ncol = 6; col_w = flow_w/ncol
+    col_names = ["IDEA", "BUILD WITH AI", "INTAKE + TIER", "SCAN  SAST/DAST/AI-RT", "GATE / APPROVE", "DEPLOY + MONITOR"]
+    def cx(c):
+        return flow_x0 + c*col_w + col_w/2
+
+    # Column header strip + faint column separators down through the lanes
+    chy = 58; chh = 20; sep_bottom = 560
+    for c in range(ncol):
+        x = flow_x0 + c*col_w
+        s.append(box(x+2, chy, col_w-4, chh, GRAY_LT, GRAY, 1, 4))
+        s.append(text(x+col_w/2, chy+14, col_names[c], 8.5, NAVY_DK, "middle", "bold"))
+        if c > 0:
+            s.append(f'<line x1="{flow_x0+c*col_w}" y1="{chy+chh+2}" x2="{flow_x0+c*col_w}" y2="{sep_bottom}" stroke="{GRAY}" stroke-width="1" stroke-dasharray="2 5"/>')
+
+    # Persona / actor swimlanes
+    lanes = [
+        ("Citizen Builder", "non-dev employee", "#F7F9FB", 80, 104, "#2C547F"),
+        ("AppSec / Security", "human — Tier 1-2 only", "#FCF3E6", 188, 104, "#9C6A1E"),
+        ("Platform & AI Gov", "owns the paved road", "#EEF4FA", 296, 104, "#2C547F"),
+        ("ai-protect automation", "auto — no human", "#E7F3EB", 404, 156, "#2E6B45"),
+    ]
+    for (ttl, sub, bg, y, h, lab) in lanes:
+        s.append(box(margin, y, W-2*margin, h, bg, GRAY, 1, 6))
+        s.append(box(margin, y, lane_w, h, lab, NAVY_DK, 1, 6))
+        s.append(text(margin+lane_w/2, y+h/2-3, ttl, 11, WHITE, "middle", "bold"))
+        s.append(text(margin+lane_w/2, y+h/2+13, sub, 8.5, "#E6EEF6", "middle"))
+    s.append(box(margin, 404, W-2*margin, 156, "none", GREEN, 2.5, 6))  # accent the guardrail lane
+
+    def wrap(t, n):
+        words = t.split(" "); lines = []; cur = ""
+        for w in words:
+            if len(cur)+len(w)+1 > n:
+                lines.append(cur); cur = w
+            else:
+                cur = (cur+" "+w).strip()
+        if cur:
+            lines.append(cur)
+        return lines
+
+    def node(c, y, h, label, sub, emph, lane="other", span=1):
+        w = col_w*0.88 + (span-1)*col_w
+        x = cx(c) + (span-1)*col_w/2
+        if emph == "gate":
+            fill, edge, tcol = (ORANGE, ORANGE_DK, "#5a3d08") if lane == "appsec" else (GREEN_LT, GREEN, "#1c3a26")
+        elif emph == "ai":
+            fill, edge, tcol = PURPLE_LT, PURPLE, "#2a1f55"
+        elif emph == "highlight":
+            fill, edge, tcol = ORANGE, ACCENT, ACCENT
+        else:
+            fill, edge, tcol = WHITE, GRAY_DK, TEXT
+        sw = 2 if emph in ("gate", "highlight") else 1.2
+        s.append(box(x-w/2, y, w, h, fill, edge, sw, 5))
+        ly = y+17
+        for ln in wrap(label, 20)[:2]:
+            s.append(text(x, ly, ln, 10, tcol, "middle", "bold")); ly += 12
+        for ln in wrap(sub, 30)[:2]:
+            s.append(text(x, ly+1, ln, 7.5, TEXT_LT, "middle")); ly += 10
+        return x
+
+    # --- Citizen Builder lane ---
+    by = 100; bh = 64
+    node(0, by, bh, "Idea / business need", "automation · app · agent · SaaS replacement", "highlight")
+    node(1, by, bh, "Build with Claude", "+ Copilot · paved-road template", "ai")
+    node(2, by, bh, "Fill scan manifest", "open Azure DevOps PR", "normal")
+    node(3, by, bh, "Fix from findings card", "apply auto-change · re-push", "normal")
+    node(5, by, bh, "Self-serve deploy", "Tier 3-4 · no human in the loop", "normal")
+
+    # --- AppSec / Security lane (only where risk earns a human) ---
+    ay = 208; ah = 64
+    s.append(text(cx(1), ay+30, "no human gate on most of the road", 9, TEXT_LT, "middle", "italic"))
+    node(3, ay, ah, "Manual AI red team", "forced for Tier 1-2", "normal", "appsec")
+    node(4, ay, ah, "Approve / reject change", "HUMAN gate · Teams sign-off", "gate", "appsec")
+    node(5, ay, ah, "Triage Defender/Sentinel", "act on prod signal", "normal", "appsec")
+
+    # --- Platform & AI Governance lane ---
+    gy = 316; gh = 64
+    node(0, gy, gh, "Paved-road templates", "blessed starting points", "normal")
+    node(1, gy, gh, "Sanctioned LLM gateway", "Claude primary + Copilot", "ai")
+    node(2, gy, gh, "Tier policy + manifest schema", "PHI / clinical / external → Tier 1", "normal")
+    node(5, gy, gh, "Sanctioned deploy ring", "only approved builds released", "gate")
+
+    # --- ai-protect automation lane (8-stage pipeline, every commit) ---
+    r1 = 424; r2 = 492; rh = 60
+    s.append(text(cx(0), 474, "8-stage pipeline runs", 9, "#2E6B45", "middle", "bold"))
+    s.append(text(cx(0), 487, "on every commit  →", 9, "#2E6B45", "middle", "bold"))
+    node(2, r1, rh, "Discovery / Intake", "manifest validator · G1", "gate")
+    node(2, r2, rh, "Triage → Tier 1-4", "classify() · ★ THE FORK", "highlight")
+    node(3, r1, rh, "Static SAST + secrets", "blocks high findings · G2", "gate")
+    node(3, r2, rh, "Dynamic DAST + AI Red Team", "garak / PyRIT · G3", "gate")
+    node(4, r1, rh, "Auto-remediate", "findings → proposed changes", "ai")
+    node(4, r2, rh, "Tier 3-4 auto-approve", "all blocking pass · G4", "gate")
+    node(5, r1, rh*2+8, "Continuous monitoring + Reporting", "re-tier on drift / KEV intel · audit trail", "highlight")
+
+    # --- Foundation strip ---
+    fy = 580; fh = 78
+    s.append(box(margin, fy, W-2*margin, fh, "#EDF0F4", NAVY_DK, 1.2, 6))
+    s.append(text(margin+12, fy+16, "MICROSOFT & SANCTIONED AI RAILS   (the paved infrastructure — using it IS the enforcement)", 10, NAVY_DK, "start", "bold"))
+    found = [("MCP farm + agent runtime", "vetted tools · sandboxed"),
+             ("Azure DevOps Repos / Boards / Pipelines", "manifest in · CI gates run here"),
+             ("Defender + Sentinel", "runtime telemetry"),
+             ("Microsoft Teams", "approvals + alerts")]
+    fw = (W-2*margin-24)/4
+    for i, (a, b) in enumerate(found):
+        x = margin+12 + i*fw
+        s.append(box(x+4, fy+26, fw-8, fh-34, WHITE, "#456A92", 1, 5))
+        s.append(text(x+fw/2, fy+44, a, 9, NAVY_DK, "middle", "bold"))
+        s.append(text(x+fw/2, fy+58, b, 7.5, TEXT_LT, "middle"))
+
+    # --- Flow arrows ---
+    bm = by+bh/2  # builder mid
+    for a, b in [(0, 1), (1, 2), (2, 3)]:
+        s.append(f'<line x1="{cx(a)+col_w*0.45}" y1="{bm}" x2="{cx(b)-col_w*0.45}" y2="{bm}" stroke="{NAVY}" stroke-width="1.6" marker-end="url(#arr)"/>')
+    # handoff DOWN: builder manifest (c2) -> ai-protect intake
+    s.append(f'<line x1="{cx(2)}" y1="{by+bh}" x2="{cx(2)}" y2="{r1}" stroke="{GRAY_DK}" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arr)"/>')
+    # remediation UP: ai-protect auto-remediate (c4) -> builder fix (c3)
+    s.append(f'<path d="M {cx(4)} {r1} C {cx(4)} 300, {cx(3)} 300, {cx(3)} {by+bh}" fill="none" stroke="{PURPLE}" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrP)"/>')
+    # TIER FORK (gate column): green auto straight to deploy; amber human up to AppSec
+    s.append(f'<path d="M {cx(4)+col_w*0.36} {r2+rh/2} C {cx(5)-col_w*0.15} {r2+rh/2}, {cx(5)} 360, {cx(5)} {by+bh}" fill="none" stroke="{GREEN}" stroke-width="2.2" marker-end="url(#arrG)"/>')
+    s.append(f'<line x1="{cx(4)}" y1="{r1}" x2="{cx(4)}" y2="{ay+ah}" stroke="{ORANGE_DK}" stroke-width="2.2" marker-end="url(#arrAm)"/>')
+    s.append(f'<path d="M {cx(4)+col_w*0.4} {ay+ah/2} C {cx(5)-col_w*0.1} {ay+ah/2}, {cx(5)} 300, {cx(5)} {gy}" fill="none" stroke="{ORANGE_DK}" stroke-width="1.6" marker-end="url(#arrAm)"/>')
+    # continuous-validation loop-back: monitor (c5) -> triage (c2)
+    s.append(f'<path d="M {cx(5)} 560 V 570 H {cx(2)} V {r2+rh}" fill="none" stroke="{GREEN}" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrG)"/>')
+    s.append(text((cx(2)+cx(5))/2, 567, "↺ continuous validation — re-tier on drift / new KEV intel", 8.5, "#2E6B45", "middle", "bold"))
+
+    # --- Legend ---
+    ly = 678
+    leg = [(GREEN_LT, GREEN, "AUTO gate (machine-enforced)"),
+           (ORANGE, ORANGE_DK, "HUMAN approval — Tier 1-2"),
+           (PURPLE_LT, PURPLE, "AI surface (Claude / Copilot)"),
+           (ORANGE, ACCENT, "key callout / tier fork")]
+    lx = margin
+    s.append(text(lx, ly+12, "Legend:", 9, TEXT, "start", "bold")); lx += 58
+    for fill, edge, lab in leg:
+        s.append(box(lx, ly+3, 16, 12, fill, edge, 1.4, 2))
+        s.append(text(lx+22, ly+13, lab, 9, TEXT, "start")); lx += 36 + len(lab)*5.6
+    s.append(text(W-margin, ly+13, "Rows = WHO acts (Builder · AppSec · Governance · ai-protect)", 9, TEXT_LT, "end"))
+
+    s.append("</svg>")
+    return "\n".join(s)
+
+
+# ============================================================
 # Build all
 # ============================================================
 diagrams = {
@@ -789,6 +949,7 @@ diagrams = {
     "05_dashboard_technical.svg": diagram_5(),
     "06_dashboard_executive.svg": diagram_6(),
     "07_phase_rollout.svg": diagram_7(),
+    "08_ai_empowerment_paved_road.svg": diagram_8(),
 }
 
 for fn, content in diagrams.items():
