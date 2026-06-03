@@ -166,8 +166,10 @@ The `/scan` launcher splits into two distinct flows so static code analysis can'
 
 ```
 [ Source code (SAST) ]  [ Live target (DAST) ]
-       23 adapters             14 adapters
+       23 adapters             20 adapters
 ```
+
+48 adapters wired total: **SAST 23 · DAST 20** (10 web/app/network scanners, 4 AI red-team, 4 adversary-emulation/exploit, recon, mcp-scope) · **pre-flight policy 3** · **production telemetry 2**.
 
 **Classification** (`pipeline/core/scan_modes.py`): every adapter is bucketed using its catalog `kind` (static/dynamic/ai/policy) with a small set of explicit overrides for shape mismatches (`agentic_radar` reads agent source → SAST; `mcp_scope` probes a live MCP → DAST; `intel_match` is enrichment → pre-flight). Three always-run pre-flight adapters (`manifest_validator`, `threat_model_check`, `intel_match`) appear alongside both modes in a small "Pre-flight policy checks (when applicable)" callout so the audit story is honest about what runs.
 
