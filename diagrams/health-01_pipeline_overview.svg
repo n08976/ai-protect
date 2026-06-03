@@ -9,6 +9,10 @@
 </defs>
 <rect x="0" y="0" width="1200" height="44" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
 <text x="600.0" y="28" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Security Assurance Pipeline — Environment Tooling Highlighted</text>
+<rect x="40" y="54" width="14" height="13" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
+<text x="60" y="65" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Already in place — environment tooling</text>
+<rect x="372" y="54" width="14" height="13" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1.4" rx="2" ry="2"/>
+<text x="392" y="65" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Introduced by ai-protect</text>
 <rect x="40" y="80" width="130" height="90" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="105.0" y="102" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 0</text>
 <text x="105.0" y="130" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Discovery &amp;</text>
@@ -62,32 +66,47 @@
 <text x="247.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
 <text x="247.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Tier scoring</text>
 <rect x="324" y="195" width="130" height="146" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="389.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Semgrep</text>
-<text x="389.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CodeQL</text>
-<text x="389.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Trivy</text>
-<text x="389.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ModelScan</text>
-<text x="389.0" y="301" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">TruffleHog</text>
+<rect x="329" y="200" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="213" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">Semgrep</text>
+<rect x="329" y="222" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="235" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">CodeQL</text>
+<rect x="329" y="244" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="257" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">Trivy</text>
+<rect x="329" y="266" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="279" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">ModelScan</text>
+<rect x="329" y="288" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="301" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">TruffleHog</text>
 <rect x="329" y="310" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
 <text x="389.0" y="323" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Mend.io (SAST/SCA)</text>
 <rect x="466" y="195" width="130" height="124" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="471" y="200" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
 <text x="531.0" y="213" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Burp Suite</text>
-<text x="531.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Nuclei</text>
-<text x="531.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ZAP</text>
-<text x="531.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Schemathesis</text>
+<rect x="471" y="222" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="235" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">Nuclei</text>
+<rect x="471" y="244" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="257" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">ZAP</text>
+<rect x="471" y="266" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="279" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">Schemathesis</text>
 <rect x="471" y="288" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
 <text x="531.0" y="301" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Rapid7 InsightVM</text>
 <rect x="608" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="673.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">garak</text>
-<text x="673.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">PyRIT</text>
-<text x="673.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ART</text>
-<text x="673.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">PromptFoo</text>
+<rect x="613" y="200" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="213" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">garak</text>
+<rect x="613" y="222" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="235" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">PyRIT</text>
+<rect x="613" y="244" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="257" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">ART</text>
+<rect x="613" y="266" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="279" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">PromptFoo</text>
 <rect x="750" y="195" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
-<text x="815.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Auto-PR (AzDO/GH)</text>
+<rect x="755" y="200" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="213" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">Auto-PR (AzDO/GH)</text>
 <rect x="755" y="222" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
 <text x="815.0" y="235" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">WAF (Palo Alto)</text>
-<text x="815.0" y="257" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Llama Guard</text>
-<text x="815.0" y="279" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">NeMo Guard</text>
+<rect x="755" y="244" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="257" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">Llama Guard</text>
+<rect x="755" y="266" width="120" height="18" fill="#D5F0EA" stroke="#0F7A66" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="279" font-size="11" fill="#0B5F50" text-anchor="middle" font-weight="bold">NeMo Guard</text>
 <rect x="892" y="195" width="130" height="80" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <text x="957.0" y="213" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Telemetry</text>
 <text x="957.0" y="235" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">Drift det.</text>

@@ -56,16 +56,29 @@ def arrow_def():
 def diagram_1(highlight=False):
     W, H = 1200, 880
     s = [hdr(W, H), arrow_def()]
-    # Provided enterprise-environment tools to emphasize in the health- variant.
-    # The whole "ENTERPRISE SECURITY ENVIRONMENT" band is also highlighted when on.
+    # Two highlight sets for the health- variant:
+    #   HL      = environment tooling ALREADY in place (orange accent). The whole
+    #             "ENTERPRISE SECURITY ENVIRONMENT" band + dashboards are also orange.
+    #   HL_NEW  = tools ai-protect INTRODUCES (teal accent) — the new SAST/DAST/
+    #             AI-red-team/remediation capabilities this brings.
     HL = {"GitHub scan", "Azure Repos scan", "Armis (assets)", "Mend.io (SAST/SCA)",
           "Burp Suite", "Rapid7 InsightVM", "WAF (Palo Alto)", "Teams",
           "Azure Boards / Jira"} if highlight else set()
+    TEAL = "#0F7A66"; TEAL_FILL = "#D5F0EA"; TEAL_TXT = "#0B5F50"
+    HL_NEW = {"Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog",
+              "Nuclei", "ZAP", "Schemathesis",
+              "garak", "PyRIT", "ART", "PromptFoo",
+              "Auto-PR (AzDO/GH)", "Llama Guard", "NeMo Guard"} if highlight else set()
     # Title strip
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
     title = ("AI Security Assurance Pipeline — Environment Tooling Highlighted"
              if highlight else "AI Security Assurance Pipeline — End-to-End")
     s.append(text(W/2, 28, title, 18, WHITE, "middle", "bold"))
+    if highlight:
+        s.append(box(40, 54, 14, 13, ORANGE, ACCENT, 1.4, 2))
+        s.append(text(60, 65, "Already in place — environment tooling", 11, TEXT, "start"))
+        s.append(box(372, 54, 14, 13, TEAL_FILL, TEAL, 1.4, 2))
+        s.append(text(392, 65, "Introduced by ai-protect", 11, TEXT, "start"))
 
     # Pipeline stages (top row)
     stages = [
@@ -105,10 +118,15 @@ def diagram_1(highlight=False):
         x = sx0 + i*(sw+gap)
         s.append(box(x, ty0, sw, len(items)*tslot+14, WHITE, GRAY_DK, 1, 4))
         for j, it in enumerate(items):
-            hl = it in HL
-            if hl:
+            if it in HL:                 # already in place — orange
                 s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, ORANGE, ACCENT, 1, 3))
-            s.append(text(x+sw/2, ty0+18+j*tslot, it, 11, ACCENT if hl else TEXT, "middle", "bold" if hl else "normal"))
+                tcol, tw = ACCENT, "bold"
+            elif it in HL_NEW:           # introduced by ai-protect — teal
+                s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, TEAL_FILL, TEAL, 1, 3))
+                tcol, tw = TEAL_TXT, "bold"
+            else:
+                tcol, tw = TEXT, "normal"
+            s.append(text(x+sw/2, ty0+18+j*tslot, it, 11, tcol, "middle", tw))
 
     # Orchestrator + Findings + Notify lane
     oy = 430; oh = 70
