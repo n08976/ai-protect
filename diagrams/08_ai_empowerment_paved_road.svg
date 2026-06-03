@@ -105,11 +105,13 @@
 <rect x="729.0600000000001" y="424" width="147.54666666666665" height="60" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="2" rx="5" ry="5"/>
 <text x="802.8333333333334" y="441" font-size="10" fill="#1c3a26" text-anchor="middle" font-weight="bold">Static SAST +</text>
 <text x="802.8333333333334" y="453" font-size="10" fill="#1c3a26" text-anchor="middle" font-weight="bold">secrets</text>
-<text x="802.8333333333334" y="466" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">blocks high findings · G2</text>
+<text x="802.8333333333334" y="466" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">blocks Critical / High</text>
+<text x="802.8333333333334" y="476" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">findings · G2</text>
 <rect x="729.0600000000001" y="492" width="147.54666666666665" height="60" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="2" rx="5" ry="5"/>
 <text x="802.8333333333334" y="509" font-size="10" fill="#1c3a26" text-anchor="middle" font-weight="bold">Dynamic DAST + AI</text>
 <text x="802.8333333333334" y="521" font-size="10" fill="#1c3a26" text-anchor="middle" font-weight="bold">Red Team</text>
-<text x="802.8333333333334" y="534" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">garak / PyRIT · G3</text>
+<text x="802.8333333333334" y="534" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">blocks Critical / High ·</text>
+<text x="802.8333333333334" y="544" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">garak/PyRIT · G3</text>
 <rect x="896.7266666666667" y="424" width="147.54666666666665" height="60" fill="#ECE6FA" stroke="#6D52C9" stroke-width="1.2" rx="5" ry="5"/>
 <text x="970.5" y="441" font-size="10" fill="#2a1f55" text-anchor="middle" font-weight="bold">Auto-remediate</text>
 <text x="970.5" y="454" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">findings → proposed changes</text>
