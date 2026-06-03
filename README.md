@@ -28,7 +28,7 @@ In healthcare, an AI-mediated PHI exposure or a manipulated clinical-adjacent sy
 | **`docs/exec_brief_v1.{docx,pdf}`** | Board, risk committee, peer execs (CISO uses upward) | Single-page executive brief. Leads with the thesis, "what we will do" vs. "what we need from the executive team," twelve-month success criteria, and why-now closing. |
 | **`docs/one_pager_v1.{docx,pdf}`** | AI governance, privacy, platform engineering, compliance — wider distribution | Single-page summary of v2.1. The shift, three operating principles, four-tier risk model, six-layer sanctioned AI infrastructure, four-phase roadmap, the seven asks. |
 | **`docs/pipeline_companion_v1.{docx,pdf}`** | Offensive security leads (the five vertical owners) | The technical companion to v2.1. Eight-stage AI assurance pipeline, per-vertical capability builds across the five functions, eighteen-row RACI extension, dashboard surfaces, phased tooling rollout. |
-| **`diagrams/*.svg` + `*.png`** | Reused inside companion + slide decks | Seven diagrams: pipeline overview, v2.1 mapping, AI red-team kill chain, vertical ownership, technical dashboard, executive dashboard, phased rollout. SVG for editing; PNG (1800px wide) for embedding. |
+| **`diagrams/*.svg` + `*.png`** | Reused inside companion + slide decks | Seven diagrams: pipeline overview, v2.1 mapping, AI red-team kill chain, vertical ownership, technical dashboard, executive dashboard, phased rollout. Plus a `health-` highlighted variant of the pipeline overview emphasizing the environment tooling. SVG for editing; PNG (1800px wide) for embedding. |
 
 > **Reading order for someone new:** `exec_brief_v1.pdf` → `one_pager_v1.pdf` → `operating_model_v2_1.docx` → `pipeline_companion_v1.pdf`.
 
@@ -203,13 +203,13 @@ ai-protect/
 │   ├── pipeline_companion_v1.docx
 │   └── pipeline_companion_v1.pdf
 ├── build/                          # Deterministic build scripts
-│   ├── build_diagrams.py           # Builds the 7 SVGs + PNGs in diagrams/
+│   ├── build_diagrams.py           # Builds the 7 SVGs + PNGs (+ health- overview variant) in diagrams/
 │   ├── build_doc.py                # Builds pipeline_companion_v1.docx
 │   ├── build_onepagers.py          # Builds one_pager_v1.docx + exec_brief_v1.docx
 │   └── requirements.txt            # python-docx, cairosvg
 ├── .github/workflows/
 │   └── ai-protect.yml              # CI: tier-classify + scan every example manifest, upload findings, gate on blocking failures
-└── diagrams/                       # 7 SVG diagrams + PNG renders (1800px wide)
+└── diagrams/                       # 7 SVG diagrams + PNG renders (1800px wide) + health- highlighted overview
     ├── 01_pipeline_overview.{svg,png}
     ├── 02_v21_mapping.{svg,png}
     ├── 03_ai_redteam_killchain.{svg,png}
@@ -311,6 +311,26 @@ When v2.1 changes, the v1 distillations should be regenerated (and their version
 ## Software sources catalogue
 
 Single reference for every tool source that has been raised, reviewed, or wired into this project. Use this section as the canonical list when adding, removing, or replacing software in the pipeline.
+
+### Environment integrations (Microsoft-aligned)
+
+The enterprise security stack this pipeline plugs into in the target (Microsoft-centric) environment. These are existing platforms the pipeline integrates with or feeds — not adapters shipped in this repo. They are rendered on `diagrams/01_pipeline_overview.*`, with a highlighted variant at `diagrams/health-01_pipeline_overview.*` that emphasizes exactly these tools.
+
+| Tool | Category | Where it maps in the pipeline |
+| --- | --- | --- |
+| Microsoft Defender (XDR/EDR) | Endpoint / XDR | Continuous monitoring — detection telemetry, ATT&CK coverage validation (pairs with atomic/caldera) |
+| Microsoft Sentinel | SIEM / SOAR | Continuous monitoring — findings + telemetry sink, alerting, response automation |
+| Microsoft Defender Threat Intelligence | Threat intel | Intel feeds — IOC/actor enrichment into the intel-match detection path |
+| Google Threat Intelligence (Mandiant) | Threat intel | Intel feeds — CVE/actor enrichment |
+| OpenCTI | Threat intel | Intel feeds — STIX aggregation / threat-intel platform |
+| Armis | Asset visibility | Discovery & Intake — asset/device inventory for scope |
+| Rapid7 (InsightVM) | Vuln management | Dynamic AppSec — infra/host vulnerability scanning |
+| Palo Alto (NGFW / Prisma) | Network / Cloud | Remediation (WAF push) + network/cloud guardrails |
+| MEND.io | SCA | Static / build — dependency + license scanning (alongside Trivy/Grype/OSV) |
+| Abnormal | Email security | Email-intake surface protection (anti-phishing/BEC) |
+| GitHub (+ Advanced Security) | Source / SAST | Source-repo scan (Stage 0) + CodeQL code scanning |
+| M365 / GitHub Copilot | AI surface | Monitored AI surface — target for red-team + telemetry |
+| Microsoft Teams | Collaboration | Reporting & Notification channel |
 
 ### Initial seed list (provided by the offensive security director)
 
