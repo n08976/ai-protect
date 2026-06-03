@@ -71,7 +71,8 @@
 <rect x="896.7266666666667" y="208" width="147.54666666666665" height="64" fill="#FFF4E5" stroke="#E0A555" stroke-width="2" rx="5" ry="5"/>
 <text x="970.5" y="225" font-size="10" fill="#5a3d08" text-anchor="middle" font-weight="bold">Approve / reject</text>
 <text x="970.5" y="237" font-size="10" fill="#5a3d08" text-anchor="middle" font-weight="bold">change</text>
-<text x="970.5" y="250" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">HUMAN gate · Teams sign-off</text>
+<text x="970.5" y="250" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">human OR automated-policy</text>
+<text x="970.5" y="260" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">approval · Teams</text>
 <rect x="1064.3933333333332" y="208" width="147.54666666666665" height="64" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1.2" rx="5" ry="5"/>
 <text x="1138.1666666666665" y="225" font-size="10" fill="#222222" text-anchor="middle" font-weight="bold">Triage</text>
 <text x="1138.1666666666665" y="237" font-size="10" fill="#222222" text-anchor="middle" font-weight="bold">Defender/Sentinel</text>
@@ -99,7 +100,8 @@
 <text x="635.1666666666666" y="454" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">manifest validator · G1</text>
 <rect x="561.3933333333333" y="492" width="147.54666666666665" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="635.1666666666666" y="509" font-size="10" fill="#C04A2B" text-anchor="middle" font-weight="bold">Triage → Tier 1-4</text>
-<text x="635.1666666666666" y="522" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">classify() · ★ THE FORK</text>
+<text x="635.1666666666666" y="522" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">app RISK tier (1=highest) · ★</text>
+<text x="635.1666666666666" y="532" font-size="7.5" fill="#555555" text-anchor="middle" font-weight="normal">FORK</text>
 <rect x="729.0600000000001" y="424" width="147.54666666666665" height="60" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="2" rx="5" ry="5"/>
 <text x="802.8333333333334" y="441" font-size="10" fill="#1c3a26" text-anchor="middle" font-weight="bold">Static SAST +</text>
 <text x="802.8333333333334" y="453" font-size="10" fill="#1c3a26" text-anchor="middle" font-weight="bold">secrets</text>
@@ -148,10 +150,10 @@
 <rect x="76" y="681" width="16" height="12" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1.4" rx="2" ry="2"/>
 <text x="98" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AUTO gate (machine-enforced)</text>
 <rect x="268.79999999999995" y="681" width="16" height="12" fill="#FFF4E5" stroke="#E0A555" stroke-width="1.4" rx="2" ry="2"/>
-<text x="290.79999999999995" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">HUMAN approval — Tier 1-2</text>
-<rect x="444.79999999999995" y="681" width="16" height="12" fill="#ECE6FA" stroke="#6D52C9" stroke-width="1.4" rx="2" ry="2"/>
-<text x="466.79999999999995" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AI surface (Claude / Copilot)</text>
-<rect x="643.1999999999999" y="681" width="16" height="12" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
-<text x="665.1999999999999" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">key callout / tier fork</text>
+<text x="290.79999999999995" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">Human / auto-policy approval — Tier 1-2</text>
+<rect x="523.1999999999999" y="681" width="16" height="12" fill="#ECE6FA" stroke="#6D52C9" stroke-width="1.4" rx="2" ry="2"/>
+<text x="545.1999999999999" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AI surface (Claude / Copilot)</text>
+<rect x="721.5999999999999" y="681" width="16" height="12" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
+<text x="743.5999999999999" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">key callout / tier fork</text>
 <text x="1222" y="691" font-size="9" fill="#555555" text-anchor="end" font-weight="normal">Rows = WHO acts (Builder · AppSec · Governance · ai-protect)</text>
 </svg>
