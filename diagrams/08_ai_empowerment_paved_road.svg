@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="730" viewBox="0 0 1240 730" font-family="Arial, Helvetica, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="752" viewBox="0 0 1240 752" font-family="Arial, Helvetica, sans-serif">
 <defs>
 <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/></marker>
@@ -148,14 +148,16 @@
 <path d="M 1037.5666666666666 240.0 C 1121.3999999999999 240.0, 1138.1666666666665 300, 1138.1666666666665 316" fill="none" stroke="#E0A555" stroke-width="1.6" marker-end="url(#arrAm)"/>
 <path d="M 1138.1666666666665 560 V 570 H 635.1666666666666 V 552" fill="none" stroke="#3D8C5C" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrG)"/>
 <text x="886.6666666666665" y="567" font-size="8.5" fill="#2E6B45" text-anchor="middle" font-weight="bold">↺ continuous validation — re-tier on drift / new KEV intel</text>
-<text x="18" y="690" font-size="9" fill="#222222" text-anchor="start" font-weight="bold">Legend:</text>
-<rect x="76" y="681" width="16" height="12" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1.4" rx="2" ry="2"/>
-<text x="98" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AUTO gate (machine-enforced)</text>
-<rect x="268.79999999999995" y="681" width="16" height="12" fill="#FFF4E5" stroke="#E0A555" stroke-width="1.4" rx="2" ry="2"/>
-<text x="290.79999999999995" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">Human / auto-policy approval — Tier 1-2</text>
-<rect x="523.1999999999999" y="681" width="16" height="12" fill="#ECE6FA" stroke="#6D52C9" stroke-width="1.4" rx="2" ry="2"/>
-<text x="545.1999999999999" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AI surface (Claude / Copilot)</text>
-<rect x="721.5999999999999" y="681" width="16" height="12" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
-<text x="743.5999999999999" y="691" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">key callout / tier fork</text>
-<text x="1222" y="691" font-size="9" fill="#555555" text-anchor="end" font-weight="normal">Rows = WHO acts (Builder · AppSec · Governance · ai-protect)</text>
+<text x="18" y="688" font-size="9" fill="#222222" text-anchor="start" font-weight="bold">Legend:</text>
+<rect x="70" y="679" width="14" height="11" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1.4" rx="2" ry="2"/>
+<text x="89" y="688" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AUTO gate — machine-enforced</text>
+<rect x="250.4" y="679" width="14" height="11" fill="#C8E0CF" stroke="#3D8C5C" stroke-width="1.4" rx="2" ry="2"/>
+<text x="269.4" y="688" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">Severity gate — auto-blocks Critical/High findings (G2/G3)</text>
+<rect x="589.8" y="679" width="14" height="11" fill="#FFF4E5" stroke="#E0A555" stroke-width="1.4" rx="2" ry="2"/>
+<text x="608.8" y="688" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">Human / auto-policy approval — Tier 1-2</text>
+<rect x="828.5" y="679" width="14" height="11" fill="#ECE6FA" stroke="#6D52C9" stroke-width="1.4" rx="2" ry="2"/>
+<text x="847.5" y="688" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">AI surface (Claude / Copilot)</text>
+<rect x="1014.2" y="679" width="14" height="11" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
+<text x="1033.2" y="688" font-size="9" fill="#222222" text-anchor="start" font-weight="normal">key callout / tier fork</text>
+<text x="18" y="706" font-size="9" fill="#555555" text-anchor="start" font-weight="normal">Rows = WHO acts (Builder · AppSec · Governance · ai-protect)</text>
 </svg>

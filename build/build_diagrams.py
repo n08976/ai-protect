@@ -799,7 +799,7 @@ def diagram_7():
 # DIAGRAM 8: Empowered AI building on the ai-protect paved road
 # ============================================================
 def diagram_8():
-    W, H = 1240, 730
+    W, H = 1240, 752
     PURPLE = "#6D52C9"; PURPLE_LT = "#ECE6FA"
     s = [hdr(W, H), arrow_def()]
     s.append('<defs>'
@@ -938,18 +938,24 @@ def diagram_8():
     s.append(f'<path d="M {cx(5)} 560 V 570 H {cx(2)} V {r2+rh}" fill="none" stroke="{GREEN}" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrG)"/>')
     s.append(text((cx(2)+cx(5))/2, 567, "↺ continuous validation — re-tier on drift / new KEV intel", 8.5, "#2E6B45", "middle", "bold"))
 
-    # --- Legend ---
-    ly = 678
-    leg = [(GREEN_LT, GREEN, "AUTO gate (machine-enforced)"),
+    # --- Legend (auto-wraps to a second row if needed) ---
+    ly = 676
+    s.append(text(margin, ly+12, "Legend:", 9, TEXT, "start", "bold"))
+    leg = [(GREEN_LT, GREEN, "AUTO gate — machine-enforced"),
+           (GREEN_LT, GREEN, "Severity gate — auto-blocks Critical/High findings (G2/G3)"),
            (ORANGE, ORANGE_DK, "Human / auto-policy approval — Tier 1-2"),
            (PURPLE_LT, PURPLE, "AI surface (Claude / Copilot)"),
            (ORANGE, ACCENT, "key callout / tier fork")]
-    lx = margin
-    s.append(text(lx, ly+12, "Legend:", 9, TEXT, "start", "bold")); lx += 58
+    lx = margin + 52; row = 0
     for fill, edge, lab in leg:
-        s.append(box(lx, ly+3, 16, 12, fill, edge, 1.4, 2))
-        s.append(text(lx+22, ly+13, lab, 9, TEXT, "start")); lx += 36 + len(lab)*5.6
-    s.append(text(W-margin, ly+13, "Rows = WHO acts (Builder · AppSec · Governance · ai-protect)", 9, TEXT_LT, "end"))
+        w_est = 32 + len(lab)*5.3
+        if lx + w_est > W - margin:
+            row += 1; lx = margin + 52
+        yy = ly + row*18
+        s.append(box(lx, yy+3, 14, 11, fill, edge, 1.4, 2))
+        s.append(text(lx+19, yy+12, lab, 9, TEXT, "start"))
+        lx += w_est
+    s.append(text(margin, ly + (row+1)*18 + 12, "Rows = WHO acts (Builder · AppSec · Governance · ai-protect)", 9, TEXT_LT, "start"))
 
     s.append("</svg>")
     return "\n".join(s)
