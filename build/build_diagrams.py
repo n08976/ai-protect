@@ -58,8 +58,9 @@ def diagram_1(highlight=False):
     s = [hdr(W, H), arrow_def()]
     # Provided enterprise-environment tools to emphasize in the health- variant.
     # The whole "ENTERPRISE SECURITY ENVIRONMENT" band is also highlighted when on.
-    HL = {"GitHub scan", "Armis (assets)", "Mend.io (SCA)", "Rapid7 InsightVM",
-          "WAF (Palo Alto)", "Slack/Teams"} if highlight else set()
+    HL = {"GitHub scan", "Azure Repos scan", "Armis (assets)", "Mend.io (SAST/SCA)",
+          "Burp Suite", "Rapid7 InsightVM", "WAF (Palo Alto)", "Teams",
+          "Azure Boards / Jira"} if highlight else set()
     # Title strip
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
     title = ("AI Security Assurance Pipeline — Environment Tooling Highlighted"
@@ -92,12 +93,12 @@ def diagram_1(highlight=False):
     tools = [
         ["ServiceNow", "CASB egress", "Azure Repos scan", "GitHub scan", "Armis (assets)"],
         ["OPA policy", "CMDB tag", "Tier scoring"],
-        ["Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog", "Mend.io (SCA)"],
+        ["Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog", "Mend.io (SAST/SCA)"],
         ["Burp Suite", "Nuclei", "ZAP", "Schemathesis", "Rapid7 InsightVM"],
         ["garak", "PyRIT", "ART", "PromptFoo"],
         ["Auto-PR (AzDO/GH)", "WAF (Palo Alto)", "Llama Guard", "NeMo Guard"],
         ["Telemetry", "Drift det.", "Re-scan cron"],
-        ["Slack/Teams", "Azure Boards / Jira", "Report card"],
+        ["Slack", "Teams", "Azure Boards / Jira", "Report card"],
     ]
     ty0 = 195; tslot = 22
     for i, items in enumerate(tools):
@@ -169,10 +170,12 @@ def diagram_1(highlight=False):
              ("Executive Dashboard", "Superset/Power BI — risk heatmap, portfolio KPIs, compliance"),
              ("Compliance Evidence", "HIPAA / HITRUST control mapping, audit query")]
     cw = (W-80-2*15)/3; cx0 = 40
+    dash_hl = {"Technical Dashboard", "Executive Dashboard"} if highlight else set()
     for i, (a, b) in enumerate(cards):
         x = cx0 + i*(cw+15)
-        s.append(box(x, dy, cw, dh, BLUE, BLUE_DK, 1.5, 6))
-        s.append(text(x+cw/2, dy+24, a, 13, NAVY_DK, "middle", "bold"))
+        chl = a in dash_hl
+        s.append(box(x, dy, cw, dh, ORANGE if chl else BLUE, ACCENT if chl else BLUE_DK, 2.5 if chl else 1.5, 6))
+        s.append(text(x+cw/2, dy+24, a, 13, ACCENT if chl else NAVY_DK, "middle", "bold"))
         s.append(text(x+cw/2, dy+50, b, 11, TEXT, "middle"))
 
     # Connector lines from stages to orchestrator
