@@ -53,12 +53,18 @@ def arrow_def():
 # ============================================================
 # DIAGRAM 1: Pipeline Overview (full stack)
 # ============================================================
-def diagram_1():
-    W, H = 1200, 760
+def diagram_1(highlight=False):
+    W, H = 1200, 880
     s = [hdr(W, H), arrow_def()]
+    # Provided enterprise-environment tools to emphasize in the health- variant.
+    # The whole "ENTERPRISE SECURITY ENVIRONMENT" band is also highlighted when on.
+    HL = {"GitHub scan", "Armis (assets)", "Mend.io (SCA)", "Rapid7 InsightVM",
+          "WAF (Palo Alto)", "Slack/Teams"} if highlight else set()
     # Title strip
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
-    s.append(text(W/2, 28, "AI Security Assurance Pipeline — End-to-End", 18, WHITE, "middle", "bold"))
+    title = ("AI Security Assurance Pipeline — Environment Tooling Highlighted"
+             if highlight else "AI Security Assurance Pipeline — End-to-End")
+    s.append(text(W/2, 28, title, 18, WHITE, "middle", "bold"))
 
     # Pipeline stages (top row)
     stages = [
@@ -84,12 +90,12 @@ def diagram_1():
 
     # Tool layer (per-stage tools)
     tools = [
-        ["ServiceNow", "CASB egress", "Azure Repos scan", "GitHub scan"],
+        ["ServiceNow", "CASB egress", "Azure Repos scan", "GitHub scan", "Armis (assets)"],
         ["OPA policy", "CMDB tag", "Tier scoring"],
-        ["Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog"],
-        ["Burp Suite", "Nuclei", "ZAP", "Schemathesis"],
+        ["Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog", "Mend.io (SCA)"],
+        ["Burp Suite", "Nuclei", "ZAP", "Schemathesis", "Rapid7 InsightVM"],
         ["garak", "PyRIT", "ART", "PromptFoo"],
-        ["Auto-PR (AzDO/GH)", "WAF push", "Llama Guard", "NeMo Guard"],
+        ["Auto-PR (AzDO/GH)", "WAF (Palo Alto)", "Llama Guard", "NeMo Guard"],
         ["Telemetry", "Drift det.", "Re-scan cron"],
         ["Slack/Teams", "Azure Boards / Jira", "Report card"],
     ]
@@ -98,7 +104,10 @@ def diagram_1():
         x = sx0 + i*(sw+gap)
         s.append(box(x, ty0, sw, len(items)*tslot+14, WHITE, GRAY_DK, 1, 4))
         for j, it in enumerate(items):
-            s.append(text(x+sw/2, ty0+18+j*tslot, it, 11, TEXT, "middle"))
+            hl = it in HL
+            if hl:
+                s.append(box(x+5, ty0+5+j*tslot, sw-10, 18, ORANGE, ACCENT, 1, 3))
+            s.append(text(x+sw/2, ty0+18+j*tslot, it, 11, ACCENT if hl else TEXT, "middle", "bold" if hl else "normal"))
 
     # Orchestrator + Findings + Notify lane
     oy = 430; oh = 70
@@ -118,8 +127,44 @@ def diagram_1():
         s.append(text(x+pw/2, iy+57, a, 12, WHITE, "middle", "bold"))
         s.append(text(x+pw/2, iy+72, b, 10, BLUE, "middle"))
 
+    # Enterprise security environment (Microsoft-aligned) — the stack the pipeline plugs into.
+    # Entirely provided-tooling, so the whole band is accent-highlighted in the health- variant.
+    ey = 635; eh = 110
+    s.append(box(40, ey, W-80, eh, "#243B55", ACCENT if highlight else NAVY_DK, 2.5 if highlight else 1.5, 8))
+    s.append(text(60, ey+24, "ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)"
+                  + ("   ★ provided environment tooling" if highlight else ""), 13, WHITE, "start", "bold"))
+    env = [
+        ("Endpoint / XDR", "Microsoft Defender"),
+        ("SIEM / SOAR", "Microsoft Sentinel"),
+        ("Threat Intel", "Google TI · OpenCTI · MS Defender TI"),
+        ("Email Security", "Abnormal"),
+        ("Network / Cloud", "Palo Alto NGFW / Prisma"),
+        ("AI Surfaces", "M365 / GitHub Copilot"),
+        ("Collaboration", "Microsoft Teams"),
+    ]
+    ew = (W-120)/len(env); ex0 = 60
+    sb_fill = ORANGE if highlight else "#2C547F"
+    sb_edge = ACCENT if highlight else "#456A92"
+    a_col = ACCENT if highlight else WHITE
+    b_col = TEXT if highlight else BLUE
+    for i, (a, b) in enumerate(env):
+        x = ex0 + i*ew
+        s.append(box(x+5, ey+38, ew-10, 60, sb_fill, sb_edge, 2 if highlight else 1, 5))
+        s.append(text(x+ew/2, ey+57, a, 11, a_col, "middle", "bold"))
+        # wrap the vendor sub-label to up to 2 lines inside the box
+        words = b.split(" "); lines = []; cur = ""
+        for w in words:
+            if len(cur) + len(w) + 1 > 20:
+                lines.append(cur); cur = w
+            else:
+                cur = (cur + " " + w).strip()
+        if cur:
+            lines.append(cur)
+        for k, ln in enumerate(lines[:2]):
+            s.append(text(x+ew/2, ey+74+k*13, ln, 9, b_col, "middle"))
+
     # Output layer (dashboards)
-    dy = 645; dh = 80
+    dy = 765; dh = 80
     cards = [("Technical Dashboard", "Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap"),
              ("Executive Dashboard", "Superset/Power BI — risk heatmap, portfolio KPIs, compliance"),
              ("Compliance Evidence", "HIPAA / HITRUST control mapping, audit query")]
@@ -138,10 +183,14 @@ def diagram_1():
     for i in range(len(parts)):
         x = px0 + i*pw + pw/2
         s.append(f'<line x1="{x}" y1="{oy+oh}" x2="{x}" y2="{iy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
-    # orchestrator -> dashboards
+    # infra -> enterprise environment band
+    for i in range(len(env)):
+        x = ex0 + i*ew + ew/2
+        s.append(f'<line x1="{x}" y1="{iy+ih}" x2="{x}" y2="{ey}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+    # enterprise band -> dashboards
     for i in range(3):
         x = cx0 + i*(cw+15) + cw/2
-        s.append(f'<line x1="{x}" y1="{iy+ih}" x2="{x}" y2="{dy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+        s.append(f'<line x1="{x}" y1="{ey+eh}" x2="{x}" y2="{dy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
 
     s.append("</svg>")
     return "\n".join(s)
@@ -727,6 +776,10 @@ def diagram_7():
 # ============================================================
 diagrams = {
     "01_pipeline_overview.svg": diagram_1(),
+    # Health-environment variant: same overview with the provided enterprise
+    # tooling (Defender, Sentinel, Google TI / OpenCTI / MS Defender TI, Armis,
+    # Rapid7, Palo Alto, Mend.io, Abnormal, Copilot, Teams, GitHub) highlighted.
+    "health-01_pipeline_overview.svg": diagram_1(highlight=True),
     "02_v21_mapping.svg": diagram_2(),
     "03_ai_redteam_killchain.svg": diagram_3(),
     "04_vertical_ownership.svg": diagram_4(),
