@@ -272,6 +272,17 @@ python -m pipeline.cli --findings findings.jsonl remediate <manifest> \
 
 Outcomes per finding: `fixed_verified` · `fix_unverified_reverted` · `proposed_awaiting_human` (Tier 1-2) · `no_fix` · `apply_error`. The **gate decision stays with `cli run`** (exit code 2 on Critical/High) — re-run it after `remediate` to re-gate. `--fail-on-unfixed` exits 3 if anything qualifying wasn't fixed+verified.
 
+**Auto-fix coverage** is what the remediation strategies (`pipeline/remediate/strategies/`) support — each is deterministic and re-scan-verified; everything else routes to `proposed_awaiting_human` / `no_fix` (safe by default):
+
+| Strategy | Fixes | Handles |
+| --- | --- | --- |
+| `pip_bump` | bump a vulnerable Python dep in `requirements.txt` | SUPPLY_CHAIN (pip_audit / grype / osv_scanner) |
+| `npm_bump` | bump a vulnerable npm dep in `package.json` | SUPPLY_CHAIN (osv_scanner / grype / trivy, npm) |
+| `insecure_pattern_fix` | drop-in-safe Python swap on the flagged line (`yaml.load`→`yaml.safe_load`, `verify=False`→`True`) | AUTH / INFRA_VULN (bandit / semgrep) |
+| `header_snippet` | Flask middleware adding missing security header(s) | INFRA_VULN (nuclei) |
+
+Add a strategy: subclass `Remediator` in `strategies/`, set `handles` + `can_fix` + `propose`, register it in `pipeline/remediate/registry.py` (order = priority).
+
 **Reusable workflow — `.github/workflows/assure.yml`** (`workflow_call`). Drop ai-protect into any project's deploy pipeline in ~5 lines:
 
 ```yaml
