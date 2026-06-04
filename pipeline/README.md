@@ -256,6 +256,45 @@ Implementation: `pipeline/core/auto_resolve.py:compute_and_apply()`, called by `
 
 Provenance: every auto-resolved Change carries `actor="auto-resolve"`, a summary noting the scan id and adapter, plus an EventStore `scan.auto_resolved` row per fingerprint so the audit story is fully recoverable. The `/finding/<id>` page surfaces a green "auto-resolved by re-scan" callout when applicable, linking to the Change record and explaining how to override (revert the Change).
 
+## CI/CD: insert ai-protect into a deploy pipeline
+
+This is `diagrams/08_ai_empowerment_paved_road.*` operationalized — ai-protect becomes a blocking gate between **build** and **deploy**: scan → fix → verify → gate.
+
+**Headless fix→verify loop — `cli remediate`:**
+
+```bash
+# Propose fixes for every fixable Critical/High finding. Tier 3-4 + --auto also
+# apply + re-scan to VERIFY (reverting any fix the re-scan can't confirm).
+# Tier 1-2 is always propose-only — the engine refuses auto-apply (the fork).
+python -m pipeline.cli --findings findings.jsonl remediate <manifest> \
+    --auto --severity high --format json
+```
+
+Outcomes per finding: `fixed_verified` · `fix_unverified_reverted` · `proposed_awaiting_human` (Tier 1-2) · `no_fix` · `apply_error`. The **gate decision stays with `cli run`** (exit code 2 on Critical/High) — re-run it after `remediate` to re-gate. `--fail-on-unfixed` exits 3 if anything qualifying wasn't fixed+verified.
+
+**Reusable workflow — `.github/workflows/assure.yml`** (`workflow_call`). Drop ai-protect into any project's deploy pipeline in ~5 lines:
+
+```yaml
+jobs:
+  build: { ... }
+  assure:
+    needs: build
+    uses: n08976/ai-protect/.github/workflows/assure.yml@main
+    with: { manifest: .ai-protect/manifest.yml, stage: preprod, auto_fix: true }
+    permissions: { contents: write, pull-requests: write }   # for the fix PR
+  deploy:
+    needs: assure
+    if: needs.assure.outputs.gate == 'pass'              # only deploy if green
+    environment: ${{ needs.assure.outputs.tier_env }}    # tier → reviewers (fork)
+    steps: [ ...your existing deploy... ]
+```
+
+The workflow: installs ai-protect + scanners → tier-classifies → **scans** (`cli run`) → on failure **auto-fixes** (`cli remediate --auto`) → **opens a fix PR** → **re-scans** to verify → emits `gate`/`tier`/`tier_env`/`fixed` outputs and fails the job if the gate doesn't pass.
+
+**The tier fork = GitHub Environments (zero extra code):** map **Tier 1-2 → an Environment with required reviewers** (AppSec sign-off before deploy) and **Tier 3-4 → an Environment without reviewers** (auto). `tiering.py` computes the tier; `assure.yml` emits `tier_env`; GitHub enforces the human-vs-auto split. Gates also surface as Actions checks, so they block PR merge, not just deploy.
+
+Other trigger options: `push`/`pull_request` (default), `workflow_dispatch` (manual), `repository_dispatch` (API), `schedule:` (nightly re-scan on new KEV intel). A direct GitHub-webhook → scan path would use the existing `POST /scan/start` + `GET /api/scan/<id>` endpoints via a thin bridge (not yet built).
+
 ## Intel feeds (`pipeline/intel/`)
 
 External CVE / threat feeds are first-class citizens: configured in the UI, polled in the background, and consulted during scans (see **Intel-scan integration** below).

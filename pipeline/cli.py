@@ -76,6 +76,96 @@ def cmd_run(args):
         sys.exit(2)
 
 
+def cmd_remediate(args):
+    """Headless fix → verify loop for CI.
+
+    For each open finding at/above the severity threshold that a remediator can
+    handle: propose a fix. With --auto AND Tier 3-4, also approve → apply →
+    re-scan to verify (reverting any fix the re-scan can't confirm). Tier 1-2
+    never auto-applies (the engine enforces this) — fixes are proposed for a
+    human, matching the paved-road tier fork. The gate decision stays with
+    `cli run`; re-run it after this to re-gate.
+    """
+    from collections import Counter
+
+    from .core.findings import SEVERITY_SCORE, Severity
+    from .remediate.engine import Engine, EngineError
+    from .remediate.registry import remediators_for
+    from .remediate.state import ChangeState
+
+    m = Manifest.from_yaml(args.manifest)
+    store = FindingStore(args.findings)
+    tier = classify(m).tier
+    engine = Engine(m, store)
+
+    threshold = SEVERITY_SCORE[Severity(args.severity)]
+    auto = args.auto and tier >= 3        # engine forbids Tier 1-2 auto-apply
+
+    # Latest finding per fingerprint for this app, at/above threshold, fixable.
+    latest: dict[str, object] = {}
+    for f in store.by_app(m.name):
+        latest[f.fingerprint] = f
+    candidates = [
+        f for f in latest.values()
+        if SEVERITY_SCORE.get(f.severity, 0) >= threshold and remediators_for(f, m.raw)
+    ]
+    if args.max:
+        candidates = candidates[: args.max]
+
+    results = []
+    for f in candidates:
+        rec = {"finding_id": f.finding_id, "severity": f.severity.value,
+               "title": f.title[:90]}
+        try:
+            change = engine.propose(f.finding_id, actor="auto")
+        except EngineError as e:
+            rec["outcome"] = "no_fix"; rec["detail"] = str(e); results.append(rec); continue
+        rec["change_id"] = change.change_id
+        rec["strategy"] = change.strategy
+        if not auto:
+            rec["outcome"] = "proposed_awaiting_human"
+            rec["reason"] = (f"Tier {tier} requires human apply"
+                             if tier <= 2 else "auto-apply disabled (--auto off)")
+            results.append(rec); continue
+        try:
+            engine.approve(change.change_id, actor="auto")
+            engine.apply(change.change_id, actor="auto")
+            ch, summary = engine.rescan(change.change_id, actor="auto")
+        except EngineError as e:
+            rec["outcome"] = "apply_error"; rec["detail"] = str(e); results.append(rec); continue
+        rec["rescan"] = summary
+        if ch.state == ChangeState.VALIDATED:
+            rec["outcome"] = "fixed_verified"
+        else:
+            try:
+                engine.rollback(change.change_id, actor="auto")
+            except EngineError:
+                pass
+            rec["outcome"] = "fix_unverified_reverted"
+        results.append(rec)
+
+    counts = Counter(r["outcome"] for r in results)
+    out = {"app": m.name, "tier": tier, "auto_apply": auto,
+           "candidates": len(candidates), "outcomes": dict(counts), "changes": results}
+    if args.format == "json":
+        print(json.dumps(out, indent=2))
+    else:
+        print(f"remediate: app={m.name} tier={tier} auto_apply={auto} "
+              f"candidates={len(candidates)}")
+        for k, v in sorted(counts.items()):
+            print(f"  {k}: {v}")
+        for r in results:
+            print(f"  - [{r['outcome']:<23}] {r['severity']:<8} "
+                  f"{r.get('strategy','-'):<22} {r['title']}")
+
+    if args.fail_on_unfixed:
+        unfixed = sum(counts.get(k, 0) for k in
+                      ("no_fix", "apply_error", "fix_unverified_reverted",
+                       "proposed_awaiting_human"))
+        if unfixed:
+            sys.exit(3)
+
+
 def cmd_report(args):
     from .reporting.technical import build_technical
     from .reporting.executive import build_executive
@@ -143,6 +233,19 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--adapter", default=None,
                        help="Run only this adapter (filters the policy table)")
     p_run.set_defaults(func=cmd_run)
+
+    p_rem = sub.add_parser("remediate", help="Headless fix → verify loop (CI). Propose fixes; "
+                                             "Tier 3-4 + --auto also apply + re-scan to verify.")
+    p_rem.add_argument("manifest")
+    p_rem.add_argument("--severity", choices=["critical", "high", "medium", "low", "info"],
+                       default="high", help="Minimum finding severity to remediate.")
+    p_rem.add_argument("--auto", action="store_true",
+                       help="Apply + verify fixes (Tier 3-4 only; Tier 1-2 always propose-only).")
+    p_rem.add_argument("--max", type=int, default=0, help="Cap candidates processed (0 = no cap).")
+    p_rem.add_argument("--fail-on-unfixed", action="store_true",
+                       help="Exit 3 if any qualifying finding wasn't fixed+verified.")
+    p_rem.add_argument("--format", choices=["text", "json"], default="text")
+    p_rem.set_defaults(func=cmd_remediate)
 
     p_rep = sub.add_parser("report", help="Generate a dashboard report from findings")
     p_rep.add_argument("--kind", choices=["technical", "executive"], default="technical")
