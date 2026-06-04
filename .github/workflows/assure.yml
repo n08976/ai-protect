@@ -1,0 +1,176 @@
+# ai-protect — reusable assurance workflow (the "paved road" gate).
+#
+# Drop ai-protect into ANY project's deploy pipeline as a blocking gate between
+# build and deploy. It scans → auto-fixes (Tier 3-4) or proposes (Tier 1-2) →
+# re-scans to verify → opens a fix PR → emits a gate/tier verdict the caller
+# uses to decide deploy. See pipeline/README.md → "CI/CD: insert into a deploy".
+#
+# CALLER (your project's deploy.yml):
+#
+#   jobs:
+#     build: { ... }
+#     assure:
+#       needs: build
+#       uses: n08976/ai-protect/.github/workflows/assure.yml@main
+#       with:
+#         manifest: .ai-protect/manifest.yml   # lives in YOUR repo
+#         stage: preprod
+#         auto_fix: true
+#       permissions:                            # needed for the fix PR
+#         contents: write
+#         pull-requests: write
+#     deploy:
+#       needs: assure
+#       if: needs.assure.outputs.gate == 'pass'           # only deploy if green
+#       environment: ${{ needs.assure.outputs.tier_env }} # tier → reviewers (the fork)
+#       steps: [ ...your existing deploy... ]
+#
+# Map Tier 1-2 → a GitHub Environment WITH required reviewers (AppSec sign-off);
+# Tier 3-4 → an Environment without reviewers (auto). GitHub then enforces the
+# human-vs-auto split for you.
+
+on:
+  workflow_call:
+    inputs:
+      manifest:
+        description: "Path (in the caller repo) to the ai-protect manifest."
+        type: string
+        required: true
+      stage:
+        description: "Pipeline stage to gate on (intake|design|build|preprod|production)."
+        type: string
+        default: preprod
+      severity:
+        description: "Minimum finding severity to gate/fix (critical|high|medium|low)."
+        type: string
+        default: high
+      auto_fix:
+        description: "Attempt auto-remediation (Tier 3-4 apply+verify; Tier 1-2 propose-only)."
+        type: boolean
+        default: true
+      tools:
+        description: "Space-separated pip packages of scanners to enforce (extend per stack)."
+        type: string
+        default: "semgrep bandit pip-audit checkov"
+      ai_protect_ref:
+        description: "Git ref of n08976/ai-protect to run."
+        type: string
+        default: main
+    outputs:
+      gate:
+        description: "pass | fail — whether the (post-fix) re-scan cleared the gate."
+        value: ${{ jobs.assure.outputs.gate }}
+      tier:
+        description: "Risk tier 1-4 of the app."
+        value: ${{ jobs.assure.outputs.tier }}
+      tier_env:
+        description: "Suggested GitHub Environment name encoding the tier fork."
+        value: ${{ jobs.assure.outputs.tier_env }}
+      fixed:
+        description: "Count of findings auto-fixed and verified."
+        value: ${{ jobs.assure.outputs.fixed }}
+
+jobs:
+  assure:
+    runs-on: ubuntu-latest
+    outputs:
+      gate: ${{ steps.regate.outputs.gate }}
+      tier: ${{ steps.tier.outputs.tier }}
+      tier_env: ${{ steps.tier.outputs.tier_env }}
+      fixed: ${{ steps.fix.outputs.fixed }}
+    steps:
+      - name: Checkout app
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0           # needed to push a fix branch
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install ai-protect
+        run: |
+          git clone --depth 1 --branch "${{ inputs.ai_protect_ref }}" \
+            https://github.com/n08976/ai-protect /tmp/ai-protect
+          python -m pip install --upgrade pip
+          pip install -r /tmp/ai-protect/pipeline/requirements.txt
+          # run ai-protect against the app checkout (cwd) via PYTHONPATH
+          echo "PYTHONPATH=/tmp/ai-protect" >> "$GITHUB_ENV"
+          echo "AIP_FINDINGS=$GITHUB_WORKSPACE/.aip-findings.jsonl" >> "$GITHUB_ENV"
+
+      - name: Install scanners
+        run: pip install ${{ inputs.tools }} || true
+
+      - name: Tier classify
+        id: tier
+        run: |
+          T=$(python -m pipeline.cli tier "${{ inputs.manifest }}" \
+                | python -c "import sys,json;print(json.load(sys.stdin)['tier'])")
+          echo "tier=$T" >> "$GITHUB_OUTPUT"
+          if [ "$T" -le 2 ]; then
+            echo "tier_env=ai-protect-tier12" >> "$GITHUB_OUTPUT"   # required reviewers
+          else
+            echo "tier_env=ai-protect-tier34" >> "$GITHUB_OUTPUT"   # auto
+          fi
+          echo "::notice::ai-protect tier=$T for ${{ inputs.manifest }}"
+
+      - name: Scan (gate)
+        id: scan
+        continue-on-error: true        # exit 2 on gate fail; handled below
+        run: |
+          python -m pipeline.cli --findings "$AIP_FINDINGS" \
+            run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}"
+
+      - name: Auto-fix + verify
+        id: fix
+        if: ${{ inputs.auto_fix && steps.scan.outcome == 'failure' }}
+        run: |
+          python -m pipeline.cli --findings "$AIP_FINDINGS" \
+            remediate "${{ inputs.manifest }}" --auto \
+            --severity "${{ inputs.severity }}" --format json | tee /tmp/remediate.json
+          echo "fixed=$(python -c "import json;print(json.load(open('/tmp/remediate.json'))['outcomes'].get('fixed_verified',0))")" >> "$GITHUB_OUTPUT"
+
+      - name: Open fix PR
+        if: ${{ steps.fix.outputs.fixed && steps.fix.outputs.fixed != '0' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name  "ai-protect[bot]"
+          git config user.email "ai-protect@users.noreply.github.com"
+          branch="ai-protect/fix-${{ github.run_id }}"
+          git checkout -b "$branch"
+          git add -A
+          git commit -m "fix(ai-protect): auto-remediated ${{ steps.fix.outputs.fixed }} verified finding(s)" || exit 0
+          git push origin "$branch"
+          gh pr create --title "ai-protect: auto-remediated findings (Tier ${{ steps.tier.outputs.tier }})" \
+            --body "Automated fixes, each verified by a re-scan. Tier ${{ steps.tier.outputs.tier }}. Review and merge to deploy." \
+            --base "${{ github.ref_name }}" --head "$branch" || true
+
+      - name: Re-gate (post-fix)
+        id: regate
+        run: |
+          rm -f "$AIP_FINDINGS"          # fresh findings for an honest re-scan
+          if python -m pipeline.cli --findings "$AIP_FINDINGS" \
+               run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}"; then
+            echo "gate=pass" >> "$GITHUB_OUTPUT"
+            echo "::notice::ai-protect gate PASS"
+          else
+            echo "gate=fail" >> "$GITHUB_OUTPUT"
+            echo "::warning::ai-protect gate FAIL — Critical/High findings remain (see artifact / fix PR)"
+          fi
+
+      - name: Upload findings
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-protect-findings
+          path: ${{ env.AIP_FINDINGS }}
+          if-no-files-found: ignore
+
+      - name: Enforce gate
+        run: |
+          if [ "${{ steps.regate.outputs.gate }}" != "pass" ]; then
+            echo "ai-protect gate did not pass — blocking."
+            exit 1
+          fi
