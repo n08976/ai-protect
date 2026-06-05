@@ -9,14 +9,18 @@ from .strategies.header_snippet import HeaderSnippetRemediator
 from .strategies.insecure_pattern_fix import InsecurePatternFixRemediator
 from .strategies.npm_bump import NpmBumpRemediator
 from .strategies.pip_bump import PipBumpRemediator
+from .strategies.semgrep_autofix import SemgrepAutofixRemediator
 
 
 # Order matters: the engine applies the FIRST remediator whose can_fix() is True
-# (remediators_for preserves this order). npm_bump is listed before pip_bump so
-# npm SUPPLY_CHAIN findings are claimed by the right ecosystem.
+# (remediators_for preserves this order).
+#   - npm_bump before pip_bump  → npm SUPPLY_CHAIN findings claimed by the right ecosystem.
+#   - semgrep_autofix before insecure_pattern_fix → prefer the rule-authored fix
+#     when Semgrep shipped one; fall back to our curated swaps otherwise.
 REMEDIATORS: list[Remediator] = [
     NpmBumpRemediator(),
     PipBumpRemediator(),
+    SemgrepAutofixRemediator(),
     InsecurePatternFixRemediator(),
     HeaderSnippetRemediator(),
 ]

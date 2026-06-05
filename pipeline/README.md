@@ -278,8 +278,11 @@ Outcomes per finding: `fixed_verified` · `fix_unverified_reverted` · `proposed
 | --- | --- | --- |
 | `pip_bump` | bump a vulnerable Python dep in `requirements.txt` | SUPPLY_CHAIN (pip_audit / grype / osv_scanner) |
 | `npm_bump` | bump a vulnerable npm dep in `package.json` | SUPPLY_CHAIN (osv_scanner / grype / trivy, npm) |
-| `insecure_pattern_fix` | drop-in-safe Python swap on the flagged line (`yaml.load`→`yaml.safe_load`, `verify=False`→`True`) | AUTH / INFRA_VULN (bandit / semgrep) |
+| `semgrep_autofix` | apply **Semgrep's own rule-authored `fix:`** at the matched span — broadest lever (any rule with a fix) | any category (semgrep findings carrying a fix) |
+| `insecure_pattern_fix` | drop-in-safe Python swap on the flagged line (`yaml.load`→`safe_load`, `Loader=yaml.Loader/UnsafeLoader`→`SafeLoader`, `verify=False`→`True`, `ssl._create_unverified_context`→`create_default_context`, `debug=True`→`False`) | AUTH / INFRA_VULN (bandit / semgrep) |
 | `header_snippet` | Flask middleware adding missing security header(s) | INFRA_VULN (nuclei) |
+
+`semgrep_autofix` is ordered before `insecure_pattern_fix`, so a Semgrep finding uses the rule-authored fix when present and falls back to the curated swaps otherwise.
 
 Add a strategy: subclass `Remediator` in `strategies/`, set `handles` + `can_fix` + `propose`, register it in `pipeline/remediate/registry.py` (order = priority).
 

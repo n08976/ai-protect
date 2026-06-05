@@ -51,6 +51,24 @@ def test_only_the_flagged_line_is_touched(tmp_path):
     assert out == "a = yaml.safe_load(p)\nb = yaml.load(q)\n"   # only line 1 changed
 
 
+def test_explicit_unsafe_loader_swapped(tmp_path):
+    f = tmp_path / "cfg.py"
+    f.write_text("cfg = yaml.load(s, Loader=yaml.Loader)\n")
+    prop = InsecurePatternFixRemediator().propose(_finding(f, 1), {"source_path": str(tmp_path)})
+    assert prop is not None
+    out = prop.file_changes[0].new_content
+    assert "Loader=yaml.SafeLoader" in out
+    assert "Loader=yaml.Loader" not in out
+
+
+def test_flask_debug_swapped(tmp_path):
+    f = tmp_path / "app.py"
+    f.write_text("app.run(host='0.0.0.0', debug=True)\n")
+    prop = InsecurePatternFixRemediator().propose(
+        _finding(f, 1, category=Category.INFRA_VULN), {"source_path": str(tmp_path)})
+    assert "debug=False" in prop.file_changes[0].new_content
+
+
 def test_semgrep_line_range(tmp_path):
     f = tmp_path / "net.py"
     f.write_text("x = 1\nr = requests.get(u, verify=False)\n")

@@ -21,13 +21,26 @@ from ..base import FileChange, Proposal, Remediator
 
 
 # Each swap: literal find → replace, an optional guard on the line, a label.
+# All are behaviour-preserving for the secure path and surgically scoped to the
+# flagged line. Order matters: the explicit-Loader swaps run before the bare
+# yaml.load swap so `yaml.load(s, Loader=yaml.Loader)` becomes SafeLoader.
 SAFE_SWAPS = [
+    {"find": "Loader=yaml.UnsafeLoader", "replace": "Loader=yaml.SafeLoader",
+     "guard": lambda line: True, "label": "yaml UnsafeLoader → SafeLoader"},
+    {"find": "Loader=yaml.Loader", "replace": "Loader=yaml.SafeLoader",
+     "guard": lambda line: True, "label": "yaml Loader → SafeLoader"},
     {"find": "yaml.load(", "replace": "yaml.safe_load(",
      "guard": lambda line: "Loader=" not in line and "safe_load" not in line,
      "label": "yaml.load → yaml.safe_load"},
     {"find": "verify=False", "replace": "verify=True",
      "guard": lambda line: True,
      "label": "verify=False → verify=True"},
+    {"find": "ssl._create_unverified_context", "replace": "ssl.create_default_context",
+     "guard": lambda line: True,
+     "label": "ssl unverified → default (verified) context"},
+    {"find": "debug=True", "replace": "debug=False",
+     "guard": lambda line: True,
+     "label": "debug=True → debug=False"},
 ]
 
 
