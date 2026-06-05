@@ -97,7 +97,8 @@ jobs:
           pip install -r /tmp/ai-protect/pipeline/requirements.txt
           # run ai-protect against the app checkout (cwd) via PYTHONPATH
           echo "PYTHONPATH=/tmp/ai-protect" >> "$GITHUB_ENV"
-          echo "AIP_FINDINGS=$GITHUB_WORKSPACE/.aip-findings.jsonl" >> "$GITHUB_ENV"
+          # findings live OUTSIDE the workspace so they never land in the fix PR
+          echo "AIP_FINDINGS=$RUNNER_TEMP/aip-findings.jsonl" >> "$GITHUB_ENV"
 
       - name: Install scanners
         run: pip install ${{ inputs.tools }} || true
@@ -120,7 +121,8 @@ jobs:
         continue-on-error: true        # exit 2 on gate fail; handled below
         run: |
           python -m pipeline.cli --findings "$AIP_FINDINGS" \
-            run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}"
+            run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}" \
+            --fail-on-severity "${{ inputs.severity }}"
 
       - name: Auto-fix + verify
         id: fix
@@ -152,7 +154,8 @@ jobs:
         run: |
           rm -f "$AIP_FINDINGS"          # fresh findings for an honest re-scan
           if python -m pipeline.cli --findings "$AIP_FINDINGS" \
-               run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}"; then
+               run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}" \
+               --fail-on-severity "${{ inputs.severity }}"; then
             echo "gate=pass" >> "$GITHUB_OUTPUT"
             echo "::notice::ai-protect gate PASS"
           else

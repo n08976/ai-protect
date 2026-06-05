@@ -33,6 +33,7 @@ class AdapterResult:
     status: str                         # "ok" | "skipped" | "error" | "unavailable"
     findings_count: int = 0
     high_or_above: int = 0
+    critical_count: int = 0
     error: str | None = None
     duration_s: float = 0.0
     # Fingerprints actually emitted by this adapter in this run. Populated
@@ -254,6 +255,7 @@ class Orchestrator:
             1 for f in findings
             if f.severity in (Severity.HIGH, Severity.CRITICAL)
         )
+        ar.critical_count = sum(1 for f in findings if f.severity == Severity.CRITICAL)
         ar.duration_s = time.time() - t0
         # Capture the fingerprints THIS adapter emitted — auto_resolve consults
         # this set to decide which prior fingerprints have "disappeared".

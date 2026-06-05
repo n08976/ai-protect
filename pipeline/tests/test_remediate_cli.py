@@ -93,3 +93,35 @@ def test_no_remediator_finding_is_skipped(tmp_path, capsys):
     out = _run(["--findings", str(findings), "remediate", manifest,
                 "--format", "json"], capsys)
     assert out["candidates"] == 0
+
+
+# ---- CI deploy gate: --fail-on-severity (independent of per-adapter blocking) ----
+
+import shutil  # noqa: E402
+
+
+def test_fail_on_severity_high_exits_2(tmp_path):
+    """A HIGH bandit finding fails the gate with --fail-on-severity high, even
+    though bandit is NOT a `blocking` adapter in the policy table."""
+    if not shutil.which("bandit"):
+        pytest.skip("bandit not installed")
+    (tmp_path / "v.py").write_text("import requests\nr = requests.get(u, verify=False)\n")
+    manifest = _manifest(tmp_path, "public")          # → Tier 4
+    findings = tmp_path / "f.jsonl"
+    with pytest.raises(SystemExit) as ei:
+        cli.main(["--findings", str(findings), "run", manifest, "--stage", "build",
+                  "--adapter", "bandit", "--fail-on-severity", "high"])
+    assert ei.value.code == 2
+
+
+def test_no_flag_passes_gate_for_nonblocking_high(tmp_path):
+    """Without --fail-on-severity, the same HIGH bandit finding does NOT fail the
+    gate (bandit isn't blocking) — documents why the CI flag exists."""
+    if not shutil.which("bandit"):
+        pytest.skip("bandit not installed")
+    (tmp_path / "v.py").write_text("import requests\nr = requests.get(u, verify=False)\n")
+    manifest = _manifest(tmp_path, "public")
+    findings = tmp_path / "f.jsonl"
+    # no SystemExit (exit 0) expected
+    cli.main(["--findings", str(findings), "run", manifest, "--stage", "build",
+              "--adapter", "bandit"])

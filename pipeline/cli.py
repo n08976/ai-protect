@@ -72,7 +72,20 @@ def cmd_run(args):
             results = [orc.run_stage(args.stage)]
     for r in results:
         print(json.dumps(r.to_dict(), indent=2))
-    if any(not r.gate_passed for r in results):
+    # Policy gate: a blocking adapter produced HIGH+ findings.
+    gate_fail = any(not r.gate_passed for r in results)
+    # Optional CI deploy gate: fail on ANY finding at/above a severity, regardless
+    # of the per-adapter blocking flag (the per-adapter `blocking` flag only gates
+    # secrets / AI-red-team / policy classes — this lets CI block on Critical/High
+    # from SAST/SCA too, which is what `cli remediate` then auto-fixes).
+    sev = getattr(args, "fail_on_severity", None)
+    if sev:
+        for r in results:
+            for a in r.adapter_results:
+                if (sev == "critical" and a.critical_count > 0) or \
+                   (sev == "high" and a.high_or_above > 0):
+                    gate_fail = True
+    if gate_fail:
         sys.exit(2)
 
 
@@ -232,6 +245,10 @@ def main(argv: list[str] | None = None) -> int:
                             "scan_runner.py supplies this when launching from the UI.")
     p_run.add_argument("--adapter", default=None,
                        help="Run only this adapter (filters the policy table)")
+    p_run.add_argument("--fail-on-severity", choices=["high", "critical"], default=None,
+                       help="Also fail the gate (exit 2) if this run produced any finding "
+                            "at/above this severity, regardless of the per-adapter blocking "
+                            "flag. Use this as the CI deploy gate.")
     p_run.set_defaults(func=cmd_run)
 
     p_rem = sub.add_parser("remediate", help="Headless fix → verify loop (CI). Propose fixes; "

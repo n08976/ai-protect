@@ -1,0 +1,18 @@
+# Demo: drives the reusable assure.yml against a seeded insecure fixture so you
+# can watch the gate → auto-fix → re-gate → fix-PR flow run in real Actions.
+# Trigger manually:  gh workflow run pilot-assure.yml
+name: assure pilot (demo)
+on:
+  workflow_dispatch:
+jobs:
+  pilot:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/assure.yml
+    with:
+      manifest: pilot/manifest.yml
+      stage: build
+      severity: high
+      auto_fix: true
+      tools: "bandit semgrep"
