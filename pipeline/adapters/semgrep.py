@@ -103,6 +103,11 @@ class SemgrepAdapter(Adapter):
                     "file": r.get("path"),
                     "start_line": (r.get("start") or {}).get("line"),
                     "end_line": (r.get("end") or {}).get("line"),
+                    # Byte offsets + rule-authored fix let the semgrep_autofix
+                    # remediator apply Semgrep's own suggested replacement.
+                    "start_offset": (r.get("start") or {}).get("offset"),
+                    "end_offset": (r.get("end") or {}).get("offset"),
+                    "fix": extra.get("fix"),
                     "snippet": (extra.get("lines") or "")[:1000],
                 },
                 affected={"file": r.get("path")},
