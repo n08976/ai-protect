@@ -257,8 +257,11 @@ class Engine:
         if new_findings:
             self.findings.append_many(new_findings)
 
-        after = {f.fingerprint for f in self.findings.by_app(change.app_name)}
-        cleared = change.finding_fingerprint not in after
+        # A fix is verified when the FRESH re-scan no longer re-emits the
+        # finding. (Comparing against the accumulated append-only store would
+        # always still contain the original row, so it could never clear.)
+        re_emitted = {f.fingerprint for f in new_findings}
+        cleared = change.finding_fingerprint not in re_emitted
         new_high = sum(
             1 for f in new_findings
             if f.severity in (Severity.HIGH, Severity.CRITICAL)
