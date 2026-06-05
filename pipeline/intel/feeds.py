@@ -150,7 +150,8 @@ class IntelItem:
 def make_item_id(source_feed_id: str, cve_id: str, link: str) -> str:
     """Stable id used for dedupe across fetches."""
     key = f"{source_feed_id}|{cve_id or link}"
-    return hashlib.sha1(key.encode("utf-8")).hexdigest()[:16]
+    # non-security dedupe id — usedforsecurity=False (clears bandit B324)
+    return hashlib.sha1(key.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
 class IntelStore:

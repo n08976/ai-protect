@@ -279,6 +279,7 @@ Outcomes per finding: `fixed_verified` · `fix_unverified_reverted` · `proposed
 | `pip_bump` | bump a vulnerable Python dep in `requirements.txt` | SUPPLY_CHAIN (pip_audit / grype / osv_scanner) |
 | `npm_bump` | bump a vulnerable npm dep in `package.json` | SUPPLY_CHAIN (osv_scanner / grype / trivy, npm) |
 | `semgrep_autofix` | apply **Semgrep's own rule-authored `fix:`** at the matched span — broadest lever (any rule with a fix) | any category (semgrep findings carrying a fix) |
+| `weak_hash_fix` | add `usedforsecurity=False` to a weak md5/sha1 call (bandit B324) — AST-exact, behaviour-preserving (digest unchanged) | AUTH / INFRA_VULN / SECRETS (bandit B324) |
 | `insecure_pattern_fix` | drop-in-safe Python swap on the flagged line (`yaml.load`→`safe_load`, `Loader=yaml.Loader/UnsafeLoader`→`SafeLoader`, `verify=False`→`True`, `ssl._create_unverified_context`→`create_default_context`, `debug=True`→`False`) | AUTH / INFRA_VULN (bandit / semgrep) |
 | `header_snippet` | Flask middleware adding missing security header(s) | INFRA_VULN (nuclei) |
 

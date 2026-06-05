@@ -10,6 +10,7 @@ from .strategies.insecure_pattern_fix import InsecurePatternFixRemediator
 from .strategies.npm_bump import NpmBumpRemediator
 from .strategies.pip_bump import PipBumpRemediator
 from .strategies.semgrep_autofix import SemgrepAutofixRemediator
+from .strategies.weak_hash_fix import WeakHashFixRemediator
 
 
 # Order matters: the engine applies the FIRST remediator whose can_fix() is True
@@ -21,6 +22,7 @@ REMEDIATORS: list[Remediator] = [
     NpmBumpRemediator(),
     PipBumpRemediator(),
     SemgrepAutofixRemediator(),
+    WeakHashFixRemediator(),
     InsecurePatternFixRemediator(),
     HeaderSnippetRemediator(),
 ]
