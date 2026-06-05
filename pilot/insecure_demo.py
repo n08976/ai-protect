@@ -9,4 +9,4 @@ import requests
 
 def fetch(url):
     # bandit B501 / semgrep: TLS verification disabled (HIGH)
-    return requests.get(url, verify=False)
+    return requests.get(url, verify=True)
