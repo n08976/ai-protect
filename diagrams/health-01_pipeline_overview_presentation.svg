@@ -9,21 +9,21 @@
 </defs>
 <rect x="0" y="0" width="1200" height="44" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
 <text x="600.0" y="27" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Security Assurance Pipeline — Tooling, Automation &amp; New Stages</text>
-<text x="40" y="62" font-size="11" fill="#222222" text-anchor="start" font-weight="bold">KEY:</text>
-<rect x="80" y="52" width="14" height="13" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
-<text x="100" y="62" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Existing systems for integration</text>
-<rect x="360" y="52" width="14" height="13" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="2" ry="2"/>
-<text x="380" y="62" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">New tools introduced with ai-protect</text>
-<rect x="990" y="51" width="30" height="15" fill="#1E8E4E" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
-<text x="1005" y="62" font-size="9" fill="#FFFFFF" text-anchor="middle" font-weight="bold">NEW</text>
-<text x="1026" y="62" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">= new pipeline stage</text>
-<text x="40" y="84" font-size="11" fill="#222222" text-anchor="start" font-weight="bold">HUMAN-IN-THE-LOOP:</text>
-<rect x="188" y="74" width="16" height="13" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.6" rx="3" ry="3"/>
-<text x="210" y="84" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Fully automated</text>
-<rect x="312.5" y="74" width="16" height="13" fill="#FBEBD2" stroke="#C77D11" stroke-width="1.6" rx="3" ry="3"/>
-<text x="334.5" y="84" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Human optional</text>
-<rect x="430.7" y="74" width="16" height="13" fill="#F6DAD5" stroke="#B0392B" stroke-width="1.6" rx="3" ry="3"/>
-<text x="452.7" y="84" font-size="11" fill="#222222" text-anchor="start" font-weight="normal">Human required</text>
+<text x="40" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="bold">KEY:</text>
+<rect x="76" y="52" width="13" height="12" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
+<text x="94" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Existing</text>
+<rect x="151.6" y="52" width="13" height="12" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="2" ry="2"/>
+<text x="169.6" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">New tool</text>
+<rect x="229.2" y="51" width="28" height="14" fill="#1E8E4E" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="243.2" y="62" font-size="8" fill="#FFFFFF" text-anchor="middle" font-weight="bold">NEW</text>
+<text x="261.2" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">= new stage</text>
+<text x="349.4" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="bold">HUMAN-IN-THE-LOOP:</text>
+<rect x="478.2" y="52" width="14" height="12" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.6" rx="3" ry="3"/>
+<text x="497.2" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Automated</text>
+<rect x="562.3" y="52" width="14" height="12" fill="#FBEBD2" stroke="#C77D11" stroke-width="1.6" rx="3" ry="3"/>
+<text x="581.3" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Human optional</text>
+<rect x="675.9" y="52" width="14" height="12" fill="#F6DAD5" stroke="#B0392B" stroke-width="1.6" rx="3" ry="3"/>
+<text x="694.9" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Human required</text>
 <rect x="40" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="105.0" y="118" font-size="11" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 0</text>
 <text x="105.0" y="139" font-size="13" fill="#222222" text-anchor="middle" font-weight="bold">Discovery &amp;</text>
@@ -164,77 +164,77 @@
 <rect x="40" y="382" width="1120" height="90" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="8" ry="8"/>
 <text x="600.0" y="406" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ORCHESTRATION &amp; DATA PLANE</text>
 <rect x="65.0" y="420" width="170.0" height="42" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
-<text x="150.0" y="439" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Pipelines</text>
-<text x="150.0" y="454" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">CI — available today</text>
+<text x="150.0" y="438" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Pipelines</text>
+<text x="150.0" y="454" font-size="10.5" fill="#222222" text-anchor="middle" font-weight="bold">CI — available today</text>
 <rect x="245.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="330.0" y="439" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Argo / Tekton</text>
-<text x="330.0" y="454" font-size="9" fill="#EAF3FA" text-anchor="middle" font-weight="normal">pipeline CI</text>
+<text x="330.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Argo / Tekton</text>
+<text x="330.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">pipeline CI</text>
 <rect x="425.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="510.0" y="439" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Kafka</text>
-<text x="510.0" y="454" font-size="9" fill="#EAF3FA" text-anchor="middle" font-weight="normal">event bus</text>
+<text x="510.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Kafka</text>
+<text x="510.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">event bus</text>
 <rect x="605.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="690.0" y="439" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">DefectDojo</text>
-<text x="690.0" y="454" font-size="9" fill="#EAF3FA" text-anchor="middle" font-weight="normal">findings · OCSF</text>
+<text x="690.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">DefectDojo</text>
+<text x="690.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">findings · OCSF</text>
 <rect x="785.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="870.0" y="439" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Vault / Key Vault</text>
-<text x="870.0" y="454" font-size="9" fill="#EAF3FA" text-anchor="middle" font-weight="normal">secrets</text>
+<text x="870.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Vault / Key Vault</text>
+<text x="870.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">secrets</text>
 <rect x="965.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="1050.0" y="439" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">OPA</text>
-<text x="1050.0" y="454" font-size="9" fill="#EAF3FA" text-anchor="middle" font-weight="normal">deploy gates</text>
+<text x="1050.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">OPA</text>
+<text x="1050.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">deploy gates</text>
 <rect x="40" y="484" width="1120" height="90" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="8" ry="8"/>
 <text x="600.0" y="508" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)</text>
 <rect x="65.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="168.0" y="539" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">LLM Gateway</text>
-<text x="168.0" y="552" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Claude primary</text>
-<text x="168.0" y="563" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">+ secondary LLM</text>
+<text x="168.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">LLM Gateway</text>
+<text x="168.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">Claude primary</text>
+<text x="168.0" y="564" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">+ secondary LLM</text>
 <rect x="281.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="384.0" y="539" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">MCP Farm</text>
-<text x="384.0" y="552" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">curated registry</text>
+<text x="384.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">MCP Farm</text>
+<text x="384.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">curated registry</text>
 <rect x="497.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="600.0" y="539" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Agent Runtime</text>
-<text x="600.0" y="552" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">SPIFFE ID, scoped</text>
+<text x="600.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Agent Runtime</text>
+<text x="600.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">SPIFFE ID, scoped</text>
 <rect x="713.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="816.0" y="539" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Data Plane</text>
-<text x="816.0" y="552" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">FHIR / vector / RAG</text>
+<text x="816.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Data Plane</text>
+<text x="816.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">FHIR / vector / RAG</text>
 <rect x="929.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
-<text x="1032.0" y="539" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Telemetry Mesh</text>
-<text x="1032.0" y="552" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">prompts • tools • completions</text>
+<text x="1032.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Telemetry Mesh</text>
+<text x="1032.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">prompts • tools • completions</text>
 <rect x="40" y="586" width="1120" height="110" fill="#243B55" stroke="#C04A2B" stroke-width="2.5" rx="8" ry="8"/>
 <text x="600.0" y="610" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)   ★ provided environment tooling</text>
 <rect x="65.0" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="137.14285714285714" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Endpoint / XDR</text>
-<text x="137.14285714285714" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Microsoft Defender</text>
+<text x="137.14285714285714" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Microsoft Defender</text>
 <rect x="219.28571428571428" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="291.42857142857144" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">SIEM / SOAR</text>
-<text x="291.42857142857144" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Microsoft Sentinel</text>
+<text x="291.42857142857144" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Microsoft Sentinel</text>
 <rect x="373.57142857142856" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="445.71428571428567" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Threat Intel</text>
-<text x="445.71428571428567" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Google TI · OpenCTI</text>
-<text x="445.71428571428567" y="673" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">· MS Defender TI</text>
+<text x="445.71428571428567" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Google TI · OpenCTI</text>
+<text x="445.71428571428567" y="673" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">· MS Defender TI</text>
 <rect x="527.8571428571429" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="600.0" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Email Security</text>
-<text x="600.0" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Abnormal</text>
+<text x="600.0" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Abnormal</text>
 <rect x="682.1428571428571" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="754.2857142857142" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Network / Cloud</text>
-<text x="754.2857142857142" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Palo Alto NGFW /</text>
-<text x="754.2857142857142" y="673" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Prisma</text>
+<text x="754.2857142857142" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Palo Alto NGFW /</text>
+<text x="754.2857142857142" y="673" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Prisma</text>
 <rect x="836.4285714285713" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="908.5714285714284" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">AI Surfaces</text>
-<text x="908.5714285714284" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Claude · Copilot</text>
+<text x="908.5714285714284" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Claude · Copilot</text>
 <rect x="990.7142857142857" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="1062.857142857143" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Collaboration</text>
-<text x="1062.857142857143" y="660" font-size="9" fill="#222222" text-anchor="middle" font-weight="normal">Microsoft Teams</text>
+<text x="1062.857142857143" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Microsoft Teams</text>
 <rect x="40.0" y="710" width="363.3333333333333" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="221.66666666666666" y="732" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Technical Dashboard</text>
-<text x="221.66666666666666" y="758" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap</text>
+<text x="221.66666666666666" y="758" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap</text>
 <rect x="418.3333333333333" y="710" width="363.3333333333333" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="600.0" y="732" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Executive Dashboard</text>
-<rect x="566.0" y="743" width="68" height="16" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.5" rx="3" ry="3"/>
-<text x="600.0" y="754" font-size="9" fill="#C04A2B" text-anchor="middle" font-weight="bold">Power BI</text>
-<text x="600.0" y="773" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">risk heatmap, portfolio KPIs, compliance</text>
+<rect x="564.0" y="742" width="72" height="16" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.5" rx="3" ry="3"/>
+<text x="600.0" y="753" font-size="10" fill="#C04A2B" text-anchor="middle" font-weight="bold">Power BI</text>
+<text x="600.0" y="773" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">risk heatmap, portfolio KPIs, compliance</text>
 <rect x="796.6666666666666" y="710" width="363.3333333333333" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="978.3333333333333" y="732" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Compliance Evidence</text>
-<text x="978.3333333333333" y="758" font-size="10" fill="#EAF3FA" text-anchor="middle" font-weight="normal">HIPAA / HITRUST control mapping, audit query</text>
+<text x="978.3333333333333" y="758" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">HIPAA / HITRUST control mapping, audit query</text>
 <line x1="105.0" y1="322" x2="105.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="247.0" y1="300" x2="247.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="389.0" y1="366" x2="389.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>

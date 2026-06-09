@@ -1012,24 +1012,24 @@ def diagram_health_presentation():
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
     s.append(text(W/2, 27, "AI Security Assurance Pipeline — Tooling, Automation & New Stages",
                   17, WHITE, "middle", "bold"))
-    # row 1: tooling key + NEW-stage badge meaning
-    s.append(text(40, 62, "KEY:", 11, TEXT, "start", "bold"))
-    s.append(box(80, 52, 14, 13, ORANGE, ACCENT, 1.4, 2))
-    s.append(text(100, 62, "Existing systems for integration", 11, TEXT, "start"))
-    s.append(box(360, 52, 14, 13, GRN_FILL, GRN, 1.4, 2))
-    s.append(text(380, 62, "New tools introduced with ai-protect", 11, TEXT, "start"))
-    s.append(box(W-210, 51, 30, 15, GRN, GRN, 1, 3))
-    s.append(text(W-195, 62, "NEW", 9, WHITE, "middle", "bold"))
-    s.append(text(W-174, 62, "= new pipeline stage", 11, TEXT, "start"))
-    # row 2: human-in-the-loop legend
-    s.append(text(40, 84, "HUMAN-IN-THE-LOOP:", 11, TEXT, "start", "bold"))
-    lx = 188
-    for lvl, lab in (("auto", "Fully automated"), ("optional", "Human optional"),
+    # single legend line: tooling key + NEW-stage badge + human-in-the-loop
+    y0 = 62; swy = 52
+    lx = 40
+    s.append(text(lx, y0, "KEY:", 10, TEXT, "start", "bold")); lx += 36
+    s.append(box(lx, swy, 13, 12, ORANGE, ACCENT, 1.4, 2))
+    s.append(text(lx+18, y0, "Existing", 10, TEXT, "start")); lx += 18 + 8*6.2 + 8
+    s.append(box(lx, swy, 13, 12, GRN_FILL, GRN, 1.4, 2))
+    s.append(text(lx+18, y0, "New tool", 10, TEXT, "start")); lx += 18 + 8*6.2 + 10
+    s.append(box(lx, swy-1, 28, 14, GRN, GRN, 1, 3))
+    s.append(text(lx+14, y0, "NEW", 8, WHITE, "middle", "bold"))
+    s.append(text(lx+32, y0, "= new stage", 10, TEXT, "start")); lx += 32 + 11*6.2 + 20
+    s.append(text(lx, y0, "HUMAN-IN-THE-LOOP:", 10, TEXT, "start", "bold")); lx += 18*6.6 + 10
+    for lvl, lab in (("auto", "Automated"), ("optional", "Human optional"),
                      ("mandatory", "Human required")):
         bd, fl, _ = LV[lvl]
-        s.append(box(lx, 74, 16, 13, fl, bd, 1.6, 3))
-        s.append(text(lx + 22, 84, lab, 11, TEXT, "start"))
-        lx += 30 + len(lab) * 6.3
+        s.append(box(lx, swy, 14, 12, fl, bd, 1.6, 3))
+        s.append(text(lx+19, y0, lab, 10, TEXT, "start"))
+        lx += 19 + len(lab)*5.9 + 12
 
     # ---- stages (with NEW badge + human-in-the-loop pill) ----
     stages = [("Stage 0", "Discovery &", "Intake"), ("Stage 1", "Triage &", "Tiering"),
@@ -1118,12 +1118,12 @@ def diagram_health_presentation():
         x = ox0 + i*ow
         if existing:
             s.append(box(x+5, oy+38, ow-10, 42, ORANGE, ACCENT, 2, 5))
-            s.append(text(x+ow/2, oy+57, a, 11, ACCENT, "middle", "bold"))
-            s.append(text(x+ow/2, oy+72, b, 9, TEXT, "middle"))
+            s.append(text(x+ow/2, oy+56, a, 11, ACCENT, "middle", "bold"))
+            s.append(text(x+ow/2, oy+72, b, 10.5, TEXT, "middle", "bold"))
         else:
             s.append(box(x+5, oy+38, ow-10, 42, "#2C547F", "#456A92", 1, 5))
-            s.append(text(x+ow/2, oy+57, a, 11, WHITE, "middle", "bold"))
-            s.append(text(x+ow/2, oy+72, b, 9, BLUE, "middle"))
+            s.append(text(x+ow/2, oy+56, a, 11, WHITE, "middle", "bold"))
+            s.append(text(x+ow/2, oy+72, b, 10.5, "#DCEBFA", "middle", "bold"))
 
     iy = 484; ih = 90
     s.append(box(40, iy, W-80, ih, NAVY, NAVY_DK, 1.5, 8))
@@ -1135,9 +1135,9 @@ def diagram_health_presentation():
     for i, (a, subs) in enumerate(parts):
         x = px0 + i*pw
         s.append(box(x+5, iy+38, pw-10, 42, "#2C547F", "#456A92", 1, 5))
-        s.append(text(x+pw/2, iy+55, a, 12, WHITE, "middle", "bold"))
+        s.append(text(x+pw/2, iy+54, a, 12, WHITE, "middle", "bold"))
         for k, sub in enumerate(subs[:2]):
-            s.append(text(x+pw/2, iy+68+k*11, sub, 10, BLUE, "middle"))
+            s.append(text(x+pw/2, iy+68+k*12, sub, 11, "#DCEBFA", "middle", "bold"))
 
     ey = 586; eh = 110
     s.append(box(40, ey, W-80, eh, "#243B55", ACCENT, 2.5, 8))
@@ -1160,7 +1160,7 @@ def diagram_health_presentation():
         if cur:
             lines.append(cur)
         for k, ln in enumerate(lines[:2]):
-            s.append(text(x+ew/2, ey+74+k*13, ln, 9, TEXT, "middle"))
+            s.append(text(x+ew/2, ey+74+k*13, ln, 10, "#3a2a14", "middle", "bold"))
 
     dy = 710; dh = 80
     # dark-blue cards (same scheme as the bands); Power BI is existing -> orange pill.
@@ -1173,11 +1173,11 @@ def diagram_health_presentation():
         s.append(box(x, dy, cw, dh, NAVY, NAVY_DK, 1.5, 6))
         s.append(text(x+cw/2, dy+22, a, 13, WHITE, "middle", "bold"))
         if existing:
-            s.append(box(x+cw/2-34, dy+33, 68, 16, ORANGE, ACCENT, 1.5, 3))
-            s.append(text(x+cw/2, dy+44, existing, 9, ACCENT, "middle", "bold"))
-            s.append(text(x+cw/2, dy+63, b, 10, BLUE, "middle"))
+            s.append(box(x+cw/2-36, dy+32, 72, 16, ORANGE, ACCENT, 1.5, 3))
+            s.append(text(x+cw/2, dy+43, existing, 10, ACCENT, "middle", "bold"))
+            s.append(text(x+cw/2, dy+63, b, 11, "#DCEBFA", "middle", "bold"))
         else:
-            s.append(text(x+cw/2, dy+48, b, 10, BLUE, "middle"))
+            s.append(text(x+cw/2, dy+48, b, 11, "#DCEBFA", "middle", "bold"))
 
     # ---- connectors ----
     for i in range(len(stages)):
