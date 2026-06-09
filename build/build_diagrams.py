@@ -988,7 +988,7 @@ def diagram_8():
 # ============================================================
 def diagram_health_presentation():
     DY = 18
-    W, H = 1200, 788
+    W, H = 1200, 808
     s = [hdr(W, H), arrow_def()]
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     # human-in-the-loop levels: (border, fill, label)
@@ -1105,12 +1105,27 @@ def diagram_health_presentation():
             s.append(text(x+sw/2, yy, it, 11, tc, "middle", tw))
 
     # ---- orchestration / infra / enterprise band / dashboards (shifted by DY) ----
-    oy = 382; oh = 70   # pulled up close to the tool boxes (tallest ends ~366) for a compact slide
-    s.append(box(40, oy, W-80, oh, ORANGE, ORANGE_DK, 1.5, 8))
-    s.append(text(W/2, oy+25, "ORCHESTRATION & DATA PLANE", 12, NAVY_DK, "middle", "bold"))
-    s.append(text(W/2, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT, "middle"))
+    oy = 382; oh = 90   # navy band (same scheme as Sanctioned), pulled up under the tool boxes
+    s.append(box(40, oy, W-80, oh, NAVY, NAVY_DK, 1.5, 8))
+    s.append(text(W/2, oy+24, "ORCHESTRATION & DATA PLANE", 13, WHITE, "middle", "bold"))
+    # Azure Pipelines is available today (existing) -> orange pill like the workflow items;
+    # the rest is new ai-protect orchestration -> navy sub-boxes.
+    orch = [("Azure Pipelines", "CI — available today", True), ("Argo / Tekton", "pipeline CI", False),
+            ("Kafka", "event bus", False), ("DefectDojo", "findings · OCSF", False),
+            ("Vault / Key Vault", "secrets", False), ("OPA", "deploy gates", False)]
+    ow = (W-120)/len(orch); ox0 = 60
+    for i, (a, b, existing) in enumerate(orch):
+        x = ox0 + i*ow
+        if existing:
+            s.append(box(x+5, oy+38, ow-10, 42, ORANGE, ACCENT, 2, 5))
+            s.append(text(x+ow/2, oy+57, a, 11, ACCENT, "middle", "bold"))
+            s.append(text(x+ow/2, oy+72, b, 9, TEXT, "middle"))
+        else:
+            s.append(box(x+5, oy+38, ow-10, 42, "#2C547F", "#456A92", 1, 5))
+            s.append(text(x+ow/2, oy+57, a, 11, WHITE, "middle", "bold"))
+            s.append(text(x+ow/2, oy+72, b, 9, BLUE, "middle"))
 
-    iy = 464; ih = 90
+    iy = 484; ih = 90
     s.append(box(40, iy, W-80, ih, NAVY, NAVY_DK, 1.5, 8))
     s.append(text(W/2, iy+24, "SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)", 13, WHITE, "middle", "bold"))
     parts = [("LLM Gateway", ["Claude primary", "+ secondary LLM"]), ("MCP Farm", ["curated registry"]),
@@ -1124,7 +1139,7 @@ def diagram_health_presentation():
         for k, sub in enumerate(subs[:2]):
             s.append(text(x+pw/2, iy+68+k*11, sub, 10, BLUE, "middle"))
 
-    ey = 566; eh = 110
+    ey = 586; eh = 110
     s.append(box(40, ey, W-80, eh, "#243B55", ACCENT, 2.5, 8))
     s.append(text(W/2, ey+24, "ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)   ★ provided environment tooling", 13, WHITE, "middle", "bold"))
     env = [("Endpoint / XDR", "Microsoft Defender"), ("SIEM / SOAR", "Microsoft Sentinel"),
@@ -1147,7 +1162,7 @@ def diagram_health_presentation():
         for k, ln in enumerate(lines[:2]):
             s.append(text(x+ew/2, ey+74+k*13, ln, 9, TEXT, "middle"))
 
-    dy = 690; dh = 80
+    dy = 710; dh = 80
     cards = [("Technical Dashboard", "Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap"),
              ("Executive Dashboard", "Superset/Power BI — risk heatmap, portfolio KPIs, compliance"),
              ("Compliance Evidence", "HIPAA / HITRUST control mapping, audit query")]
