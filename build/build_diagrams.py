@@ -1044,12 +1044,12 @@ def diagram_health_presentation():
     for i, (lab, l1, l2) in enumerate(stages):
         x = sx0 + i*(sw+gap)
         s.append(box(x, sy, sw, sh, BLUE, NAVY, 1.5, 6))
-        s.append(text(x+sw/2, sy+20, lab, 11, NAVY_DK, "middle", "bold"))
+        s.append(text(x+sw/2, sy+23, lab, 16, NAVY_DK, "middle", "bold"))   # Stage N — largest in box
         if l2:
-            s.append(text(x+sw/2, sy+41, l1, 13, TEXT, "middle", "bold"))
-            s.append(text(x+sw/2, sy+57, l2, 13, TEXT, "middle", "bold"))
+            s.append(text(x+sw/2, sy+43, l1, 12, TEXT, "middle", "bold"))
+            s.append(text(x+sw/2, sy+58, l2, 12, TEXT, "middle", "bold"))
         else:                                    # single-word stage — center it on one line
-            s.append(text(x+sw/2, sy+50, l1, 13, TEXT, "middle", "bold"))
+            s.append(text(x+sw/2, sy+51, l1, 12, TEXT, "middle", "bold"))
         if i in new_stages:                                  # NEW badge (top-left)
             s.append(box(x+4, sy+4, 32, 14, GRN, GRN, 1, 3))
             s.append(text(x+20, sy+14, "NEW", 9, WHITE, "middle", "bold"))
