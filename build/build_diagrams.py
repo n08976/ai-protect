@@ -1198,10 +1198,90 @@ def diagram_health_presentation():
 
 
 # ============================================================
+# DIAGRAM: AI organizational transformation (presentation)
+# ============================================================
+def diagram_ai_transformation():
+    W, H = 1280, 452
+    s = [hdr(W, H), arrow_def()]
+    GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
+    PROD = "#13643A"; PROD_FILL = "#DCF0E4"
+    s.append('<defs>'
+             '<marker id="arrGr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1E8E4E"/></marker>'
+             '</defs>')
+    s.append(box(0, 0, W, 52, NAVY, NAVY, 0, 0))
+    s.append(text(W/2, 22, "AI Organizational Transformation — Empowered Building → Governed AI-Production", 18, WHITE, "middle", "bold"))
+    s.append(text(W/2, 42, "Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.", 11, BLUE, "middle"))
+
+    # ---- Zone A: controlled build environment ----
+    ax, ay, aw, ah = 22, 84, 304, 330
+    s.append(box(ax, ay, aw, ah, "#F2F5F9", NAVY, 1.5, 8))
+    s.append(text(ax+aw/2, ay+22, "CONTROLLED BUILD ENVIRONMENT", 12, NAVY_DK, "middle", "bold"))
+    s.append(text(ax+aw/2, ay+38, "sanctioned · governed · paved road", 9, TEXT_LT, "middle"))
+    builders = ["Clinical ops", "Finance", "Revenue cycle", "Marketing", "Analytics", "Support"]
+    bw, bh = 132, 50
+    bx0 = ax+14; by0 = ay+52
+    builder_pts = []
+    for i, name in enumerate(builders):
+        c = i % 2; r = i // 2
+        bx = bx0 + c*(bw+8); byy = by0 + r*(bh+8)
+        s.append(box(bx, byy, bw, bh, WHITE, GRAY_DK, 1, 5))
+        s.append(text(bx+bw/2, byy+19, "Citizen Builder", 9, NAVY_DK, "middle", "bold"))
+        s.append(text(bx+bw/2, byy+34, name, 10, TEXT, "middle", "bold"))
+        builder_pts.append((bx+bw, byy+bh/2))
+    s.append(text(ax+aw/2, by0+3*(bh+8)+4, "builds: automations · apps · agents · SaaS replacements", 8.5, TEXT_LT, "middle"))
+    s.append(box(ax+14, ay+ah-40, aw-28, 30, GRN_FILL, GRN, 1.2, 5))
+    s.append(text(ax+aw/2, ay+ah-20, "Build with Claude (primary) · Copilot · paved-road templates", 9.5, GRN_TXT, "middle", "bold"))
+
+    # ---- Node B: single sanctioned commit ----
+    nx, ny, nw, nh = 364, 250, 152, 116
+    s.append(box(nx, ny, nw, nh, ORANGE, ACCENT, 2.5, 8))
+    s.append(text(nx+nw/2, ny+24, "SINGLE", 12, ACCENT, "middle", "bold"))
+    s.append(text(nx+nw/2, ny+41, "SANCTIONED COMMIT", 10.5, ACCENT, "middle", "bold"))
+    s.append(text(nx+nw/2, ny+68, "Azure Repos", 11, TEXT, "middle", "bold"))
+    s.append(text(nx+nw/2, ny+86, "all AI code lands here", 9, TEXT_LT, "middle"))
+    cbx, cby = nx, ny+nh/2
+    for (px, py) in builder_pts:
+        s.append(f'<path d="M {px} {py} C {px+40} {py}, {cbx-46} {cby}, {cbx-2} {cby}" fill="none" stroke="{GRAY_DK}" stroke-width="1.3" marker-end="url(#arr)"/>')
+
+    # ---- Zone C: ai-protect pipeline (Stage 0 -> Stage 7) ----
+    px_, py_, pw_, ph_ = 548, 234, 468, 150
+    s.append(box(px_, py_, pw_, ph_, "#243B55", GRN, 2.5, 8))
+    s.append(text(px_+pw_/2, py_+24, "ai-protect PIPELINE", 13, WHITE, "middle", "bold"))
+    s.append(text(px_+pw_/2, py_+41, "scan → fix → verify → gate  (tier-aware: auto or human approval)", 9.5, BLUE, "middle"))
+    n = 8; rr = 14; spacing = (pw_-60)/(n-1); s0x = px_+30; cy = py_+92
+    for st in range(n):
+        cx = s0x + st*spacing
+        if st < n-1:
+            s.append(f'<line x1="{cx+rr}" y1="{cy}" x2="{cx+spacing-rr}" y2="{cy}" stroke="{BLUE}" stroke-width="2" marker-end="url(#arr)"/>')
+        s.append(f'<circle cx="{cx}" cy="{cy}" r="{rr}" fill="{GRN_FILL}" stroke="{GRN}" stroke-width="2"/>')
+        s.append(text(cx, cy+4, str(st), 12, GRN_TXT, "middle", "bold"))
+    s.append(text(s0x, cy+32, "Stage 0 kicks off", 9, BLUE, "middle", "bold"))
+    s.append(text(s0x+(n-1)*spacing, cy+32, "Stage 7 completes", 9, BLUE, "middle", "bold"))
+    s.append(f'<line x1="{nx+nw}" y1="{cby}" x2="{px_-2}" y2="{cy}" stroke="{ACCENT}" stroke-width="2.5" marker-end="url(#arrA)"/>')
+    s.append(text((nx+nw+px_)/2, py_-12, "commit", 9, ACCENT, "middle", "bold"))
+    s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 9, ACCENT, "middle", "bold"))
+
+    # ---- Zone D: ai-production network zone ----
+    dx, dyy, dw, dh = 1082, 248, 176, 124
+    s.append(box(dx, dyy, dw, dh, PROD_FILL, PROD, 3, 10))
+    s.append(text(dx+dw/2, dyy+27, "AI-PRODUCTION", 14, PROD, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+45, "sanctioned network zone", 9.5, TEXT, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+76, "only gate-passed", 9, TEXT_LT, "middle"))
+    s.append(text(dx+dw/2, dyy+90, "builds land here", 9, TEXT_LT, "middle"))
+    s.append(f'<line x1="{px_+pw_}" y1="{cy}" x2="{dx-2}" y2="{dyy+dh/2}" stroke="{GRN}" stroke-width="2.5" marker-end="url(#arrGr)"/>')
+    s.append(text((px_+pw_+dx)/2, py_-12, "launch /", 9, GRN_TXT, "middle", "bold"))
+    s.append(text((px_+pw_+dx)/2, py_-1, "deploy", 9, GRN_TXT, "middle", "bold"))
+
+    s.append("</svg>")
+    return "\n".join(s)
+
+
+# ============================================================
 # Build all
 # ============================================================
 diagrams = {
     "01_pipeline_overview.svg": diagram_1(),
+    "ai_organizational_transformation.svg": diagram_ai_transformation(),
     "health-01_pipeline_overview_presentation.svg": diagram_health_presentation(),
     # Health-environment variant: same overview with the provided enterprise
     # tooling (Defender, Sentinel, Google TI / OpenCTI / MS Defender TI, Armis,
