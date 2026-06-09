@@ -1163,16 +1163,21 @@ def diagram_health_presentation():
             s.append(text(x+ew/2, ey+74+k*13, ln, 9, TEXT, "middle"))
 
     dy = 710; dh = 80
-    cards = [("Technical Dashboard", "Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap"),
-             ("Executive Dashboard", "Superset/Power BI — risk heatmap, portfolio KPIs, compliance"),
-             ("Compliance Evidence", "HIPAA / HITRUST control mapping, audit query")]
+    # dark-blue cards (same scheme as the bands); Power BI is existing -> orange pill.
+    cards = [("Technical Dashboard", "Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap", None),
+             ("Executive Dashboard", "risk heatmap, portfolio KPIs, compliance", "Power BI"),
+             ("Compliance Evidence", "HIPAA / HITRUST control mapping, audit query", None)]
     cw = (W-80-2*15)/3; cx0 = 40
-    for i, (a, b) in enumerate(cards):
+    for i, (a, b, existing) in enumerate(cards):
         x = cx0 + i*(cw+15)
-        chl = a in ("Technical Dashboard", "Executive Dashboard")
-        s.append(box(x, dy, cw, dh, ORANGE if chl else BLUE, ACCENT if chl else BLUE_DK, 2.5 if chl else 1.5, 6))
-        s.append(text(x+cw/2, dy+24, a, 13, ACCENT if chl else NAVY_DK, "middle", "bold"))
-        s.append(text(x+cw/2, dy+50, b, 11, TEXT, "middle"))
+        s.append(box(x, dy, cw, dh, NAVY, NAVY_DK, 1.5, 6))
+        s.append(text(x+cw/2, dy+22, a, 13, WHITE, "middle", "bold"))
+        if existing:
+            s.append(box(x+cw/2-34, dy+33, 68, 16, ORANGE, ACCENT, 1.5, 3))
+            s.append(text(x+cw/2, dy+44, existing, 9, ACCENT, "middle", "bold"))
+            s.append(text(x+cw/2, dy+63, b, 10, BLUE, "middle"))
+        else:
+            s.append(text(x+cw/2, dy+48, b, 10, BLUE, "middle"))
 
     # ---- connectors ----
     for i in range(len(stages)):
