@@ -1005,8 +1005,8 @@ def diagram_health_presentation():
               "PromptFoo", "Auto-PR (AzDO/GH)", "Llama Guard", "NeMo Guard",
               "Telemetry", "Drift det.", "Re-scan cron", "Report card"}   # new — green
 
-    def _grp(it):    # orange (existing) at TOP -> plain -> green (new) at BOTTOM
-        return 0 if it in HL else (2 if it in HL_NEW else 1)
+    def _grp(it):    # orange (existing) at TOP -> green (new) -> plain at BOTTOM (e.g. CMDB tag)
+        return 0 if it in HL else (1 if it in HL_NEW else 2)
 
     # ---- title + legends ----
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
@@ -1036,7 +1036,9 @@ def diagram_health_presentation():
               ("Stage 2", "Static /", "Pre-Prod"), ("Stage 3", "Dynamic", "AppSec"),
               ("Stage 4", "AI", "Red Team"), ("Stage 5", "Remed-", "iation"),
               ("Stage 6", "Continuous", "Monitoring"), ("Stage 7", "Reporting &", "Notification")]
-    auto_by_stage = ["auto", "auto", "auto", "auto", "optional", "mandatory", "auto", "auto"]
+    # Stage 5 is tier-gated: human required (Tier 1-2) OR optional/auto (Tier 3-4) → show both.
+    auto_by_stage = ["auto", "auto", "auto", "auto", "optional",
+                     ["mandatory", "optional"], "auto", "auto"]
     new_stages = {1, 4, 6}
     sw = 130; sh = 96; sx0 = 40; sy = 80 + DY; gap = 12
     for i, (lab, l1, l2) in enumerate(stages):
@@ -1048,9 +1050,19 @@ def diagram_health_presentation():
         if i in new_stages:                                  # NEW badge (top-left)
             s.append(box(x+4, sy+4, 32, 14, GRN, GRN, 1, 3))
             s.append(text(x+20, sy+14, "NEW", 9, WHITE, "middle", "bold"))
-        bd, fl, plab = LV[auto_by_stage[i]]                  # human-in-the-loop pill (bottom)
-        s.append(box(x+7, sy+74, sw-14, 15, fl, bd, 1.4, 3))
-        s.append(text(x+sw/2, sy+85, plab, 7.5, bd, "middle", "bold"))
+        levels = auto_by_stage[i]                            # human-in-the-loop pill(s) (bottom)
+        if isinstance(levels, str):
+            levels = [levels]
+        SHORT = {"AUTOMATED": "AUTOMATED", "HUMAN OPTIONAL": "OPTIONAL", "HUMAN REQUIRED": "REQUIRED"}
+        pwid = (sw-14)/len(levels)
+        for pi, lvl in enumerate(levels):
+            bd, fl, plab = LV[lvl]
+            px = x+7 + pi*pwid
+            split = len(levels) > 1
+            s.append(box(px, sy+74, pwid-(2 if split else 0), 15, fl, bd, 1.4, 3))
+            lab = SHORT[plab] if split else plab
+            s.append(text(px+(pwid-(2 if split else 0))/2, sy+85, lab,
+                          7 if split else 7.5, bd, "middle", "bold"))
         if i < len(stages)-1:
             s.append(f'<line x1="{x+sw+1}" y1="{sy+sh/2}" x2="{x+sw+gap-1}" y2="{sy+sh/2}" '
                      f'stroke="{NAVY}" stroke-width="2" marker-end="url(#arr)"/>')
@@ -1092,23 +1104,26 @@ def diagram_health_presentation():
     # ---- orchestration / infra / enterprise band / dashboards (shifted by DY) ----
     oy = 430 + DY; oh = 70
     s.append(box(40, oy, W-80, oh, ORANGE, ORANGE_DK, 1.5, 8))
-    s.append(text(60, oy+25, "ORCHESTRATION & DATA PLANE", 12, NAVY_DK, "start", "bold"))
-    s.append(text(60, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT))
+    s.append(text(W/2, oy+25, "ORCHESTRATION & DATA PLANE", 12, NAVY_DK, "middle", "bold"))
+    s.append(text(W/2, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT, "middle"))
 
     iy = 530 + DY; ih = 90
     s.append(box(40, iy, W-80, ih, NAVY, NAVY_DK, 1.5, 8))
-    s.append(text(60, iy+24, "SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)", 13, WHITE, "start", "bold"))
-    parts = [("LLM Gateway", "Claude primary"), ("MCP Farm", "curated registry"), ("Agent Runtime", "SPIFFE ID, scoped"), ("Data Plane", "FHIR / vector / RAG"), ("Telemetry Mesh", "prompts • tools • completions")]
+    s.append(text(W/2, iy+24, "SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)", 13, WHITE, "middle", "bold"))
+    parts = [("LLM Gateway", ["Claude primary", "+ secondary LLM"]), ("MCP Farm", ["curated registry"]),
+             ("Agent Runtime", ["SPIFFE ID, scoped"]), ("Data Plane", ["FHIR / vector / RAG"]),
+             ("Telemetry Mesh", ["prompts • tools • completions"])]
     pw = (W-120)/len(parts); px0 = 60
-    for i, (a, b) in enumerate(parts):
+    for i, (a, subs) in enumerate(parts):
         x = px0 + i*pw
         s.append(box(x+5, iy+38, pw-10, 42, "#2C547F", "#456A92", 1, 5))
-        s.append(text(x+pw/2, iy+57, a, 12, WHITE, "middle", "bold"))
-        s.append(text(x+pw/2, iy+72, b, 10, BLUE, "middle"))
+        s.append(text(x+pw/2, iy+55, a, 12, WHITE, "middle", "bold"))
+        for k, sub in enumerate(subs[:2]):
+            s.append(text(x+pw/2, iy+68+k*11, sub, 10, BLUE, "middle"))
 
     ey = 635 + DY; eh = 110
     s.append(box(40, ey, W-80, eh, "#243B55", ACCENT, 2.5, 8))
-    s.append(text(60, ey+24, "ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)   ★ provided environment tooling", 13, WHITE, "start", "bold"))
+    s.append(text(W/2, ey+24, "ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)   ★ provided environment tooling", 13, WHITE, "middle", "bold"))
     env = [("Endpoint / XDR", "Microsoft Defender"), ("SIEM / SOAR", "Microsoft Sentinel"),
            ("Threat Intel", "Google TI · OpenCTI · MS Defender TI"), ("Email Security", "Abnormal"),
            ("Network / Cloud", "Palo Alto NGFW / Prisma"), ("AI Surfaces", "Claude · Copilot"),
