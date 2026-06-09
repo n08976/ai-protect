@@ -984,10 +984,187 @@ def diagram_8():
 
 
 # ============================================================
+# DIAGRAM: health-01 presentation variant (high-level deck)
+# ============================================================
+def diagram_health_presentation():
+    DY = 18
+    W, H = 1200, 880 + DY
+    s = [hdr(W, H), arrow_def()]
+    GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
+    # human-in-the-loop levels: (border, fill, label)
+    LV = {
+        "auto":      ("#1E8E4E", "#D8F0DF", "AUTOMATED"),
+        "optional":  ("#C77D11", "#FBEBD2", "HUMAN OPTIONAL"),
+        "mandatory": ("#B0392B", "#F6DAD5", "HUMAN REQUIRED"),
+    }
+    HL = {"GitHub scan", "Azure Repos scan", "Armis (assets)", "Mend.io (SAST/SCA)",
+          "Burp Suite", "Rapid7 InsightVM", "WAF (Palo Alto)", "Teams",
+          "Azure Boards", "Jira", "Mend", "Burp"}            # existing — orange
+    HL_NEW = {"OPA policy", "Tier scoring", "Semgrep", "CodeQL", "Trivy", "ModelScan",
+              "TruffleHog", "Nuclei", "ZAP", "Schemathesis", "garak", "PyRIT", "ART",
+              "PromptFoo", "Auto-PR (AzDO/GH)", "Llama Guard", "NeMo Guard",
+              "Telemetry", "Drift det.", "Re-scan cron", "Report card"}   # new — green
+
+    def _grp(it):    # orange (existing) at TOP -> plain -> green (new) at BOTTOM
+        return 0 if it in HL else (2 if it in HL_NEW else 1)
+
+    # ---- title + legends ----
+    s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
+    s.append(text(W/2, 27, "AI Security Assurance Pipeline — Tooling, Automation & New Stages",
+                  17, WHITE, "middle", "bold"))
+    # row 1: tooling key + NEW-stage badge meaning
+    s.append(text(40, 62, "KEY:", 11, TEXT, "start", "bold"))
+    s.append(box(80, 52, 14, 13, ORANGE, ACCENT, 1.4, 2))
+    s.append(text(100, 62, "Existing systems for integration", 11, TEXT, "start"))
+    s.append(box(360, 52, 14, 13, GRN_FILL, GRN, 1.4, 2))
+    s.append(text(380, 62, "New tools introduced with ai-protect", 11, TEXT, "start"))
+    s.append(box(W-210, 51, 30, 15, GRN, GRN, 1, 3))
+    s.append(text(W-195, 62, "NEW", 9, WHITE, "middle", "bold"))
+    s.append(text(W-174, 62, "= new pipeline stage", 11, TEXT, "start"))
+    # row 2: human-in-the-loop legend
+    s.append(text(40, 84, "HUMAN-IN-THE-LOOP:", 11, TEXT, "start", "bold"))
+    lx = 188
+    for lvl, lab in (("auto", "Fully automated"), ("optional", "Human optional"),
+                     ("mandatory", "Human required")):
+        bd, fl, _ = LV[lvl]
+        s.append(box(lx, 74, 16, 13, fl, bd, 1.6, 3))
+        s.append(text(lx + 22, 84, lab, 11, TEXT, "start"))
+        lx += 30 + len(lab) * 6.3
+
+    # ---- stages (with NEW badge + human-in-the-loop pill) ----
+    stages = [("Stage 0", "Discovery &", "Intake"), ("Stage 1", "Triage &", "Tiering"),
+              ("Stage 2", "Static /", "Pre-Prod"), ("Stage 3", "Dynamic", "AppSec"),
+              ("Stage 4", "AI", "Red Team"), ("Stage 5", "Remed-", "iation"),
+              ("Stage 6", "Continuous", "Monitoring"), ("Stage 7", "Reporting &", "Notification")]
+    auto_by_stage = ["auto", "auto", "auto", "auto", "optional", "mandatory", "auto", "auto"]
+    new_stages = {1, 4, 6}
+    sw = 130; sh = 96; sx0 = 40; sy = 80 + DY; gap = 12
+    for i, (lab, l1, l2) in enumerate(stages):
+        x = sx0 + i*(sw+gap)
+        s.append(box(x, sy, sw, sh, BLUE, NAVY, 1.5, 6))
+        s.append(text(x+sw/2, sy+20, lab, 11, NAVY_DK, "middle", "bold"))
+        s.append(text(x+sw/2, sy+41, l1, 13, TEXT, "middle", "bold"))
+        s.append(text(x+sw/2, sy+57, l2, 13, TEXT, "middle", "bold"))
+        if i in new_stages:                                  # NEW badge (top-left)
+            s.append(box(x+4, sy+4, 32, 14, GRN, GRN, 1, 3))
+            s.append(text(x+20, sy+14, "NEW", 9, WHITE, "middle", "bold"))
+        bd, fl, plab = LV[auto_by_stage[i]]                  # human-in-the-loop pill (bottom)
+        s.append(box(x+7, sy+74, sw-14, 15, fl, bd, 1.4, 3))
+        s.append(text(x+sw/2, sy+85, plab, 7.5, bd, "middle", "bold"))
+        if i < len(stages)-1:
+            s.append(f'<line x1="{x+sw+1}" y1="{sy+sh/2}" x2="{x+sw+gap-1}" y2="{sy+sh/2}" '
+                     f'stroke="{NAVY}" stroke-width="2" marker-end="url(#arr)"/>')
+
+    # ---- tool layer (orange top / green bottom) ----
+    tools = [
+        ["ServiceNow", "Azure Repos scan", "GitHub scan", "Armis (assets)"],            # 0 (no CASB)
+        ["OPA policy", "CMDB tag", "Tier scoring"],                                      # 1
+        ["Semgrep", "CodeQL", "Trivy", "ModelScan", "TruffleHog", "Mend.io (SAST/SCA)"], # 2
+        ["Burp Suite", "Nuclei", "ZAP", "Schemathesis", "Rapid7 InsightVM"],            # 3
+        ["garak", "PyRIT", "ART", "PromptFoo"],                                          # 4
+        ["Auto-PR (AzDO/GH)", "WAF (Palo Alto)", "Llama Guard", "NeMo Guard"],           # 5
+        ["Telemetry", "Drift det.", "Re-scan cron", "Mend", "Burp"],                     # 6 (+Mend,Burp)
+        ["Teams", "Azure Boards", "Jira", "Report card"],                                # 7 (no Slack; split)
+    ]
+    ty0 = 195 + DY; tslot = 22; ggap = 7
+    box_bottoms = []
+    for i, items in enumerate(tools):
+        x = sx0 + i*(sw+gap)
+        items = sorted(items, key=_grp)
+        ntrans = sum(1 for k in range(1, len(items)) if _grp(items[k]) != _grp(items[k-1]))
+        bh = len(items)*tslot + 14 + ntrans*ggap
+        box_bottoms.append(ty0 + bh)
+        s.append(box(x, ty0, sw, bh, WHITE, GRAY_DK, 1, 4))
+        yoff = 0; prev = None
+        for j, it in enumerate(items):
+            if prev is not None and _grp(it) != prev:
+                yoff += ggap
+            prev = _grp(it)
+            yy = ty0 + 18 + j*tslot + yoff
+            if it in HL:
+                s.append(box(x+5, yy-13, sw-10, 18, ORANGE, ACCENT, 1, 3)); tc, tw = ACCENT, "bold"
+            elif it in HL_NEW:
+                s.append(box(x+5, yy-13, sw-10, 18, GRN_FILL, GRN, 1, 3)); tc, tw = GRN_TXT, "bold"
+            else:
+                tc, tw = TEXT, "normal"
+            s.append(text(x+sw/2, yy, it, 11, tc, "middle", tw))
+
+    # ---- orchestration / infra / enterprise band / dashboards (shifted by DY) ----
+    oy = 430 + DY; oh = 70
+    s.append(box(40, oy, W-80, oh, ORANGE, ORANGE_DK, 1.5, 8))
+    s.append(text(60, oy+25, "ORCHESTRATION & DATA PLANE", 12, NAVY_DK, "start", "bold"))
+    s.append(text(60, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT))
+
+    iy = 530 + DY; ih = 90
+    s.append(box(40, iy, W-80, ih, NAVY, NAVY_DK, 1.5, 8))
+    s.append(text(60, iy+24, "SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)", 13, WHITE, "start", "bold"))
+    parts = [("LLM Gateway", "Claude primary"), ("MCP Farm", "curated registry"), ("Agent Runtime", "SPIFFE ID, scoped"), ("Data Plane", "FHIR / vector / RAG"), ("Telemetry Mesh", "prompts • tools • completions")]
+    pw = (W-120)/len(parts); px0 = 60
+    for i, (a, b) in enumerate(parts):
+        x = px0 + i*pw
+        s.append(box(x+5, iy+38, pw-10, 42, "#2C547F", "#456A92", 1, 5))
+        s.append(text(x+pw/2, iy+57, a, 12, WHITE, "middle", "bold"))
+        s.append(text(x+pw/2, iy+72, b, 10, BLUE, "middle"))
+
+    ey = 635 + DY; eh = 110
+    s.append(box(40, ey, W-80, eh, "#243B55", ACCENT, 2.5, 8))
+    s.append(text(60, ey+24, "ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)   ★ provided environment tooling", 13, WHITE, "start", "bold"))
+    env = [("Endpoint / XDR", "Microsoft Defender"), ("SIEM / SOAR", "Microsoft Sentinel"),
+           ("Threat Intel", "Google TI · OpenCTI · MS Defender TI"), ("Email Security", "Abnormal"),
+           ("Network / Cloud", "Palo Alto NGFW / Prisma"), ("AI Surfaces", "Claude · Copilot"),
+           ("Collaboration", "Microsoft Teams")]
+    ew = (W-120)/len(env); ex0 = 60
+    for i, (a, b) in enumerate(env):
+        x = ex0 + i*ew
+        s.append(box(x+5, ey+38, ew-10, 60, ORANGE, ACCENT, 2, 5))
+        s.append(text(x+ew/2, ey+57, a, 11, ACCENT, "middle", "bold"))
+        words = b.split(" "); lines = []; cur = ""
+        for w in words:
+            if len(cur)+len(w)+1 > 20:
+                lines.append(cur); cur = w
+            else:
+                cur = (cur+" "+w).strip()
+        if cur:
+            lines.append(cur)
+        for k, ln in enumerate(lines[:2]):
+            s.append(text(x+ew/2, ey+74+k*13, ln, 9, TEXT, "middle"))
+
+    dy = 765 + DY; dh = 80
+    cards = [("Technical Dashboard", "Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap"),
+             ("Executive Dashboard", "Superset/Power BI — risk heatmap, portfolio KPIs, compliance"),
+             ("Compliance Evidence", "HIPAA / HITRUST control mapping, audit query")]
+    cw = (W-80-2*15)/3; cx0 = 40
+    for i, (a, b) in enumerate(cards):
+        x = cx0 + i*(cw+15)
+        chl = a in ("Technical Dashboard", "Executive Dashboard")
+        s.append(box(x, dy, cw, dh, ORANGE if chl else BLUE, ACCENT if chl else BLUE_DK, 2.5 if chl else 1.5, 6))
+        s.append(text(x+cw/2, dy+24, a, 13, ACCENT if chl else NAVY_DK, "middle", "bold"))
+        s.append(text(x+cw/2, dy+50, b, 11, TEXT, "middle"))
+
+    # ---- connectors ----
+    for i in range(len(stages)):
+        x = sx0 + i*(sw+gap) + sw/2
+        s.append(f'<line x1="{x}" y1="{box_bottoms[i]}" x2="{x}" y2="{oy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+    for i in range(len(parts)):
+        x = px0 + i*pw + pw/2
+        s.append(f'<line x1="{x}" y1="{oy+oh}" x2="{x}" y2="{iy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+    for i in range(len(env)):
+        x = ex0 + i*ew + ew/2
+        s.append(f'<line x1="{x}" y1="{iy+ih}" x2="{x}" y2="{ey}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+    for i in range(3):
+        x = cx0 + i*(cw+15) + cw/2
+        s.append(f'<line x1="{x}" y1="{ey+eh}" x2="{x}" y2="{dy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
+
+    s.append("</svg>")
+    return "\n".join(s)
+
+
+# ============================================================
 # Build all
 # ============================================================
 diagrams = {
     "01_pipeline_overview.svg": diagram_1(),
+    "health-01_pipeline_overview_presentation.svg": diagram_health_presentation(),
     # Health-environment variant: same overview with the provided enterprise
     # tooling (Defender, Sentinel, Google TI / OpenCTI / MS Defender TI, Armis,
     # Rapid7, Palo Alto, Mend.io, Abnormal, Copilot, Teams, GitHub) highlighted.
