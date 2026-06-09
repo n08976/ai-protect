@@ -1033,8 +1033,8 @@ def diagram_health_presentation():
 
     # ---- stages (with NEW badge + human-in-the-loop pill) ----
     stages = [("Stage 0", "Discovery &", "Intake"), ("Stage 1", "Triage &", "Tiering"),
-              ("Stage 2", "Static /", "Pre-Prod"), ("Stage 3", "Dynamic", "AppSec"),
-              ("Stage 4", "AI", "Red Team"), ("Stage 5", "Remed-", "iation"),
+              ("Stage 2", "Pre-Prod", ""), ("Stage 3", "Dynamic", "AppSec"),
+              ("Stage 4", "AI", "Red Team"), ("Stage 5", "Remediation", ""),
               ("Stage 6", "Continuous", "Monitoring"), ("Stage 7", "Reporting &", "Notification")]
     # Stage 5 is tier-gated: human required (Tier 1-2) OR optional/auto (Tier 3-4) → show both.
     auto_by_stage = ["auto", "auto", "auto", "auto", "optional",
@@ -1045,8 +1045,11 @@ def diagram_health_presentation():
         x = sx0 + i*(sw+gap)
         s.append(box(x, sy, sw, sh, BLUE, NAVY, 1.5, 6))
         s.append(text(x+sw/2, sy+20, lab, 11, NAVY_DK, "middle", "bold"))
-        s.append(text(x+sw/2, sy+41, l1, 13, TEXT, "middle", "bold"))
-        s.append(text(x+sw/2, sy+57, l2, 13, TEXT, "middle", "bold"))
+        if l2:
+            s.append(text(x+sw/2, sy+41, l1, 13, TEXT, "middle", "bold"))
+            s.append(text(x+sw/2, sy+57, l2, 13, TEXT, "middle", "bold"))
+        else:                                    # single-word stage — center it on one line
+            s.append(text(x+sw/2, sy+50, l1, 13, TEXT, "middle", "bold"))
         if i in new_stages:                                  # NEW badge (top-left)
             s.append(box(x+4, sy+4, 32, 14, GRN, GRN, 1, 3))
             s.append(text(x+20, sy+14, "NEW", 9, WHITE, "middle", "bold"))
