@@ -1210,7 +1210,7 @@ def diagram_ai_transformation():
              '</defs>')
     s.append(box(0, 0, W, 52, NAVY, NAVY, 0, 0))
     s.append(text(W/2, 22, "AI Organizational Transformation — Empowered Building → Governed AI-Production", 18, WHITE, "middle", "bold"))
-    s.append(text(W/2, 42, "Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.", 11, BLUE, "middle"))
+    s.append(text(W/2, 43, "Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.", 13.5, WHITE, "middle", "bold"))
 
     # ---- Zone A: controlled build environment ----
     ax, ay, aw, ah = 22, 84, 304, 330
