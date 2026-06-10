@@ -990,6 +990,8 @@ def diagram_health_presentation():
     DY = 18
     W, H = 1200, 808
     s = [hdr(W, H), arrow_def()]
+    FB = "#7A3FB5"  # continuous-feedback loop colour
+    s.append(f'<defs><marker id="arrFb2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="{FB}"/></marker></defs>')
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     # human-in-the-loop levels: (border, fill, label)
     LV = {
@@ -1069,6 +1071,14 @@ def diagram_health_presentation():
         if i < len(stages)-1:
             s.append(f'<line x1="{x+sw+1}" y1="{sy+sh/2}" x2="{x+sw+gap-1}" y2="{sy+sh/2}" '
                      f'stroke="{NAVY}" stroke-width="2" marker-end="url(#arr)"/>')
+
+    # ---- continuous production-assurance feedback loop (over the stage row) ----
+    # AI red-team / SAST / DAST keep running against ai-production and reopen the 7 stages.
+    sx0_ = sx0; x0c = sx0 + sw/2; x7c = sx0 + 7*(sw+gap) + sw/2; fly = sy - 14
+    s.append(f'<path d="M {x7c} {sy-1} L {x7c} {fly} L {x0c} {fly} L {x0c} {sy-1}" '
+             f'fill="none" stroke="{FB}" stroke-width="2.3" stroke-dasharray="7 4" marker-end="url(#arrFb2)"/>')
+    s.append(text(W/2, fly-6, "CONTINUOUS PRODUCTION ASSURANCE — AI red-team · SAST · DAST re-test ai-production and reopen Stage 0–7",
+                  10.5, FB, "middle", "bold"))
 
     # ---- tool layer (orange top / green bottom) ----
     tools = [
@@ -1201,12 +1211,14 @@ def diagram_health_presentation():
 # DIAGRAM: AI organizational transformation (presentation)
 # ============================================================
 def diagram_ai_transformation():
-    W, H = 1280, 542
+    W, H = 1280, 568
     s = [hdr(W, H), arrow_def()]
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     PROD = "#13643A"; PROD_FILL = "#DCF0E4"
+    FB = "#7A3FB5"  # continuous-feedback loop colour
     s.append('<defs>'
              '<marker id="arrGr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1E8E4E"/></marker>'
+             f'<marker id="arrFb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="{FB}"/></marker>'
              '</defs>')
     s.append(box(0, 0, W, 52, NAVY, NAVY, 0, 0))
     s.append(text(W/2, 22, "AI Organizational Transformation — Empowered Building → Governed AI-Production", 18, WHITE, "middle", "bold"))
@@ -1262,20 +1274,32 @@ def diagram_ai_transformation():
     s.append(text((nx+nw+px_)/2, py_-14, "commit", 11.5, ACCENT, "middle", "bold"))
     s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 11.5, ACCENT, "middle", "bold"))
 
-    # ---- Zone D: ai-production network zone ----
-    dx, dyy, dw, dh = 1082, 248, 176, 124
+    # ---- Zone D: ai-production environment + continuous assurance ----
+    dx, dyy, dw, dh = 1082, 240, 176, 158
     s.append(box(dx, dyy, dw, dh, PROD_FILL, PROD, 3, 10))
-    s.append(text(dx+dw/2, dyy+28, "AI-PRODUCTION", 16, PROD, "middle", "bold"))
-    s.append(text(dx+dw/2, dyy+47, "ENVIRONMENT", 13, PROD, "middle", "bold"))
-    s.append(text(dx+dw/2, dyy+71, "sanctioned network zone", 11, TEXT, "middle", "bold"))
-    s.append(text(dx+dw/2, dyy+92, "only gate-passed", 10.5, TEXT, "middle", "bold"))
-    s.append(text(dx+dw/2, dyy+107, "builds land here", 10.5, TEXT, "middle", "bold"))
-    s.append(f'<line x1="{px_+pw_}" y1="{cy}" x2="{dx-2}" y2="{dyy+dh/2}" stroke="{GRN}" stroke-width="2.5" marker-end="url(#arrGr)"/>')
+    s.append(text(dx+dw/2, dyy+24, "AI-PRODUCTION", 15, PROD, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+41, "ENVIRONMENT", 12, PROD, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+58, "sanctioned network zone", 10, TEXT, "middle", "bold"))
+    cax, cay, caw, cah = dx+10, dyy+68, dw-20, 82
+    s.append(box(cax, cay, caw, cah, GRN_FILL, GRN, 1.4, 6))
+    s.append(text(cax+caw/2, cay+17, "● CONTINUOUS ASSURANCE", 9.5, GRN_TXT, "middle", "bold"))
+    s.append(text(cax+caw/2, cay+35, "AI red-team", 10.5, TEXT, "middle", "bold"))
+    s.append(text(cax+caw/2, cay+51, "SAST · DAST", 10.5, TEXT, "middle", "bold"))
+    s.append(text(cax+caw/2, cay+69, "always-on, in production", 8.5, TEXT_LT, "middle", "bold"))
+    s.append(f'<line x1="{px_+pw_}" y1="{cy}" x2="{dx-2}" y2="{dyy+34}" stroke="{GRN}" stroke-width="2.5" marker-end="url(#arrGr)"/>')
     s.append(text((px_+pw_+dx)/2, py_-14, "launch /", 11.5, GRN_TXT, "middle", "bold"))
     s.append(text((px_+pw_+dx)/2, py_-1, "deploy", 11.5, GRN_TXT, "middle", "bold"))
 
+    # ---- Continuous feedback loop: production findings reopen the 7 stages ----
+    fy = 418                                   # feedback lane (below pipeline / production)
+    pcx = px_+pw_/2
+    s.append(f'<path d="M {dx+dw/2} {dyy+dh} L {dx+dw/2} {fy} L {pcx} {fy} L {pcx} {py_+ph_+2}" '
+             f'fill="none" stroke="{FB}" stroke-width="2.4" stroke-dasharray="7 4" marker-end="url(#arrFb)"/>')
+    s.append(text((pcx+dx+dw/2)/2, fy-7, "continuous findings reopen Stage 0–7   ·   rescan → re-gate → remediate",
+                  10, FB, "middle", "bold"))
+
     # ---- Legend: tier-aware gate ----
-    lx, ly, lw, lh = 22, 430, W-44, 100
+    lx, ly, lw, lh = 22, 448, W-44, 100
     s.append(box(lx, ly, lw, lh, GRAY_LT, NAVY, 1.5, 8))
     s.append(text(lx+14, ly+22, "TIER-AWARE GATE", 12, NAVY_DK, "start", "bold"))
     s.append(text(lx+150, ly+22, "— the same pipeline runs for every build; the tier decides whether it ships automatically or waits for a human.",
