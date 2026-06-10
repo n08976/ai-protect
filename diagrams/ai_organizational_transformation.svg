@@ -10,7 +10,7 @@
 <defs><marker id="arrGr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1E8E4E"/></marker></defs>
 <rect x="0" y="0" width="1280" height="52" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
 <text x="640.0" y="22" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Organizational Transformation — Empowered Building → Governed AI-Production</text>
-<text x="640.0" y="42" font-size="11" fill="#EAF3FA" text-anchor="middle" font-weight="normal">Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.</text>
+<text x="640.0" y="43" font-size="13.5" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.</text>
 <rect x="22" y="84" width="304" height="330" fill="#F2F5F9" stroke="#1F3A5F" stroke-width="1.5" rx="8" ry="8"/>
 <text x="174.0" y="106" font-size="12" fill="#15293F" text-anchor="middle" font-weight="bold">CONTROLLED BUILD ENVIRONMENT</text>
 <text x="174.0" y="122" font-size="11" fill="#555555" text-anchor="middle" font-weight="bold">sanctioned · governed · paved road</text>
