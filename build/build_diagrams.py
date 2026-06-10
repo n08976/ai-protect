@@ -1216,7 +1216,7 @@ def diagram_ai_transformation():
     ax, ay, aw, ah = 22, 84, 304, 330
     s.append(box(ax, ay, aw, ah, "#F2F5F9", NAVY, 1.5, 8))
     s.append(text(ax+aw/2, ay+22, "CONTROLLED BUILD ENVIRONMENT", 12, NAVY_DK, "middle", "bold"))
-    s.append(text(ax+aw/2, ay+38, "sanctioned · governed · paved road", 9.5, TEXT_LT, "middle", "bold"))
+    s.append(text(ax+aw/2, ay+38, "sanctioned · governed · paved road", 11, TEXT_LT, "middle", "bold"))
     builders = ["Clinical ops", "Finance", "Revenue cycle", "Marketing", "Analytics", "Support"]
     bw, bh = 132, 50
     bx0 = ax+14; by0 = ay+52
@@ -1228,7 +1228,7 @@ def diagram_ai_transformation():
         s.append(text(bx+bw/2, byy+19, "Citizen Builder", 9, NAVY_DK, "middle", "bold"))
         s.append(text(bx+bw/2, byy+34, name, 10, TEXT, "middle", "bold"))
         builder_pts.append((bx+bw, byy+bh/2))
-    s.append(text(ax+aw/2, by0+3*(bh+8)+4, "builds: automations · apps · agents · SaaS replacements", 9, TEXT_LT, "middle", "bold"))
+    s.append(text(ax+aw/2, by0+3*(bh+8)+5, "builds: automations · apps · agents · SaaS replacements", 10, TEXT_LT, "middle", "bold"))
     s.append(box(ax+14, ay+ah-40, aw-28, 30, GRN_FILL, GRN, 1.2, 5))
     s.append(text(ax+aw/2, ay+ah-20, "Build with Claude (primary) · Copilot · paved-road templates", 9.5, GRN_TXT, "middle", "bold"))
 
@@ -1238,7 +1238,7 @@ def diagram_ai_transformation():
     s.append(text(nx+nw/2, ny+24, "SINGLE", 12, ACCENT, "middle", "bold"))
     s.append(text(nx+nw/2, ny+41, "SANCTIONED COMMIT", 10.5, ACCENT, "middle", "bold"))
     s.append(text(nx+nw/2, ny+68, "Azure Repos", 11, TEXT, "middle", "bold"))
-    s.append(text(nx+nw/2, ny+86, "all AI code lands here", 9, TEXT_LT, "middle"))
+    s.append(text(nx+nw/2, ny+87, "all AI code lands here", 10.5, TEXT_LT, "middle", "bold"))
     cbx, cby = nx, ny+nh/2
     for (px, py) in builder_pts:
         s.append(f'<path d="M {px} {py} C {px+40} {py}, {cbx-46} {cby}, {cbx-2} {cby}" fill="none" stroke="{GRAY_DK}" stroke-width="1.3" marker-end="url(#arr)"/>')
@@ -1279,7 +1279,7 @@ def diagram_ai_transformation():
     s.append(box(lx, ly, lw, lh, GRAY_LT, NAVY, 1.5, 8))
     s.append(text(lx+14, ly+22, "TIER-AWARE GATE", 12, NAVY_DK, "start", "bold"))
     s.append(text(lx+150, ly+22, "— the same pipeline runs for every build; the tier decides whether it ships automatically or waits for a human.",
-                  9.5, TEXT_LT, "start"))
+                  10.5, TEXT_LT, "start", "bold"))
     tiers = [
         ("#F7DAD2", ACCENT, ACCENT, "TIER 1 · Critical", "regulated · PHI · customer-facing", "→ HUMAN APPROVAL to ship"),
         ("#FFF1DD", ORANGE_DK, "#9A5B12", "TIER 2 · High", "sensitive data or broad reach", "→ HUMAN APPROVAL to ship"),
@@ -1290,9 +1290,9 @@ def diagram_ai_transformation():
     for i, (fill, stroke, txt, head, scope, decision) in enumerate(tiers):
         cx = lx + 14 + i*(cw+12); cyy = ly+32
         s.append(box(cx, cyy, cw, 56, fill, stroke, 1.4, 6))
-        s.append(text(cx+12, cyy+20, head, 11, txt, "start", "bold"))
-        s.append(text(cx+12, cyy+36, scope, 9, TEXT_LT, "start"))
-        s.append(text(cx+12, cyy+51, decision, 9.5, txt, "start", "bold"))
+        s.append(text(cx+12, cyy+20, head, 11.5, txt, "start", "bold"))
+        s.append(text(cx+12, cyy+36, scope, 10.5, TEXT, "start", "bold"))
+        s.append(text(cx+12, cyy+51, decision, 10.5, txt, "start", "bold"))
 
     s.append("</svg>")
     return "\n".join(s)
