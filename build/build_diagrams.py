@@ -1201,7 +1201,7 @@ def diagram_health_presentation():
 # DIAGRAM: AI organizational transformation (presentation)
 # ============================================================
 def diagram_ai_transformation():
-    W, H = 1280, 452
+    W, H = 1280, 542
     s = [hdr(W, H), arrow_def()]
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     PROD = "#13643A"; PROD_FILL = "#DCF0E4"
@@ -1216,7 +1216,7 @@ def diagram_ai_transformation():
     ax, ay, aw, ah = 22, 84, 304, 330
     s.append(box(ax, ay, aw, ah, "#F2F5F9", NAVY, 1.5, 8))
     s.append(text(ax+aw/2, ay+22, "CONTROLLED BUILD ENVIRONMENT", 12, NAVY_DK, "middle", "bold"))
-    s.append(text(ax+aw/2, ay+38, "sanctioned · governed · paved road", 9, TEXT_LT, "middle"))
+    s.append(text(ax+aw/2, ay+38, "sanctioned · governed · paved road", 9.5, TEXT_LT, "middle", "bold"))
     builders = ["Clinical ops", "Finance", "Revenue cycle", "Marketing", "Analytics", "Support"]
     bw, bh = 132, 50
     bx0 = ax+14; by0 = ay+52
@@ -1228,7 +1228,7 @@ def diagram_ai_transformation():
         s.append(text(bx+bw/2, byy+19, "Citizen Builder", 9, NAVY_DK, "middle", "bold"))
         s.append(text(bx+bw/2, byy+34, name, 10, TEXT, "middle", "bold"))
         builder_pts.append((bx+bw, byy+bh/2))
-    s.append(text(ax+aw/2, by0+3*(bh+8)+4, "builds: automations · apps · agents · SaaS replacements", 8.5, TEXT_LT, "middle"))
+    s.append(text(ax+aw/2, by0+3*(bh+8)+4, "builds: automations · apps · agents · SaaS replacements", 9, TEXT_LT, "middle", "bold"))
     s.append(box(ax+14, ay+ah-40, aw-28, 30, GRN_FILL, GRN, 1.2, 5))
     s.append(text(ax+aw/2, ay+ah-20, "Build with Claude (primary) · Copilot · paved-road templates", 9.5, GRN_TXT, "middle", "bold"))
 
@@ -1246,8 +1246,8 @@ def diagram_ai_transformation():
     # ---- Zone C: ai-protect pipeline (Stage 0 -> Stage 7) ----
     px_, py_, pw_, ph_ = 548, 234, 468, 150
     s.append(box(px_, py_, pw_, ph_, "#243B55", GRN, 2.5, 8))
-    s.append(text(px_+pw_/2, py_+24, "ai-protect PIPELINE", 13, WHITE, "middle", "bold"))
-    s.append(text(px_+pw_/2, py_+41, "scan → fix → verify → gate  (tier-aware: auto or human approval)", 9.5, BLUE, "middle"))
+    s.append(text(px_+pw_/2, py_+25, "ai-protect PIPELINE", 16, WHITE, "middle", "bold"))
+    s.append(text(px_+pw_/2, py_+43, "scan → fix → verify → gate  (tier-aware: auto or human approval)", 11.5, BLUE, "middle", "bold"))
     n = 8; rr = 14; spacing = (pw_-60)/(n-1); s0x = px_+30; cy = py_+92
     for st in range(n):
         cx = s0x + st*spacing
@@ -1255,22 +1255,43 @@ def diagram_ai_transformation():
             s.append(f'<line x1="{cx+rr}" y1="{cy}" x2="{cx+spacing-rr}" y2="{cy}" stroke="{BLUE}" stroke-width="2" marker-end="url(#arr)"/>')
         s.append(f'<circle cx="{cx}" cy="{cy}" r="{rr}" fill="{GRN_FILL}" stroke="{GRN}" stroke-width="2"/>')
         s.append(text(cx, cy+4, str(st), 12, GRN_TXT, "middle", "bold"))
-    s.append(text(s0x, cy+32, "Stage 0 kicks off", 9, BLUE, "middle", "bold"))
-    s.append(text(s0x+(n-1)*spacing, cy+32, "Stage 7 completes", 9, BLUE, "middle", "bold"))
+    s.append(text(s0x, cy+32, "Stage 0 kicks off", 10, BLUE, "middle", "bold"))
+    s.append(text(s0x+(n-1)*spacing, cy+32, "Stage 7 completes", 10, BLUE, "middle", "bold"))
     s.append(f'<line x1="{nx+nw}" y1="{cby}" x2="{px_-2}" y2="{cy}" stroke="{ACCENT}" stroke-width="2.5" marker-end="url(#arrA)"/>')
-    s.append(text((nx+nw+px_)/2, py_-12, "commit", 9, ACCENT, "middle", "bold"))
-    s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 9, ACCENT, "middle", "bold"))
+    s.append(text((nx+nw+px_)/2, py_-14, "commit", 11.5, ACCENT, "middle", "bold"))
+    s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 11.5, ACCENT, "middle", "bold"))
 
     # ---- Zone D: ai-production network zone ----
     dx, dyy, dw, dh = 1082, 248, 176, 124
     s.append(box(dx, dyy, dw, dh, PROD_FILL, PROD, 3, 10))
-    s.append(text(dx+dw/2, dyy+27, "AI-PRODUCTION", 14, PROD, "middle", "bold"))
-    s.append(text(dx+dw/2, dyy+45, "sanctioned network zone", 9.5, TEXT, "middle", "bold"))
-    s.append(text(dx+dw/2, dyy+76, "only gate-passed", 9, TEXT_LT, "middle"))
-    s.append(text(dx+dw/2, dyy+90, "builds land here", 9, TEXT_LT, "middle"))
+    s.append(text(dx+dw/2, dyy+28, "AI-PRODUCTION", 16, PROD, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+47, "ENVIRONMENT", 13, PROD, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+71, "sanctioned network zone", 11, TEXT, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+92, "only gate-passed", 10.5, TEXT, "middle", "bold"))
+    s.append(text(dx+dw/2, dyy+107, "builds land here", 10.5, TEXT, "middle", "bold"))
     s.append(f'<line x1="{px_+pw_}" y1="{cy}" x2="{dx-2}" y2="{dyy+dh/2}" stroke="{GRN}" stroke-width="2.5" marker-end="url(#arrGr)"/>')
-    s.append(text((px_+pw_+dx)/2, py_-12, "launch /", 9, GRN_TXT, "middle", "bold"))
-    s.append(text((px_+pw_+dx)/2, py_-1, "deploy", 9, GRN_TXT, "middle", "bold"))
+    s.append(text((px_+pw_+dx)/2, py_-14, "launch /", 11.5, GRN_TXT, "middle", "bold"))
+    s.append(text((px_+pw_+dx)/2, py_-1, "deploy", 11.5, GRN_TXT, "middle", "bold"))
+
+    # ---- Legend: tier-aware gate ----
+    lx, ly, lw, lh = 22, 430, W-44, 100
+    s.append(box(lx, ly, lw, lh, GRAY_LT, NAVY, 1.5, 8))
+    s.append(text(lx+14, ly+22, "TIER-AWARE GATE", 12, NAVY_DK, "start", "bold"))
+    s.append(text(lx+150, ly+22, "— the same pipeline runs for every build; the tier decides whether it ships automatically or waits for a human.",
+                  9.5, TEXT_LT, "start"))
+    tiers = [
+        ("#F7DAD2", ACCENT, ACCENT, "TIER 1 · Critical", "regulated · PHI · customer-facing", "→ HUMAN APPROVAL to ship"),
+        ("#FFF1DD", ORANGE_DK, "#9A5B12", "TIER 2 · High", "sensitive data or broad reach", "→ HUMAN APPROVAL to ship"),
+        ("#EAF3FA", NAVY, NAVY_DK, "TIER 3 · Moderate", "internal · limited blast radius", "→ AUTO-GATE when scan is clean"),
+        (GRN_FILL, GRN, GRN_TXT, "TIER 4 · Low", "prototype · sandbox", "→ AUTO-GATE on pass"),
+    ]
+    cw = (lw - 28 - 3*12) / 4
+    for i, (fill, stroke, txt, head, scope, decision) in enumerate(tiers):
+        cx = lx + 14 + i*(cw+12); cyy = ly+32
+        s.append(box(cx, cyy, cw, 56, fill, stroke, 1.4, 6))
+        s.append(text(cx+12, cyy+20, head, 11, txt, "start", "bold"))
+        s.append(text(cx+12, cyy+36, scope, 9, TEXT_LT, "start"))
+        s.append(text(cx+12, cyy+51, decision, 9.5, txt, "start", "bold"))
 
     s.append("</svg>")
     return "\n".join(s)
