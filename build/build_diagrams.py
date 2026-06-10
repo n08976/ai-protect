@@ -1256,8 +1256,8 @@ def diagram_ai_transformation():
         s.append(f'<circle cx="{cx}" cy="{cy}" r="{rr}" fill="{GRN_FILL}" stroke="{GRN}" stroke-width="2"/>')
         s.append(text(cx, cy+4, str(st), 12, GRN_TXT, "middle", "bold"))
     for cxl, lbl in ((px_+74, "Stage 0 kicks off"), (px_+pw_-74, "Stage 7 completes")):
-        s.append(box(cxl-62, cy+24, 124, 20, BLUE, NAVY, 1, 10))
-        s.append(text(cxl, cy+38, lbl, 10, NAVY_DK, "middle", "bold"))
+        s.append(box(cxl-62, cy+24, 124, 20, GRN_FILL, GRN, 1, 10))
+        s.append(text(cxl, cy+38, lbl, 10, "#000000", "middle", "bold"))
     s.append(f'<line x1="{nx+nw}" y1="{cby}" x2="{px_-2}" y2="{cy}" stroke="{ACCENT}" stroke-width="2.5" marker-end="url(#arrA)"/>')
     s.append(text((nx+nw+px_)/2, py_-14, "commit", 11.5, ACCENT, "middle", "bold"))
     s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 11.5, ACCENT, "middle", "bold"))
