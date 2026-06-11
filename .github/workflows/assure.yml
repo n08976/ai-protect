@@ -56,6 +56,13 @@ on:
         description: "Git ref of n08976/ai-protect to run."
         type: string
         default: main
+    secrets:
+      DEFECTDOJO_URL:
+        description: "Base URL of an open-source DefectDojo instance. Set to enable findings export."
+        required: false
+      DEFECTDOJO_API_TOKEN:
+        description: "DefectDojo API v2 token. Set to enable findings export."
+        required: false
     outputs:
       gate:
         description: "pass | fail — whether the (post-fix) re-scan cleared the gate."
@@ -73,6 +80,11 @@ on:
 jobs:
   assure:
     runs-on: ubuntu-latest
+    # Job-level env so the optional DefectDojo step can gate on `env.* != ''`
+    # (secrets aren't directly referenceable in a step `if:`). Empty when unset.
+    env:
+      DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
+      DEFECTDOJO_API_TOKEN: ${{ secrets.DEFECTDOJO_API_TOKEN }}
     outputs:
       gate: ${{ steps.regate.outputs.gate }}
       tier: ${{ steps.tier.outputs.tier }}
@@ -162,6 +174,17 @@ jobs:
             echo "gate=fail" >> "$GITHUB_OUTPUT"
             echo "::warning::ai-protect gate FAIL — Critical/High findings remain (see artifact / fix PR)"
           fi
+
+      - name: Push findings to DefectDojo
+        # Opt-in: runs only when the caller supplies DefectDojo secrets.
+        # reimport-scan reconciles against the prior test, so remediated
+        # findings auto-close — closing the continuous fix→verify→track loop.
+        if: ${{ always() && env.DEFECTDOJO_URL != '' && env.DEFECTDOJO_API_TOKEN != '' }}
+        run: |
+          python -m pipeline.cli --findings "$AIP_FINDINGS" defectdojo \
+            --product "${{ github.repository }}" \
+            --engagement "ai-protect ${{ inputs.stage }}" \
+            --test-title "ai-protect ${{ inputs.stage }}" || true
 
       - name: Upload findings
         if: always()

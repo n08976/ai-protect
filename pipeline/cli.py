@@ -196,6 +196,46 @@ def cmd_report(args):
         print(out["text"])
 
 
+def cmd_defectdojo(args):
+    from .reporting.defectdojo import (DefectDojoClient, DefectDojoConfig,
+                                       DefectDojoConfigError, DefectDojoError,
+                                       filter_by_severity, to_generic_report)
+
+    store = FindingStore(args.findings)
+    findings = store.by_app(args.app) if args.app else store.all()
+    if args.min_severity != "info":
+        findings = filter_by_severity(findings, args.min_severity)
+    if not findings:
+        print("No findings to export (after severity filter).")
+        return
+
+    if args.dry_run:                      # show exactly what would be POSTed; no network, no creds
+        print(json.dumps(to_generic_report(findings), indent=2))
+        return
+
+    try:
+        cfg = DefectDojoConfig.from_env(url=args.url, token=args.token)
+    except DefectDojoConfigError as e:
+        raise SystemExit(str(e))
+
+    product = args.product or args.app or "ai-protect"
+    engagement = args.engagement or "ai-protect pipeline"
+    try:
+        res = DefectDojoClient(cfg).push(
+            findings, product=product, engagement=engagement,
+            test_title=args.test_title, reimport=not args.no_reimport,
+            minimum_severity=args.min_severity.capitalize())
+    except DefectDojoError as e:
+        raise SystemExit(str(e))
+
+    mode = "import" if args.no_reimport else "reimport"
+    print(f"Pushed {len(findings)} finding(s) to DefectDojo ({mode}) "
+          f"product={product!r} engagement={engagement!r}.")
+    for k in ("test", "test_id", "engagement_id", "product_id"):
+        if isinstance(res, dict) and res.get(k):
+            print(f"  {k}: {res[k]}")
+
+
 def cmd_adapters(args):
     rows = []
     for name, cls in sorted(REGISTRY.items()):
@@ -268,6 +308,29 @@ def main(argv: list[str] | None = None) -> int:
     p_rep.add_argument("--kind", choices=["technical", "executive"], default="technical")
     p_rep.add_argument("--format", choices=["text", "json"], default="text")
     p_rep.set_defaults(func=cmd_report)
+
+    p_dd = sub.add_parser("defectdojo",
+                          help="Export findings to an open-source DefectDojo instance "
+                               "(Generic Findings Import via the import/reimport-scan API)")
+    p_dd.add_argument("--app", default=None,
+                      help="Only export findings for this app (also the default product name)")
+    p_dd.add_argument("--product", default=None,
+                      help="DefectDojo product name (default: --app, else 'ai-protect')")
+    p_dd.add_argument("--engagement", default=None,
+                      help="DefectDojo engagement name (default: 'ai-protect pipeline')")
+    p_dd.add_argument("--test-title", default=None,
+                      help="DefectDojo test title — reimport reconciles within the same title")
+    p_dd.add_argument("--min-severity", choices=["info", "low", "medium", "high", "critical"],
+                      default="info", help="Only export findings at/above this severity")
+    p_dd.add_argument("--no-reimport", action="store_true",
+                      help="Use import-scan (new test each push) instead of reimport-scan "
+                           "(reconciles + auto-closes fixed findings)")
+    p_dd.add_argument("--url", default=None, help="DefectDojo base URL (default: $DEFECTDOJO_URL)")
+    p_dd.add_argument("--token", default=None,
+                      help="DefectDojo API v2 token (default: $DEFECTDOJO_API_TOKEN)")
+    p_dd.add_argument("--dry-run", action="store_true",
+                      help="Print the Generic Findings Import JSON without POSTing (no creds needed)")
+    p_dd.set_defaults(func=cmd_defectdojo)
 
     p_adp = sub.add_parser("adapters", help="List registered adapters")
     p_adp.add_argument("--format", choices=["text", "json"], default="text")

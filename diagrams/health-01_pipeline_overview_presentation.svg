@@ -178,7 +178,7 @@
 <text x="510.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">event bus</text>
 <rect x="605.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
 <text x="690.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">DefectDojo</text>
-<text x="690.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">findings · OCSF</text>
+<text x="690.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">findings · import API</text>
 <rect x="785.0" y="420" width="170.0" height="42" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
 <text x="870.0" y="438" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Vault / Key Vault</text>
 <text x="870.0" y="454" font-size="10.5" fill="#222222" text-anchor="middle" font-weight="bold">secrets</text>

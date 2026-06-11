@@ -1122,7 +1122,7 @@ def diagram_health_presentation():
     # Azure Pipelines is available today (existing) -> orange pill like the workflow items;
     # the rest is new ai-protect orchestration -> navy sub-boxes.
     orch = [("Azure Pipelines", "CI — available today", True), ("Argo / Tekton", "pipeline CI", False),
-            ("Kafka", "event bus", False), ("DefectDojo", "findings · OCSF", False),
+            ("Kafka", "event bus", False), ("DefectDojo", "findings · import API", False),
             ("Vault / Key Vault", "secrets", True), ("OPA", "deploy gates", False)]
     ow = (W-120)/len(orch); ox0 = 60
     for i, (a, b, existing) in enumerate(orch):
