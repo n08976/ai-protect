@@ -318,6 +318,13 @@ SCHEMA: list[Section] = [
                 help_anchor="defectdojo-engagement",
             ),
             Field(
+                key="defectdojo_product_type", label="Default product type",
+                kind="text", default="ai-protect",
+                help="DefectDojo product type, used only to create a product on first push "
+                     "(auto_create_context). Ignored once the product exists.",
+                help_anchor="defectdojo-product-type",
+            ),
+            Field(
                 key="defectdojo_min_severity", label="Minimum severity to export",
                 kind="select", default="info",
                 options=["info", "low", "medium", "high", "critical"],

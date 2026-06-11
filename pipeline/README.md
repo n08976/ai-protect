@@ -320,7 +320,7 @@ python -m pipeline.cli defectdojo --dry-run                     # preview the JS
 python -m pipeline.cli run <manifest> --stage preprod --sink defectdojo   # scan + push
 ```
 
-**DefectDojo** serializes findings to the *Generic Findings Import* format and POSTs to `reimport-scan` (reconciles + auto-closes remediated findings; `import-scan` with `--no-reimport`). Stable `unique_id_from_tool` = the pipeline fingerprint. Config resolves **CLI args → env (`DEFECTDOJO_URL`/`DEFECTDOJO_API_TOKEN`) → `/settings`**; `auto_create_context=true` creates the product/engagement on first push. Per-app product/engagement come from the manifest's `integrations.defectdojo` block (see **Manifest schema**). `assure.yml` pushes automatically when the two DefectDojo secrets are supplied.
+**DefectDojo** serializes findings to the *Generic Findings Import* format and POSTs to `reimport-scan` (reconciles against the prior test by the stable `unique_id_from_tool` = the pipeline fingerprint, so a re-scan updates findings in place instead of duplicating; `import-scan` with `--no-reimport`). We send `close_old_findings` so DefectDojo can mitigate findings no longer reported once remediated (this reconciliation depends on the instance's deduplication/close settings). Config resolves **CLI args → env (`DEFECTDOJO_URL`/`DEFECTDOJO_API_TOKEN`) → `/settings`**; `auto_create_context=true` + `product_type_name` create the product/engagement on first push. Per-app product/engagement come from the manifest's `integrations.defectdojo` block (see **Manifest schema**). `assure.yml` pushes automatically when the two DefectDojo secrets are supplied.
 
 ## Intel feeds (`pipeline/intel/`)
 

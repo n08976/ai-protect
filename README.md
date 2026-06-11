@@ -495,7 +495,7 @@ integrations:
     engagement: "ai-protect preprod"
 ```
 
-Each finding carries a stable `unique_id_from_tool` (the pipeline fingerprint), so repeated `reimport-scan` pushes reconcile against the prior test — remediated findings drop out of the next push and DefectDojo auto-closes them, closing the continuous fix→verify→track loop. `auto_create_context=true` creates the product/engagement on first push. The reusable `assure.yml` CI gate pushes automatically when `DEFECTDOJO_URL` + `DEFECTDOJO_API_TOKEN` secrets are provided.
+Each finding carries a stable `unique_id_from_tool` (the pipeline fingerprint), so repeated `reimport-scan` pushes reconcile against the prior test — a re-scan updates the same findings in place instead of creating duplicates. We also send `close_old_findings` so DefectDojo can mitigate findings no longer reported once they're remediated (this close-reconcile depends on the instance's deduplication settings). `auto_create_context=true` together with `product_type_name` creates the product/engagement on first push. The reusable `assure.yml` CI gate pushes automatically when `DEFECTDOJO_URL` + `DEFECTDOJO_API_TOKEN` secrets are provided.
 
 ### Reviewed but not yet wired
 

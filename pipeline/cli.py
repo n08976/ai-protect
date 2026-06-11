@@ -285,7 +285,8 @@ def cmd_defectdojo(args):
     except DefectDojoConfigError as e:
         raise SystemExit(str(e))
 
-    sink = DefectDojoSink(cfg, reimport=not args.no_reimport, min_severity="info")
+    sink = DefectDojoSink(cfg, reimport=not args.no_reimport, min_severity="info",
+                          product_type=args.product_type or "")
     ctx = SinkContext(
         app_name=app_name or "ai-protect",
         product=args.product or str(mapping.get("product", "")),       # explicit > manifest > app name
@@ -389,6 +390,9 @@ def main(argv: list[str] | None = None) -> int:
                            "(and the app name to filter on). Explicit --product/--engagement win.")
     p_dd.add_argument("--product", default=None,
                       help="DefectDojo product name (default: manifest mapping, then --app/app name)")
+    p_dd.add_argument("--product-type", default=None,
+                      help="DefectDojo product type (used to create the product on first push; "
+                           "default: 'ai-protect' or the defectdojo_product_type setting)")
     p_dd.add_argument("--engagement", default=None,
                       help="DefectDojo engagement name (default: 'ai-protect pipeline')")
     p_dd.add_argument("--test-title", default=None,

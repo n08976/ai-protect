@@ -57,7 +57,7 @@ def finding_to_generic(f: Finding) -> dict:
         "date": _fmt_date(f.detected_at),
         "active": True,
         "verified": False,
-        "unique_id_from_tool": f.fingerprint,   # stable across runs -> dedupe/auto-close
+        "unique_id_from_tool": f.fingerprint,   # stable across runs -> reimport reconcile (no dupes)
         "vuln_id_from_tool": f.fingerprint,
         "service": f.app_name,
         "tags": _tags(f),

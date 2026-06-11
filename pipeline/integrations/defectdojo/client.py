@@ -27,6 +27,7 @@ class DefectDojoClient:
         *,
         product: str,
         engagement: str,
+        product_type: str = "ai-protect",
         test_title: str | None = None,
         reimport: bool = True,
         minimum_severity: str = "Info",
@@ -41,6 +42,9 @@ class DefectDojoClient:
             "scan_type": SCAN_TYPE,
             "product_name": product,
             "engagement_name": engagement,
+            # product_type_name is required for auto_create_context to create a
+            # brand-new product; ignored when the product already exists.
+            "product_type_name": product_type,
             "active": "true",
             "verified": "false",
             "minimum_severity": minimum_severity,

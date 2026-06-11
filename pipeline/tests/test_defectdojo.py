@@ -138,9 +138,18 @@ def test_push_reimport_request_shape():
     assert kw["data"]["product_name"] == "commercial"
     assert kw["data"]["engagement_name"] == "pipeline"
     assert kw["data"]["auto_create_context"] == "true"
+    # product_type_name is required for auto_create_context to create a new product
+    assert kw["data"]["product_type_name"] == "ai-protect"
+    assert kw["data"]["close_old_findings"] == "true"
     doc = json.loads(kw["files"]["file"][1].read().decode())
     assert doc["findings"][0]["severity"] == "High"
     assert res == {"test": 7}
+
+
+def test_push_custom_product_type():
+    client, sess = _client(_FakeResp(201, {"test": 1}))
+    client.push([_finding()], product="p", engagement="e", product_type="Healthcare AI")
+    assert sess.calls[0][1]["data"]["product_type_name"] == "Healthcare AI"
 
 
 def test_push_import_mode_uses_import_endpoint():
