@@ -149,7 +149,7 @@ def diagram_1(highlight=False):
     oy = 430; oh = 70
     s.append(box(40, oy, W-80, oh, ORANGE, ORANGE_DK, 1.5, 8))
     s.append(text(60, oy+25, "ORCHESTRATION & DATA PLANE", 12, NAVY_DK, "start", "bold"))
-    s.append(text(60, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings, OCSF schema)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT))
+    s.append(text(60, oy+50, "Azure Pipelines / Argo / Tekton (CI)  •  Kafka event bus  •  DefectDojo (findings sink — wired)  •  Vault / Key Vault (secrets)  •  OPA (deploy gates)", 12, TEXT))
 
     # Sanctioned infrastructure layer (v2.1)
     iy = 530; ih = 90
@@ -1005,7 +1005,7 @@ def diagram_health_presentation():
     HL_NEW = {"OPA policy", "Tier scoring", "Semgrep", "CodeQL", "Trivy", "ModelScan",
               "TruffleHog", "Nuclei", "ZAP", "Schemathesis", "garak", "PyRIT", "ART",
               "PromptFoo", "Auto-PR (AzDO/GH)", "Llama Guard", "NeMo Guard",
-              "Telemetry", "Drift det.", "Re-scan cron", "Report card"}   # new — green
+              "Telemetry", "Drift det.", "Re-scan cron", "Report card", "DefectDojo"}   # new — green
 
     def _grp(it):    # orange (existing) at TOP -> green (new) -> plain at BOTTOM (e.g. CMDB tag)
         return 0 if it in HL else (1 if it in HL_NEW else 2)
@@ -1090,7 +1090,7 @@ def diagram_health_presentation():
         ["garak", "PyRIT", "ART", "PromptFoo"],                                          # 4
         ["Auto-PR (AzDO/GH)", "WAF (Palo Alto)", "Llama Guard", "NeMo Guard"],           # 5
         ["Telemetry", "Drift det.", "Re-scan cron", "Mend", "Burp"],                     # 6 (+Mend,Burp)
-        ["Teams", "Azure Boards", "Jira", "Report card"],                                # 7 (no Slack; split)
+        ["DefectDojo", "Teams", "Azure Boards", "Jira", "Report card"],                  # 7 (DefectDojo = findings sink)
     ]
     ty0 = 195 + DY; tslot = 22; ggap = 7
     box_bottoms = []
@@ -1297,7 +1297,7 @@ def diagram_ai_transformation():
     pcx = px_+pw_/2
     s.append(f'<path d="M {dx+dw/2} {dyy+dh} L {dx+dw/2} {fy} L {pcx} {fy} L {pcx} {py_+ph_+2}" '
              f'fill="none" stroke="{FB}" stroke-width="2.4" stroke-dasharray="7 4" marker-end="url(#arrFb)"/>')
-    s.append(text((pcx+dx+dw/2)/2, fy-7, "continuous findings reopen Stage 0–7   ·   rescan → re-gate → remediate",
+    s.append(text((pcx+dx+dw/2)/2, fy-7, "findings → DefectDojo → reopen Stage 0–7  (rescan · re-gate · remediate)",
                   10, FB, "middle", "bold"))
 
     # ---- Legend: tier-aware gate ----

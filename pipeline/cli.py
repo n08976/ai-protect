@@ -72,6 +72,10 @@ def cmd_run(args):
             results = [orc.run_stage(args.stage)]
     for r in results:
         print(json.dumps(r.to_dict(), indent=2))
+    # Optional: ship this app's findings to one or more sinks (e.g. DefectDojo)
+    # after the scan. Sinks read their own config from env/settings.
+    for name in getattr(args, "sink", None) or []:
+        _push_to_sink(name, m, store, results)
     # Policy gate: a blocking adapter produced HIGH+ findings.
     gate_fail = any(not r.gate_passed for r in results)
     # Optional CI deploy gate: fail on ANY finding at/above a severity, regardless
@@ -87,6 +91,59 @@ def cmd_run(args):
                     gate_fail = True
     if gate_fail:
         sys.exit(2)
+
+
+def _push_to_sink(name, manifest, store, results):
+    """Push this app's accumulated findings to a named sink. Best-effort: logs
+    and continues on failure so a sink outage never blocks the gate decision."""
+    from .integrations import SinkContext, get_sink, SinkNotConfigured
+
+    findings = store.by_app(manifest.name)
+    if not findings:
+        print(f"[sink:{name}] no findings to push")
+        return
+    mapping = manifest.integration(name)
+    stage = results[-1].stage if results else ""
+    tier = results[-1].tier_decision.tier if results else None
+    ctx = SinkContext(
+        app_name=manifest.name, tier=tier, stage=stage,
+        scan_id=getattr(manifest, "scan_id", "") or "",
+        product=str(mapping.get("product", "")),
+        engagement=str(mapping.get("engagement", "")),
+        test_title=str(mapping.get("test_title", "")),
+    )
+    try:
+        sink = get_sink(name)
+    except KeyError as e:
+        print(f"[sink:{name}] {e}")
+        return
+    if not sink.is_configured():
+        print(f"[sink:{name}] not configured — skipping "
+              f"(set creds via env or /settings)")
+        return
+    try:
+        res = sink.push(findings, ctx)
+    except SinkNotConfigured as e:
+        print(f"[sink:{name}] {e}")
+        return
+    if res.ok:
+        print(f"[sink:{name}] pushed {res.pushed} finding(s) — {res.detail}")
+        for k, v in res.ref.items():
+            if k not in ("product", "engagement"):
+                print(f"[sink:{name}]   {k}: {v}")
+    else:
+        print(f"[sink:{name}] push failed — {res.detail}")
+
+
+def cmd_sinks(args):
+    from .integrations import sink_names, get_sink
+    for name in sink_names():
+        try:
+            ok = get_sink(name).is_configured()
+        except Exception:
+            ok = False
+        state = "configured" if ok else "not configured"
+        print(f"  {name:<14} {state}")
 
 
 def cmd_remediate(args):
@@ -197,9 +254,10 @@ def cmd_report(args):
 
 
 def cmd_defectdojo(args):
-    from .reporting.defectdojo import (DefectDojoClient, DefectDojoConfig,
-                                       DefectDojoConfigError, DefectDojoError,
-                                       filter_by_severity, to_generic_report)
+    from .integrations.base import SinkContext
+    from .integrations.defectdojo import (DefectDojoConfig, DefectDojoConfigError,
+                                          DefectDojoSink, filter_by_severity,
+                                          to_generic_report)
 
     store = FindingStore(args.findings)
     findings = store.by_app(args.app) if args.app else store.all()
@@ -218,22 +276,21 @@ def cmd_defectdojo(args):
     except DefectDojoConfigError as e:
         raise SystemExit(str(e))
 
-    product = args.product or args.app or "ai-protect"
-    engagement = args.engagement or "ai-protect pipeline"
-    try:
-        res = DefectDojoClient(cfg).push(
-            findings, product=product, engagement=engagement,
-            test_title=args.test_title, reimport=not args.no_reimport,
-            minimum_severity=args.min_severity.capitalize())
-    except DefectDojoError as e:
-        raise SystemExit(str(e))
-
+    sink = DefectDojoSink(cfg, reimport=not args.no_reimport, min_severity="info")
+    ctx = SinkContext(
+        app_name=args.app or "ai-protect",
+        product=args.product or args.app or "",
+        engagement=args.engagement or "ai-protect pipeline",
+        test_title=args.test_title or "",
+    )
+    res = sink.push(findings, ctx)
+    if not res.ok:
+        raise SystemExit(res.detail)
     mode = "import" if args.no_reimport else "reimport"
-    print(f"Pushed {len(findings)} finding(s) to DefectDojo ({mode}) "
-          f"product={product!r} engagement={engagement!r}.")
-    for k in ("test", "test_id", "engagement_id", "product_id"):
-        if isinstance(res, dict) and res.get(k):
-            print(f"  {k}: {res[k]}")
+    print(f"Pushed {res.pushed} finding(s) to DefectDojo ({mode}) — {res.detail}")
+    for k, v in res.ref.items():
+        if k not in ("product", "engagement"):
+            print(f"  {k}: {v}")
 
 
 def cmd_adapters(args):
@@ -289,6 +346,10 @@ def main(argv: list[str] | None = None) -> int:
                        help="Also fail the gate (exit 2) if this run produced any finding "
                             "at/above this severity, regardless of the per-adapter blocking "
                             "flag. Use this as the CI deploy gate.")
+    p_run.add_argument("--sink", action="append", default=None, metavar="NAME",
+                       help="After the scan, push this app's findings to a sink "
+                            "(e.g. --sink defectdojo). Repeatable. Sinks read their own "
+                            "config from env/settings and skip cleanly when unconfigured.")
     p_run.set_defaults(func=cmd_run)
 
     p_rem = sub.add_parser("remediate", help="Headless fix → verify loop (CI). Propose fixes; "
@@ -331,6 +392,9 @@ def main(argv: list[str] | None = None) -> int:
     p_dd.add_argument("--dry-run", action="store_true",
                       help="Print the Generic Findings Import JSON without POSTing (no creds needed)")
     p_dd.set_defaults(func=cmd_defectdojo)
+
+    p_sink = sub.add_parser("sinks", help="List findings sinks and whether each is configured")
+    p_sink.set_defaults(func=cmd_sinks)
 
     p_adp = sub.add_parser("adapters", help="List registered adapters")
     p_adp.add_argument("--format", choices=["text", "json"], default="text")

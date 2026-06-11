@@ -459,22 +459,40 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 | `telemetry_drift` | (built-in) — `pipeline/adapters/telemetry_drift.py` |
 | `anomaly_detector` (alias) | (built-in) — `pipeline/adapters/telemetry_drift.py` |
 
-#### Findings management / export
+#### Findings management / export — findings sinks
 
-| Integration | Source |
+Findings ship to external destinations through a small, pluggable **sink** layer (`pipeline/integrations/`). A sink implements `FindingsSink` (`is_configured()` + `push()`), registers in `pipeline/integrations/registry.py`, and is then reachable from `cli run --sink <name>`, the standalone exporter, and the `cli sinks` listing — no orchestrator or CLI changes. DefectDojo is the first concrete sink; the same seam fits SARIF/OCSF files, ServiceNow, or a webhook next.
+
+| Sink | Source |
 | --- | --- |
-| DefectDojo (open source) | `pipeline/reporting/defectdojo.py` — exports normalized findings via the Generic Findings Import API |
+| DefectDojo (open source) | `pipeline/integrations/defectdojo/` — `config` · `serialize` · `client` · `sink` |
 
-Normalized findings push to an open-source [DefectDojo](https://github.com/DefectDojo/django-DefectDojo) instance for aggregation, triage, waivers, and trend tracking:
+Normalized findings push to an open-source [DefectDojo](https://github.com/DefectDojo/django-DefectDojo) instance (aggregation, triage, waivers, trend tracking) via its **Generic Findings Import** API:
 
 ```bash
 # Preview exactly what would be sent (no creds, no network):
 python -m pipeline.cli defectdojo --app commercial --min-severity high --dry-run
 
-# Push to DefectDojo (reimport-scan reconciles + auto-closes fixed findings):
+# Standalone export of the findings store:
 export DEFECTDOJO_URL=https://defectdojo.internal
-export DEFECTDOJO_API_TOKEN=...        # Settings → API v2 Key; inject from Vault/Key Vault
+export DEFECTDOJO_API_TOKEN=...        # DefectDojo → API v2 Key; inject from Vault/Key Vault
 python -m pipeline.cli defectdojo --product commercial --engagement "ai-protect preprod"
+
+# Or push automatically right after a scan:
+python -m pipeline.cli run .ai-protect/manifest.yml --stage preprod --sink defectdojo
+
+# See which sinks are configured:
+python -m pipeline.cli sinks
+```
+
+**Config resolves from CLI args → environment → `/settings`** (so CI injects creds from Vault/Key Vault while a local operator configures it once in the dashboard's *Findings sinks* section). Per-app product/engagement names come from the manifest:
+
+```yaml
+# .ai-protect/manifest.yml
+integrations:
+  defectdojo:
+    product: "Commercial Ads MCP"
+    engagement: "ai-protect preprod"
 ```
 
 Each finding carries a stable `unique_id_from_tool` (the pipeline fingerprint), so repeated `reimport-scan` pushes reconcile against the prior test — remediated findings drop out of the next push and DefectDojo auto-closes them, closing the continuous fix→verify→track loop. `auto_create_context=true` creates the product/engagement on first push. The reusable `assure.yml` CI gate pushes automatically when `DEFECTDOJO_URL` + `DEFECTDOJO_API_TOKEN` secrets are provided.

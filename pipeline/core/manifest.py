@@ -114,7 +114,20 @@ class Manifest:
     github_ref: str = ""                         # branch / tag / SHA; '' uses settings default
     github_clone_depth: int | None = None        # None uses settings default (typically 1, shallow)
 
+    # --- findings-sink integrations (added 2026-06-11) ---
+    # Per-app overrides for where findings are shipped after a scan, e.g.
+    #   integrations:
+    #     defectdojo: { product: "Commercial Ads MCP", engagement: "ai-protect preprod" }
+    # Sinks (pipeline/integrations/) read this via manifest.integration(name);
+    # missing keys fall back to settings defaults, then the app name / stage.
+    integrations: dict[str, Any] = field(default_factory=dict)
+
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
+
+    def integration(self, name: str) -> dict[str, Any]:
+        """Per-app config dict for a findings sink (empty dict if unset)."""
+        val = self.integrations.get(name)
+        return dict(val) if isinstance(val, dict) else {}
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "Manifest":
@@ -151,6 +164,7 @@ class Manifest:
             github_repo=str(data.get("github_repo") or "").strip(),
             github_ref=str(data.get("github_ref") or "").strip(),
             github_clone_depth=data.get("github_clone_depth"),
+            integrations=dict(data.get("integrations") or {}),
             raw=data,
         )
 

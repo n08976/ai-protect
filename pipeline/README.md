@@ -310,6 +310,18 @@ The workflow: installs ai-protect + scanners → tier-classifies → **scans** (
 
 Other trigger options: `push`/`pull_request` (default), `workflow_dispatch` (manual), `repository_dispatch` (API), `schedule:` (nightly re-scan on new KEV intel). A direct GitHub-webhook → scan path would use the existing `POST /scan/start` + `GET /api/scan/<id>` endpoints via a thin bridge (not yet built).
 
+## Findings sinks (`pipeline/integrations/`)
+
+A **sink** is a destination for normalized findings after a scan (defect tracker, SARIF/OCSF file, webhook). The layer is pluggable: subclass `FindingsSink` (`is_configured()` + `push(findings, ctx)`), register in `pipeline/integrations/registry.py`, and it's reachable everywhere — `cli run --sink <name>`, `cli sinks`, and any future auto-push. **DefectDojo** (`pipeline/integrations/defectdojo/`) is the first sink.
+
+```bash
+python -m pipeline.cli sinks                                    # which sinks are configured
+python -m pipeline.cli defectdojo --dry-run                     # preview the JSON (no creds/network)
+python -m pipeline.cli run <manifest> --stage preprod --sink defectdojo   # scan + push
+```
+
+**DefectDojo** serializes findings to the *Generic Findings Import* format and POSTs to `reimport-scan` (reconciles + auto-closes remediated findings; `import-scan` with `--no-reimport`). Stable `unique_id_from_tool` = the pipeline fingerprint. Config resolves **CLI args → env (`DEFECTDOJO_URL`/`DEFECTDOJO_API_TOKEN`) → `/settings`**; `auto_create_context=true` creates the product/engagement on first push. Per-app product/engagement come from the manifest's `integrations.defectdojo` block (see **Manifest schema**). `assure.yml` pushes automatically when the two DefectDojo secrets are supplied.
+
 ## Intel feeds (`pipeline/intel/`)
 
 External CVE / threat feeds are first-class citizens: configured in the UI, polled in the background, and consulted during scans (see **Intel-scan integration** below).
@@ -381,6 +393,7 @@ Key fields:
 | `target.allow_mutation` | Required `true` for adapters that modify state (atomic-red-team, burp active, exploit modules). |
 | `target.test_user_token_env` | Env var holding a test token; if set, mcp_scope probes a forbidden action live. |
 | `threat_model_path` | Required for Tier 1/2 at design stage. |
+| `integrations` | Per-app findings-sink overrides, e.g. `integrations.defectdojo.{product,engagement}`. Read by `manifest.integration(name)`; missing keys fall back to `/settings` defaults, then the app name / stage. |
 
 ## Tools wired in
 

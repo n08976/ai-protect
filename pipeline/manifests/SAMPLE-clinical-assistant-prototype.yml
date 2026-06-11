@@ -54,3 +54,10 @@ guardrails_path: pipeline/fixtures/clinical_assistant_guardrails.yml
 step_up_auth:
   required_for:
   - messaging-mcp
+# Findings-sink overrides (optional). When `cli run --sink defectdojo` runs, this
+# app's findings import into this DefectDojo product/engagement. Omit to fall
+# back to /settings defaults, then the app name / stage.
+integrations:
+  defectdojo:
+    product: Clinical Assistant (prototype)
+    engagement: ai-protect preprod
