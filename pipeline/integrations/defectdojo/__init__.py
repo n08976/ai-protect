@@ -6,8 +6,10 @@ Public API — import from ``pipeline.integrations.defectdojo``:
 
 The pipeline serializes normalized ``Finding`` objects into DefectDojo's
 **Generic Findings Import** format and POSTs them to the import-scan /
-reimport-scan REST API. reimport-scan reconciles against the prior test, so
-remediated findings auto-close — closing the continuous fix→verify→track loop.
+reimport-scan REST API. reimport-scan reconciles against the prior test (keyed
+on the stable ``unique_id_from_tool`` fingerprint) so a re-scan updates findings
+in place instead of duplicating them; we also request ``close_old_findings`` so
+DefectDojo can mitigate findings no longer reported once remediated.
 
 Config resolves from CLI args → env (DEFECTDOJO_URL / DEFECTDOJO_API_TOKEN) →
 UI settings, so it works the same in CI and from the dashboard.

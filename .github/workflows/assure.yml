@@ -179,8 +179,8 @@ jobs:
         # Opt-in: runs only when the caller supplies DefectDojo secrets.
         # --manifest makes the import honor the app's integrations.defectdojo
         # product/engagement (falling back to the app name when unset).
-        # reimport-scan reconciles against the prior test, so remediated
-        # findings auto-close — closing the continuous fix→verify→track loop.
+        # reimport-scan reconciles against the prior test (no duplicate findings
+        # on re-scan); close_old_findings lets DefectDojo mitigate remediated ones.
         if: ${{ always() && env.DEFECTDOJO_URL != '' && env.DEFECTDOJO_API_TOKEN != '' }}
         run: |
           python -m pipeline.cli --findings "$AIP_FINDINGS" defectdojo \

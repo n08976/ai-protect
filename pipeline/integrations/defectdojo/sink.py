@@ -19,11 +19,12 @@ class DefectDojoSink(FindingsSink):
     label = "DefectDojo"
 
     def __init__(self, config: DefectDojoConfig | None = None, *, session=None,
-                 reimport: bool = True, min_severity: str = ""):
+                 reimport: bool = True, min_severity: str = "", product_type: str = ""):
         self._config = config if config is not None else DefectDojoConfig.resolve()
         self._session = session
         self.reimport = reimport
         self.min_severity = min_severity or _settings_get("defectdojo_min_severity", "info") or "info"
+        self.product_type = product_type or _settings_get("defectdojo_product_type", "ai-protect") or "ai-protect"
 
     def is_configured(self) -> bool:
         return self._config is not None
@@ -55,6 +56,7 @@ class DefectDojoSink(FindingsSink):
         try:
             res = client.push(
                 findings, product=product, engagement=engagement,
+                product_type=self.product_type,
                 test_title=self._test_title(ctx), reimport=self.reimport,
                 minimum_severity=(self.min_severity or "info").capitalize())
         except DefectDojoError as e:
