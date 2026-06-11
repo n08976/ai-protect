@@ -1011,6 +1011,7 @@ def diagram_health_presentation():
         return 0 if it in HL else (1 if it in HL_NEW else 2)
 
     # ---- title + legends ----
+    s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))   # opaque white background
     s.append(box(0, 0, W, 44, NAVY, NAVY, 0, 0))
     s.append(text(W/2, 27, "AI Security Assurance Pipeline — Tooling, Automation & New Stages",
                   17, WHITE, "middle", "bold"))
@@ -1220,6 +1221,7 @@ def diagram_ai_transformation():
              '<marker id="arrGr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1E8E4E"/></marker>'
              f'<marker id="arrFb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="{FB}"/></marker>'
              '</defs>')
+    s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))   # opaque white background
     s.append(box(0, 0, W, 52, NAVY, NAVY, 0, 0))
     s.append(text(W/2, 22, "AI Organizational Transformation — Empowered Building → Governed AI-Production", 18, WHITE, "middle", "bold"))
     s.append(text(W/2, 43, "Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.", 13.5, WHITE, "middle", "bold"))

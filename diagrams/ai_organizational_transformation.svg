@@ -8,6 +8,7 @@
 <path d="M 0 0 L 10 5 L 0 10 z" fill="#C04A2B"/></marker>
 </defs>
 <defs><marker id="arrGr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1E8E4E"/></marker><marker id="arrFb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7A3FB5"/></marker></defs>
+<rect x="0" y="0" width="1280" height="568" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0" rx="0" ry="0"/>
 <rect x="0" y="0" width="1280" height="52" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
 <text x="640.0" y="22" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Organizational Transformation — Empowered Building → Governed AI-Production</text>
 <text x="640.0" y="43" font-size="13.5" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Anyone can build with AI; everything ships through one governed pipeline into the sanctioned ai-production zone.</text>
