@@ -267,3 +267,86 @@ def test_manifest_integration_mapping():
     })
     assert m.integration("defectdojo") == {"product": "P", "engagement": "E"}
     assert m.integration("missing") == {}
+
+
+# ---- CLI honors the manifest's product/engagement ------------------------ #
+def test_cli_defectdojo_honors_manifest(tmp_path, monkeypatch):
+    """`cli defectdojo --manifest` pushes with the manifest's product/engagement."""
+    import yaml
+
+    from pipeline import cli
+    from pipeline.core.findings import FindingStore
+    import pipeline.integrations.defectdojo as ddpkg
+
+    findings_path = tmp_path / "f.jsonl"
+    FindingStore(findings_path).append(_finding(app_name="metaads-commercial"))
+
+    manifest_path = tmp_path / "m.yml"
+    manifest_path.write_text(yaml.safe_dump({
+        "name": "metaads-commercial", "owner": "o@x", "description": "",
+        "data_sensitivity": "financial", "decision_impact": "automated_action",
+        "integration_footprint": "external_action", "user_population": "external",
+        "integrations": {"defectdojo": {
+            "product": "Meta Ads Commercial SaaS", "engagement": "ai-protect preprod"}},
+    }))
+
+    captured = {}
+
+    class _FakeSink:
+        def __init__(self, *a, **k):
+            pass
+
+        def push(self, findings, ctx):
+            captured["ctx"] = ctx
+            captured["n"] = len(findings)
+            from pipeline.integrations.base import SinkResult
+            return SinkResult(sink="defectdojo", ok=True, pushed=len(findings), detail="ok")
+
+    monkeypatch.setattr(ddpkg, "DefectDojoSink", _FakeSink)
+    monkeypatch.setenv("DEFECTDOJO_URL", "https://dd.example")
+    monkeypatch.setenv("DEFECTDOJO_API_TOKEN", "tok")
+
+    cli.main(["--findings", str(findings_path), "defectdojo", "--manifest", str(manifest_path)])
+
+    ctx = captured["ctx"]
+    assert ctx.app_name == "metaads-commercial"
+    assert ctx.product == "Meta Ads Commercial SaaS"
+    assert ctx.engagement == "ai-protect preprod"
+    assert captured["n"] == 1            # filtered to the manifest's app
+
+
+def test_cli_defectdojo_explicit_overrides_manifest(tmp_path, monkeypatch):
+    import yaml
+
+    from pipeline import cli
+    from pipeline.core.findings import FindingStore
+    import pipeline.integrations.defectdojo as ddpkg
+
+    findings_path = tmp_path / "f.jsonl"
+    FindingStore(findings_path).append(_finding(app_name="metaads-commercial"))
+    manifest_path = tmp_path / "m.yml"
+    manifest_path.write_text(yaml.safe_dump({
+        "name": "metaads-commercial", "owner": "o@x", "description": "",
+        "data_sensitivity": "financial", "decision_impact": "automated_action",
+        "integration_footprint": "external_action", "user_population": "external",
+        "integrations": {"defectdojo": {"product": "From Manifest", "engagement": "E"}},
+    }))
+
+    captured = {}
+
+    class _FakeSink:
+        def __init__(self, *a, **k):
+            pass
+
+        def push(self, findings, ctx):
+            captured["ctx"] = ctx
+            from pipeline.integrations.base import SinkResult
+            return SinkResult(sink="defectdojo", ok=True, pushed=1, detail="ok")
+
+    monkeypatch.setattr(ddpkg, "DefectDojoSink", _FakeSink)
+    monkeypatch.setenv("DEFECTDOJO_URL", "https://dd.example")
+    monkeypatch.setenv("DEFECTDOJO_API_TOKEN", "tok")
+
+    cli.main(["--findings", str(findings_path), "defectdojo",
+              "--manifest", str(manifest_path), "--product", "Override"])
+    assert captured["ctx"].product == "Override"

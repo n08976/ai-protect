@@ -259,8 +259,17 @@ def cmd_defectdojo(args):
                                           DefectDojoSink, filter_by_severity,
                                           to_generic_report)
 
+    # A manifest, when given, supplies per-app product/engagement (and the app
+    # name used to filter the store). Explicit --product/--engagement still win.
+    mapping: dict = {}
+    app_name = args.app
+    if getattr(args, "manifest", None):
+        m = Manifest.from_yaml(args.manifest)
+        mapping = m.integration("defectdojo")
+        app_name = app_name or m.name
+
     store = FindingStore(args.findings)
-    findings = store.by_app(args.app) if args.app else store.all()
+    findings = store.by_app(app_name) if app_name else store.all()
     if args.min_severity != "info":
         findings = filter_by_severity(findings, args.min_severity)
     if not findings:
@@ -278,10 +287,10 @@ def cmd_defectdojo(args):
 
     sink = DefectDojoSink(cfg, reimport=not args.no_reimport, min_severity="info")
     ctx = SinkContext(
-        app_name=args.app or "ai-protect",
-        product=args.product or args.app or "",
-        engagement=args.engagement or "ai-protect pipeline",
-        test_title=args.test_title or "",
+        app_name=app_name or "ai-protect",
+        product=args.product or str(mapping.get("product", "")),       # explicit > manifest > app name
+        engagement=args.engagement or str(mapping.get("engagement", "")),
+        test_title=args.test_title or str(mapping.get("test_title", "")),
     )
     res = sink.push(findings, ctx)
     if not res.ok:
@@ -375,8 +384,11 @@ def main(argv: list[str] | None = None) -> int:
                                "(Generic Findings Import via the import/reimport-scan API)")
     p_dd.add_argument("--app", default=None,
                       help="Only export findings for this app (also the default product name)")
+    p_dd.add_argument("--manifest", default=None,
+                      help="Manifest to read integrations.defectdojo.{product,engagement} from "
+                           "(and the app name to filter on). Explicit --product/--engagement win.")
     p_dd.add_argument("--product", default=None,
-                      help="DefectDojo product name (default: --app, else 'ai-protect')")
+                      help="DefectDojo product name (default: manifest mapping, then --app/app name)")
     p_dd.add_argument("--engagement", default=None,
                       help="DefectDojo engagement name (default: 'ai-protect pipeline')")
     p_dd.add_argument("--test-title", default=None,
