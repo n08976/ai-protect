@@ -459,6 +459,26 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 | `telemetry_drift` | (built-in) — `pipeline/adapters/telemetry_drift.py` |
 | `anomaly_detector` (alias) | (built-in) — `pipeline/adapters/telemetry_drift.py` |
 
+#### Findings management / export
+
+| Integration | Source |
+| --- | --- |
+| DefectDojo (open source) | `pipeline/reporting/defectdojo.py` — exports normalized findings via the Generic Findings Import API |
+
+Normalized findings push to an open-source [DefectDojo](https://github.com/DefectDojo/django-DefectDojo) instance for aggregation, triage, waivers, and trend tracking:
+
+```bash
+# Preview exactly what would be sent (no creds, no network):
+python -m pipeline.cli defectdojo --app commercial --min-severity high --dry-run
+
+# Push to DefectDojo (reimport-scan reconciles + auto-closes fixed findings):
+export DEFECTDOJO_URL=https://defectdojo.internal
+export DEFECTDOJO_API_TOKEN=...        # Settings → API v2 Key; inject from Vault/Key Vault
+python -m pipeline.cli defectdojo --product commercial --engagement "ai-protect preprod"
+```
+
+Each finding carries a stable `unique_id_from_tool` (the pipeline fingerprint), so repeated `reimport-scan` pushes reconcile against the prior test — remediated findings drop out of the next push and DefectDojo auto-closes them, closing the continuous fix→verify→track loop. `auto_create_context=true` creates the product/engagement on first push. The reusable `assure.yml` CI gate pushes automatically when `DEFECTDOJO_URL` + `DEFECTDOJO_API_TOKEN` secrets are provided.
+
 ### Reviewed but not yet wired
 
 Tools that have been evaluated and are documented for future wiring. Each line is a pre-baked candidate — when scope changes (cloud presence, AD-integrated workloads, K8s deployment, mobile surface), add them as adapters under `pipeline/adapters/` and register in `pipeline/adapters/registry.py` + `pipeline/core/policy.py`.
