@@ -1123,7 +1123,7 @@ def diagram_health_presentation():
     # the rest is new ai-protect orchestration -> navy sub-boxes.
     orch = [("Azure Pipelines", "CI — available today", True), ("Argo / Tekton", "pipeline CI", False),
             ("Kafka", "event bus", False), ("DefectDojo", "findings · OCSF", False),
-            ("Vault / Key Vault", "secrets", False), ("OPA", "deploy gates", False)]
+            ("Vault / Key Vault", "secrets", True), ("OPA", "deploy gates", False)]
     ow = (W-120)/len(orch); ox0 = 60
     for i, (a, b, existing) in enumerate(orch):
         x = ox0 + i*ow
