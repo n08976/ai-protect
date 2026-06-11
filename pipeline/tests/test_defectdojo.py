@@ -1,4 +1,4 @@
-"""Tests for the DefectDojo export integration."""
+"""Tests for the modular DefectDojo findings sink."""
 from __future__ import annotations
 
 import json
@@ -6,15 +6,31 @@ import json
 import pytest
 
 from pipeline.core.findings import Category, Severity, new_finding
-from pipeline.reporting.defectdojo import (
+from pipeline.integrations import (
+    SinkContext,
+    configured_sinks,
+    get_sink,
+    sink_names,
+)
+from pipeline.integrations.defectdojo import (
     DefectDojoClient,
     DefectDojoConfig,
     DefectDojoConfigError,
     DefectDojoError,
+    DefectDojoSink,
     filter_by_severity,
     finding_to_generic,
     to_generic_report,
 )
+from pipeline.integrations.defectdojo import config as dd_config
+from pipeline.integrations.defectdojo import sink as dd_sink
+
+
+@pytest.fixture(autouse=True)
+def _isolate_settings(monkeypatch):
+    """Stop sinks from reading the dev machine's ~/.ai-protect/config.json."""
+    monkeypatch.setattr(dd_config, "_settings_get", lambda key, default="": default)
+    monkeypatch.setattr(dd_sink, "_settings_get", lambda key, default="": default)
 
 
 def _finding(**over):
@@ -53,11 +69,8 @@ def test_finding_to_generic_unique_id_is_fingerprint():
 
 def test_finding_to_generic_tags():
     g = finding_to_generic(_finding())
-    assert "app:commercial" in g["tags"]
-    assert "tier:1" in g["tags"]
-    assert "adapter:semgrep" in g["tags"]
-    assert "category:infra_vuln" in g["tags"]
-    assert "compliance:HIPAA-164.312(a)(1)" in g["tags"]
+    assert {"app:commercial", "tier:1", "stage:preprod", "adapter:semgrep",
+            "category:infra_vuln", "compliance:HIPAA-164.312(a)(1)"} <= set(g["tags"])
 
 
 def test_severity_mapping_all_levels():
@@ -68,16 +81,14 @@ def test_severity_mapping_all_levels():
 
 
 def test_response_evidence_dropped_from_description():
-    f = _finding(evidence={"prompt": "hi", "response": "x" * 100000})
-    g = finding_to_generic(f)
+    g = finding_to_generic(_finding(evidence={"prompt": "hi", "response": "x" * 100000}))
     assert "response" not in g["description"]
     assert "prompt" in g["description"]
 
 
 def test_to_generic_report_wraps_findings():
     rep = to_generic_report([_finding(), _finding(title="XSS")])
-    assert set(rep) == {"findings"}
-    assert len(rep["findings"]) == 2
+    assert set(rep) == {"findings"} and len(rep["findings"]) == 2
 
 
 def test_filter_by_severity():
@@ -127,9 +138,7 @@ def test_push_reimport_request_shape():
     assert kw["data"]["product_name"] == "commercial"
     assert kw["data"]["engagement_name"] == "pipeline"
     assert kw["data"]["auto_create_context"] == "true"
-    # the uploaded file is the Generic Findings Import JSON
-    body = kw["files"]["file"][1].read().decode()
-    doc = json.loads(body)
+    doc = json.loads(kw["files"]["file"][1].read().decode())
     assert doc["findings"][0]["severity"] == "High"
     assert res == {"test": 7}
 
@@ -138,12 +147,6 @@ def test_push_import_mode_uses_import_endpoint():
     client, sess = _client(_FakeResp(201, {"test": 1}))
     client.push([_finding()], product="p", engagement="e", reimport=False)
     assert sess.calls[0][0].endswith("/api/v2/import-scan/")
-
-
-def test_push_test_title_passthrough():
-    client, sess = _client(_FakeResp(201, {"test": 1}))
-    client.push([_finding()], product="p", engagement="e", test_title="nightly")
-    assert sess.calls[0][1]["data"]["test_title"] == "nightly"
 
 
 def test_push_raises_on_http_error():
@@ -158,14 +161,77 @@ def test_push_handles_non_json_response():
     assert client.push([_finding()], product="p", engagement="e") == {"status_code": 201}
 
 
+# ---- sink ---------------------------------------------------------------- #
+def _sink(resp, **kw):
+    sess = _FakeSession(resp)
+    cfg = DefectDojoConfig(url="https://dd.example", token="tok")
+    return DefectDojoSink(cfg, session=sess, **kw), sess
+
+
+def test_sink_is_configured():
+    sink, _ = _sink(_FakeResp(201, {"test": 1}))
+    assert sink.is_configured() is True
+    assert DefectDojoSink(None).is_configured() is False
+
+
+def test_sink_push_returns_result_and_calls_api():
+    sink, sess = _sink(_FakeResp(201, {"test": 9, "engagement_id": 3}))
+    res = sink.push([_finding()], SinkContext(app_name="commercial", stage="preprod"))
+    assert res.ok and res.pushed == 1
+    # product defaults to the app name; engagement to "ai-protect <stage>"
+    assert sess.calls[0][1]["data"]["product_name"] == "commercial"
+    assert sess.calls[0][1]["data"]["engagement_name"] == "ai-protect preprod"
+    assert res.ref["test"] == 9 and res.ref["engagement_id"] == 3
+
+
+def test_sink_context_overrides_product_engagement():
+    sink, sess = _sink(_FakeResp(201, {"test": 1}))
+    sink.push([_finding()], SinkContext(app_name="commercial", product="Prod X",
+                                        engagement="Eng Y", test_title="nightly"))
+    data = sess.calls[0][1]["data"]
+    assert data["product_name"] == "Prod X"
+    assert data["engagement_name"] == "Eng Y"
+    assert data["test_title"] == "nightly"
+
+
+def test_sink_min_severity_filters():
+    sink, sess = _sink(_FakeResp(201, {"test": 1}), min_severity="critical")
+    res = sink.push([_finding(severity=Severity.HIGH), _finding(severity=Severity.CRITICAL)],
+                    SinkContext(app_name="a"))
+    assert res.pushed == 1
+    doc = json.loads(sess.calls[0][1]["files"]["file"][1].read().decode())
+    assert len(doc["findings"]) == 1
+
+
+def test_sink_push_http_error_returns_not_ok():
+    sink, _ = _sink(_FakeResp(500, text="boom"))
+    res = sink.push([_finding()], SinkContext(app_name="a"))
+    assert res.ok is False and "500" in res.detail
+
+
+# ---- registry ------------------------------------------------------------ #
+def test_registry_lists_defectdojo():
+    assert "defectdojo" in sink_names()
+
+
+def test_registry_get_sink_unknown_raises():
+    with pytest.raises(KeyError):
+        get_sink("nope")
+
+
+def test_registry_configured_sinks_empty_without_creds(monkeypatch):
+    monkeypatch.delenv("DEFECTDOJO_URL", raising=False)
+    monkeypatch.delenv("DEFECTDOJO_API_TOKEN", raising=False)
+    assert configured_sinks() == []
+
+
 # ---- config -------------------------------------------------------------- #
 def test_config_from_env(monkeypatch):
     monkeypatch.setenv("DEFECTDOJO_URL", "https://dd.example/")
     monkeypatch.setenv("DEFECTDOJO_API_TOKEN", "tok")
     cfg = DefectDojoConfig.from_env()
     assert cfg.url == "https://dd.example"          # trailing slash stripped
-    assert cfg.token == "tok"
-    assert cfg.verify_ssl is True
+    assert cfg.token == "tok" and cfg.verify_ssl is True
 
 
 def test_config_verify_ssl_off(monkeypatch):
@@ -178,6 +244,7 @@ def test_config_verify_ssl_off(monkeypatch):
 def test_config_missing_raises(monkeypatch):
     monkeypatch.delenv("DEFECTDOJO_URL", raising=False)
     monkeypatch.delenv("DEFECTDOJO_API_TOKEN", raising=False)
+    assert DefectDojoConfig.resolve() is None
     with pytest.raises(DefectDojoConfigError):
         DefectDojoConfig.from_env()
 
@@ -187,3 +254,16 @@ def test_config_explicit_args_override_env(monkeypatch):
     monkeypatch.delenv("DEFECTDOJO_API_TOKEN", raising=False)
     cfg = DefectDojoConfig.from_env(url="https://x", token="y")
     assert cfg.url == "https://x" and cfg.token == "y"
+
+
+# ---- manifest integration mapping ---------------------------------------- #
+def test_manifest_integration_mapping():
+    from pipeline.core.manifest import Manifest
+    m = Manifest.from_dict({
+        "name": "app", "owner": "o@x", "description": "",
+        "data_sensitivity": "public", "decision_impact": "advisory",
+        "integration_footprint": "read_only", "user_population": "team",
+        "integrations": {"defectdojo": {"product": "P", "engagement": "E"}},
+    })
+    assert m.integration("defectdojo") == {"product": "P", "engagement": "E"}
+    assert m.integration("missing") == {}

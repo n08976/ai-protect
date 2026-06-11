@@ -282,6 +282,52 @@ SCHEMA: list[Section] = [
             ),
         ],
     ),
+    Section(
+        key="integrations",
+        title="Findings sinks (DefectDojo)",
+        description="Ship normalized findings to an open-source DefectDojo instance after a scan. "
+                    "Environment variables (DEFECTDOJO_URL / DEFECTDOJO_API_TOKEN), e.g. those a CI "
+                    "job injects from Vault/Key Vault, take precedence over these values.",
+        fields=[
+            Field(
+                key="defectdojo_url", label="DefectDojo base URL",
+                kind="text", default="",
+                placeholder="https://defectdojo.internal",
+                help="Base URL of your DefectDojo instance. Leave blank to disable the integration.",
+                help_anchor="defectdojo-url",
+            ),
+            Field(
+                key="defectdojo_token", label="DefectDojo API v2 token",
+                kind="password", default="", secret=True,
+                help="DefectDojo → top-right user → API v2 Key. Stored chmod-600 in config.json; "
+                     "masked in the UI and never logged. Prefer the DEFECTDOJO_API_TOKEN env var in CI.",
+                help_anchor="defectdojo-token",
+            ),
+            Field(
+                key="defectdojo_product", label="Default product name",
+                kind="text", default="",
+                help="DefectDojo product to import into. Blank = use the app name from each manifest. "
+                     "A manifest can override per-app via integrations.defectdojo.product.",
+                help_anchor="defectdojo-product",
+            ),
+            Field(
+                key="defectdojo_engagement", label="Default engagement name",
+                kind="text", default="ai-protect pipeline",
+                help="DefectDojo engagement to import into. A manifest can override per-app via "
+                     "integrations.defectdojo.engagement.",
+                help_anchor="defectdojo-engagement",
+            ),
+            Field(
+                key="defectdojo_min_severity", label="Minimum severity to export",
+                kind="select", default="info",
+                options=["info", "low", "medium", "high", "critical"],
+                help="Only findings at or above this severity are pushed to DefectDojo. "
+                     "TLS verification is on by default; disable it only via the "
+                     "DEFECTDOJO_VERIFY_SSL=0 environment variable (self-signed certs on a trusted network).",
+                help_anchor="defectdojo-min-severity",
+            ),
+        ],
+    ),
 ]
 
 
