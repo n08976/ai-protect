@@ -1301,7 +1301,7 @@ def diagram_health_presentation(future=False):
 # DIAGRAM: AI organizational transformation (presentation)
 # ============================================================
 def diagram_ai_transformation(future=False):
-    W, H = 1280, (728 if future else 568)
+    W, H = 1280, (738 if future else 568)
     s = [hdr(W, H), arrow_def()]
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     PROD = "#13643A"; PROD_FILL = "#DCF0E4"
@@ -1371,24 +1371,30 @@ def diagram_ai_transformation(future=False):
     s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 11.5, ACCENT, "middle", "bold"))
 
     # ---- Zone D: ai-production environment + continuous assurance ----
-    dx, dyy, dw, dh = 1082, 240, 176, (198 if future else 158)
+    dx, dyy, dw, dh = 1082, 240, 176, (204 if future else 158)
     s.append(box(dx, dyy, dw, dh, PROD_FILL, PROD, 3, 10))
     s.append(text(dx+dw/2, dyy+24, "AI-PRODUCTION", 15, PROD, "middle", "bold"))
     s.append(text(dx+dw/2, dyy+41, "ENVIRONMENT", 12, PROD, "middle", "bold"))
     s.append(text(dx+dw/2, dyy+58, "sanctioned network zone", 10, TEXT, "middle", "bold"))
-    cax, cay, caw, cah = dx+10, dyy+68, dw-20, (122 if future else 82)
-    s.append(box(cax, cay, caw, cah, GRN_FILL, GRN, 1.4, 6))
-    s.append(text(cax+caw/2, cay+17, "● CONTINUOUS ASSURANCE", 9.5, GRN_TXT, "middle", "bold"))
     if future:
-        s.append(text(cax+caw/2, cay+34, "AI red-team · SAST · DAST", 9, TEXT, "middle", "bold"))
-        s.append(f'<line x1="{cax+8}" y1="{cay+42}" x2="{cax+caw-8}" y2="{cay+42}" '
-                 f'stroke="{FUT_BD}" stroke-width="1" stroke-dasharray="4 2"/>')
-        s.append(text(cax+caw/2, cay+56, "⊕ Varonis Atlas", 10, FUT_TXT, "middle", "bold"))
-        s.append(text(cax+caw/2, cay+68, "AI Detection & Response", 8, FUT_BD, "middle", "bold"))
-        s.append(text(cax+caw/2, cay+88, "⊕ MS Agent365", 10, FUT_TXT, "middle", "bold"))
-        s.append(text(cax+caw/2, cay+100, "agent identity · registry", 8, FUT_BD, "middle", "bold"))
-        s.append(text(cax+caw/2, cay+116, "always-on, in production", 7.5, TEXT_LT, "middle", "bold"))
+        # detection / assurance (green): red-team · SAST · DAST + Varonis Atlas DDR
+        cax, cay, caw, cah = dx+10, dyy+64, dw-20, 74
+        s.append(box(cax, cay, caw, cah, GRN_FILL, GRN, 1.4, 6))
+        s.append(text(cax+caw/2, cay+15, "● CONTINUOUS ASSURANCE", 9.5, GRN_TXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+32, "AI red-team · SAST · DAST", 8.5, TEXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+49, "⊕ Varonis Atlas · AI DDR", 9.5, FUT_TXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+65, "always-on, in production", 7.5, TEXT_LT, "middle", "bold"))
+        # agent governance (teal): distinct control plane, not detection
+        gay = cay + cah + 6
+        s.append(f'<rect x="{cax}" y="{gay}" width="{caw}" height="54" fill="{FUT_FILL}" '
+                 f'stroke="{FUT_BD}" stroke-width="1.4" rx="6" ry="6" stroke-dasharray="6 3"/>')
+        s.append(text(cax+caw/2, gay+15, "◆ AGENT GOVERNANCE", 9, FUT_TXT, "middle", "bold"))
+        s.append(text(cax+caw/2, gay+31, "⊕ MS Agent365", 10, FUT_TXT, "middle", "bold"))
+        s.append(text(cax+caw/2, gay+45, "identity · registry · lifecycle", 7.5, FUT_BD, "middle", "bold"))
     else:
+        cax, cay, caw, cah = dx+10, dyy+68, dw-20, 82
+        s.append(box(cax, cay, caw, cah, GRN_FILL, GRN, 1.4, 6))
+        s.append(text(cax+caw/2, cay+17, "● CONTINUOUS ASSURANCE", 9.5, GRN_TXT, "middle", "bold"))
         s.append(text(cax+caw/2, cay+35, "AI red-team", 10.5, TEXT, "middle", "bold"))
         s.append(text(cax+caw/2, cay+51, "SAST · DAST", 10.5, TEXT, "middle", "bold"))
         s.append(text(cax+caw/2, cay+69, "always-on, in production", 8.5, TEXT_LT, "middle", "bold"))
@@ -1397,7 +1403,7 @@ def diagram_ai_transformation(future=False):
     s.append(text((px_+pw_+dx)/2, py_-1, "deploy", 11.5, GRN_TXT, "middle", "bold"))
 
     # ---- Continuous feedback loop: production findings reopen the 7 stages ----
-    fy = 452 if future else 418                # feedback lane (below pipeline / production)
+    fy = 458 if future else 418                # feedback lane (below pipeline / production)
     pcx = px_+pw_/2
     s.append(f'<path d="M {dx+dw/2} {dyy+dh} L {dx+dw/2} {fy} L {pcx} {fy} L {pcx} {py_+ph_+2}" '
              f'fill="none" stroke="{FB}" stroke-width="2.4" stroke-dasharray="7 4" marker-end="url(#arrFb)"/>')
@@ -1405,7 +1411,7 @@ def diagram_ai_transformation(future=False):
                   10, FB, "middle", "bold"))
 
     # ---- Legend: tier-aware gate ----
-    lx, ly, lw, lh = 22, (470 if future else 448), W-44, 100
+    lx, ly, lw, lh = 22, (476 if future else 448), W-44, 100
     s.append(box(lx, ly, lw, lh, GRAY_LT, NAVY, 1.5, 8))
     s.append(text(lx+14, ly+22, "TIER-AWARE GATE", 12, NAVY_DK, "start", "bold"))
     s.append(text(lx+150, ly+22, "— the same pipeline runs for every build; the tier decides whether it ships automatically or waits for a human.",
@@ -1425,7 +1431,7 @@ def diagram_ai_transformation(future=False):
         s.append(text(cx+12, cyy+51, decision, 10.5, txt, "start", "bold"))
 
     if future:
-        s.extend(future_state_band(22, 584, W-44, 128))
+        s.extend(future_state_band(22, 592, W-44, 128))
 
     s.append("</svg>")
     return "\n".join(s)
