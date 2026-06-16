@@ -51,6 +51,56 @@ def arrow_def():
 </defs>'''
 
 # ============================================================
+# Shared: FUTURE / PROPOSED environment-state band
+# (Microsoft Foundry, Microsoft Agent365, Varonis Atlas AI DDR)
+# ============================================================
+FUT_BD = "#0E7490"; FUT_FILL = "#E3F6FB"; FUT_TXT = "#0B5566"; FUT_BG = "#F2FBFD"
+
+def _wrap(t, maxchars):
+    words = t.split(" "); lines = []; cur = ""
+    for w in words:
+        if cur and len(cur)+len(w)+1 > maxchars:
+            lines.append(cur); cur = w
+        else:
+            cur = (cur+" "+w).strip()
+    if cur:
+        lines.append(cur)
+    return lines
+
+# Proposed additions and the existing zone each one extends.
+FUTURE_CARDS = [
+    ("Microsoft Foundry", "Governed model & agent build / deploy platform",
+     "extends → Controlled Build Environment"),
+    ("Microsoft Agent365", "Enterprise agent identity, registry & lifecycle governance",
+     "extends → AI-Production / Agent Runtime"),
+    ("Varonis Atlas", "AI Detection & Response (DDR) — AI data access & behavior",
+     "extends → Continuous Assurance"),
+]
+
+def future_state_band(x, y, w, h):
+    """Dashed teal band advertising the three proposed (not-yet-deployed) additions."""
+    out = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{FUT_BG}" '
+           f'stroke="{FUT_BD}" stroke-width="2.2" rx="9" ry="9" stroke-dasharray="10 5"/>']
+    out.append(text(x+16, y+23, "FUTURE / PROPOSED ENVIRONMENT STATE", 13, FUT_TXT, "start", "bold"))
+    out.append(text(x+300, y+23, "— proposed additions, not yet deployed", 11, TEXT_LT, "start", "bold"))
+    gap = 14
+    cw = (w - 32 - 2*gap) / 3
+    cy = y + 34
+    cardh = h - 46
+    for i, (a, b, c) in enumerate(FUTURE_CARDS):
+        cx = x + 16 + i*(cw+gap)
+        out.append(f'<rect x="{cx}" y="{cy}" width="{cw}" height="{cardh}" fill="{FUT_FILL}" '
+                   f'stroke="{FUT_BD}" stroke-width="1.6" rx="6" ry="6" stroke-dasharray="7 4"/>')
+        out.append(box(cx+cw-84, cy+8, 74, 15, FUT_BD, FUT_BD, 1, 3))
+        out.append(text(cx+cw-84+37, cy+19, "PROPOSED", 8.5, WHITE, "middle", "bold"))
+        out.append(text(cx+14, cy+25, a, 13, FUT_TXT, "start", "bold"))
+        for k, ln in enumerate(_wrap(b, int(cw/6.2))[:2]):
+            out.append(text(cx+14, cy+44+k*14, ln, 10.5, TEXT, "start", "bold"))
+        out.append(text(cx+14, cy+cardh-10, c, 10, FUT_BD, "start", "bold"))
+    return out
+
+
+# ============================================================
 # DIAGRAM 1: Pipeline Overview (full stack)
 # ============================================================
 def diagram_1(highlight=False):
@@ -986,9 +1036,9 @@ def diagram_8():
 # ============================================================
 # DIAGRAM: health-01 presentation variant (high-level deck)
 # ============================================================
-def diagram_health_presentation():
+def diagram_health_presentation(future=False):
     DY = 18
-    W, H = 1200, 808
+    W, H = 1200, (940 if future else 808)
     s = [hdr(W, H), arrow_def()]
     FB = "#7A3FB5"  # continuous-feedback loop colour
     s.append(f'<defs><marker id="arrFb2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="{FB}"/></marker></defs>')
@@ -1204,6 +1254,14 @@ def diagram_health_presentation():
         x = cx0 + i*(cw+15) + cw/2
         s.append(f'<line x1="{x}" y1="{ey+eh}" x2="{x}" y2="{dy}" stroke="{GRAY_DK}" stroke-width="1" stroke-dasharray="3 3"/>')
 
+    if future:
+        fby = dy + dh + 14                       # below the dashboard cards
+        s.extend(future_state_band(40, fby, W-80, 128))
+        for i in range(3):                       # dashed connectors from dashboards into the band
+            x = cx0 + i*(cw+15) + cw/2
+            s.append(f'<line x1="{x}" y1="{dy+dh}" x2="{x}" y2="{fby}" stroke="{FUT_BD}" '
+                     f'stroke-width="1" stroke-dasharray="3 3"/>')
+
     s.append("</svg>")
     return "\n".join(s)
 
@@ -1211,8 +1269,8 @@ def diagram_health_presentation():
 # ============================================================
 # DIAGRAM: AI organizational transformation (presentation)
 # ============================================================
-def diagram_ai_transformation():
-    W, H = 1280, 568
+def diagram_ai_transformation(future=False):
+    W, H = 1280, (700 if future else 568)
     s = [hdr(W, H), arrow_def()]
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     PROD = "#13643A"; PROD_FILL = "#DCF0E4"
@@ -1320,6 +1378,9 @@ def diagram_ai_transformation():
         s.append(text(cx+12, cyy+36, scope, 10.5, TEXT, "start", "bold"))
         s.append(text(cx+12, cyy+51, decision, 10.5, txt, "start", "bold"))
 
+    if future:
+        s.extend(future_state_band(22, 560, W-44, 128))
+
     s.append("</svg>")
     return "\n".join(s)
 
@@ -1330,7 +1391,9 @@ def diagram_ai_transformation():
 diagrams = {
     "01_pipeline_overview.svg": diagram_1(),
     "ai_organizational_transformation.svg": diagram_ai_transformation(),
+    "ai_organizational_transformation_future.svg": diagram_ai_transformation(future=True),
     "health-01_pipeline_overview_presentation.svg": diagram_health_presentation(),
+    "health-01_pipeline_overview_presentation_future.svg": diagram_health_presentation(future=True),
     # Health-environment variant: same overview with the provided enterprise
     # tooling (Defender, Sentinel, Google TI / OpenCTI / MS Defender TI, Armis,
     # Rapid7, Palo Alto, Mend.io, Abnormal, Copilot, Teams, GitHub) highlighted.

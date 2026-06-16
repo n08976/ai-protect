@@ -1,0 +1,293 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="940" viewBox="0 0 1200 940" font-family="Arial, Helvetica, sans-serif">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/></marker>
+<marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#8A95A8"/></marker>
+<marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#C04A2B"/></marker>
+</defs>
+<defs><marker id="arrFb2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7A3FB5"/></marker></defs>
+<rect x="0" y="0" width="1200" height="940" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0" rx="0" ry="0"/>
+<rect x="0" y="0" width="1200" height="44" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
+<text x="600.0" y="27" font-size="17" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Security Assurance Pipeline — Tooling, Automation &amp; New Stages</text>
+<text x="40" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="bold">KEY:</text>
+<rect x="76" y="52" width="13" height="12" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.4" rx="2" ry="2"/>
+<text x="94" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Existing</text>
+<rect x="151.6" y="52" width="13" height="12" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="2" ry="2"/>
+<text x="169.6" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">New tool</text>
+<rect x="229.2" y="51" width="28" height="14" fill="#1E8E4E" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="243.2" y="62" font-size="8" fill="#FFFFFF" text-anchor="middle" font-weight="bold">NEW</text>
+<text x="261.2" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">= new stage</text>
+<text x="349.4" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="bold">HUMAN-IN-THE-LOOP:</text>
+<rect x="478.2" y="52" width="14" height="12" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.6" rx="3" ry="3"/>
+<text x="497.2" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Automated</text>
+<rect x="562.3" y="52" width="14" height="12" fill="#FBEBD2" stroke="#C77D11" stroke-width="1.6" rx="3" ry="3"/>
+<text x="581.3" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Human optional</text>
+<rect x="675.9" y="52" width="14" height="12" fill="#F6DAD5" stroke="#B0392B" stroke-width="1.6" rx="3" ry="3"/>
+<text x="694.9" y="62" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">Human required</text>
+<rect x="40" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="105.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 0</text>
+<text x="105.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Discovery &amp;</text>
+<text x="105.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Intake</text>
+<rect x="47.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
+<text x="105.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
+<line x1="171" y1="146.0" x2="181" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="182" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="247.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 1</text>
+<text x="247.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Triage &amp;</text>
+<text x="247.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Tiering</text>
+<rect x="186" y="102" width="32" height="14" fill="#1E8E4E" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="202" y="112" font-size="9" fill="#FFFFFF" text-anchor="middle" font-weight="bold">NEW</text>
+<rect x="189.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
+<text x="247.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
+<line x1="313" y1="146.0" x2="323" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="324" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="389.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 2</text>
+<text x="389.0" y="149" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod</text>
+<rect x="331.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
+<text x="389.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
+<line x1="455" y1="146.0" x2="465" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="466" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="531.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 3</text>
+<text x="531.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Dynamic</text>
+<text x="531.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">AppSec</text>
+<rect x="473.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
+<text x="531.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
+<line x1="597" y1="146.0" x2="607" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="608" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="673.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 4</text>
+<text x="673.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">AI</text>
+<text x="673.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Red Team</text>
+<rect x="612" y="102" width="32" height="14" fill="#1E8E4E" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="628" y="112" font-size="9" fill="#FFFFFF" text-anchor="middle" font-weight="bold">NEW</text>
+<rect x="615.0" y="172" width="116.0" height="15" fill="#FBEBD2" stroke="#C77D11" stroke-width="1.4" rx="3" ry="3"/>
+<text x="673.0" y="183" font-size="7.5" fill="#C77D11" text-anchor="middle" font-weight="bold">HUMAN OPTIONAL</text>
+<line x1="739" y1="146.0" x2="749" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="750" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="815.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 5</text>
+<text x="815.0" y="149" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Remediation</text>
+<rect x="757.0" y="172" width="56.0" height="15" fill="#F6DAD5" stroke="#B0392B" stroke-width="1.4" rx="3" ry="3"/>
+<text x="785.0" y="183" font-size="7" fill="#B0392B" text-anchor="middle" font-weight="bold">REQUIRED</text>
+<rect x="815.0" y="172" width="56.0" height="15" fill="#FBEBD2" stroke="#C77D11" stroke-width="1.4" rx="3" ry="3"/>
+<text x="843.0" y="183" font-size="7" fill="#C77D11" text-anchor="middle" font-weight="bold">OPTIONAL</text>
+<line x1="881" y1="146.0" x2="891" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="892" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="957.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 6</text>
+<text x="957.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Continuous</text>
+<text x="957.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Monitoring</text>
+<rect x="896" y="102" width="32" height="14" fill="#1E8E4E" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="912" y="112" font-size="9" fill="#FFFFFF" text-anchor="middle" font-weight="bold">NEW</text>
+<rect x="899.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
+<text x="957.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
+<line x1="1023" y1="146.0" x2="1033" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="1034" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="1099.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 7</text>
+<text x="1099.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Reporting &amp;</text>
+<text x="1099.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Notification</text>
+<rect x="1041.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
+<text x="1099.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
+<path d="M 1099.0 97 L 1099.0 84 L 105.0 84 L 105.0 97" fill="none" stroke="#7A3FB5" stroke-width="2.3" stroke-dasharray="7 4" marker-end="url(#arrFb2)"/>
+<text x="600.0" y="78" font-size="10.5" fill="#7A3FB5" text-anchor="middle" font-weight="bold">CONTINUOUS PRODUCTION ASSURANCE — AI red-team · SAST · DAST re-test ai-production and reopen Stage 0–7</text>
+<rect x="40" y="213" width="130" height="109" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="45" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="105.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Repos scan</text>
+<rect x="45" y="240" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="105.0" y="253" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">GitHub scan</text>
+<rect x="45" y="262" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="105.0" y="275" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Armis (assets)</text>
+<text x="105.0" y="304" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">ServiceNow</text>
+<rect x="182" y="213" width="130" height="87" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="187" y="218" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="247.0" y="231" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">OPA policy</text>
+<rect x="187" y="240" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="247.0" y="253" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Tier scoring</text>
+<text x="247.0" y="282" font-size="11" fill="#222222" text-anchor="middle" font-weight="normal">CMDB tag</text>
+<rect x="324" y="213" width="130" height="153" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="329" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Mend.io (SAST/SCA)</text>
+<rect x="329" y="247" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="260" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Semgrep</text>
+<rect x="329" y="269" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="282" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">CodeQL</text>
+<rect x="329" y="291" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="304" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Trivy</text>
+<rect x="329" y="313" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="326" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ModelScan</text>
+<rect x="329" y="335" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="389.0" y="348" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">TruffleHog</text>
+<rect x="466" y="213" width="130" height="131" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="471" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Burp Suite</text>
+<rect x="471" y="240" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="253" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Rapid7 InsightVM</text>
+<rect x="471" y="269" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="282" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Nuclei</text>
+<rect x="471" y="291" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="304" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ZAP</text>
+<rect x="471" y="313" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="531.0" y="326" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Schemathesis</text>
+<rect x="608" y="213" width="130" height="102" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="613" y="218" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="231" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">garak</text>
+<rect x="613" y="240" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="253" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">PyRIT</text>
+<rect x="613" y="262" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="275" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ART</text>
+<rect x="613" y="284" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="673.0" y="297" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">PromptFoo</text>
+<rect x="750" y="213" width="130" height="109" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="755" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">WAF (Palo Alto)</text>
+<rect x="755" y="247" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="260" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Auto-PR (AzDO/GH)</text>
+<rect x="755" y="269" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="282" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Llama Guard</text>
+<rect x="755" y="291" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="815.0" y="304" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">NeMo Guard</text>
+<rect x="892" y="213" width="130" height="131" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="897" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="957.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Mend</text>
+<rect x="897" y="240" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="957.0" y="253" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Burp</text>
+<rect x="897" y="269" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="957.0" y="282" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Telemetry</text>
+<rect x="897" y="291" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="957.0" y="304" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Drift det.</text>
+<rect x="897" y="313" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="957.0" y="326" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Re-scan cron</text>
+<rect x="1034" y="213" width="130" height="131" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="1039" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Teams</text>
+<rect x="1039" y="240" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="253" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Boards</text>
+<rect x="1039" y="262" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="275" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Jira</text>
+<rect x="1039" y="291" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="304" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">DefectDojo</text>
+<rect x="1039" y="313" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
+<text x="1099.0" y="326" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Report card</text>
+<rect x="40" y="382" width="1120" height="90" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="8" ry="8"/>
+<text x="600.0" y="406" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ORCHESTRATION &amp; DATA PLANE</text>
+<rect x="65.0" y="420" width="170.0" height="42" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="150.0" y="438" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Azure Pipelines</text>
+<text x="150.0" y="454" font-size="10.5" fill="#222222" text-anchor="middle" font-weight="bold">CI — available today</text>
+<rect x="245.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="330.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Argo / Tekton</text>
+<text x="330.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">pipeline CI</text>
+<rect x="425.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="510.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Kafka</text>
+<text x="510.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">event bus</text>
+<rect x="605.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="690.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">DefectDojo</text>
+<text x="690.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">findings · import API</text>
+<rect x="785.0" y="420" width="170.0" height="42" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="870.0" y="438" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Vault / Key Vault</text>
+<text x="870.0" y="454" font-size="10.5" fill="#222222" text-anchor="middle" font-weight="bold">secrets</text>
+<rect x="965.0" y="420" width="170.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="1050.0" y="438" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="bold">OPA</text>
+<text x="1050.0" y="454" font-size="10.5" fill="#DCEBFA" text-anchor="middle" font-weight="bold">deploy gates</text>
+<rect x="40" y="484" width="1120" height="90" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="8" ry="8"/>
+<text x="600.0" y="508" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">SANCTIONED AI INFRASTRUCTURE  (anchored on v2.1 Operating Model)</text>
+<rect x="65.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="168.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">LLM Gateway</text>
+<text x="168.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">Claude primary</text>
+<text x="168.0" y="564" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">+ secondary LLM</text>
+<rect x="281.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="384.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">MCP Farm</text>
+<text x="384.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">curated registry</text>
+<rect x="497.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="600.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Agent Runtime</text>
+<text x="600.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">SPIFFE ID, scoped</text>
+<rect x="713.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="816.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Data Plane</text>
+<text x="816.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">FHIR / vector / RAG</text>
+<rect x="929.0" y="522" width="206.0" height="42" fill="#2C547F" stroke="#456A92" stroke-width="1" rx="5" ry="5"/>
+<text x="1032.0" y="538" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Telemetry Mesh</text>
+<text x="1032.0" y="552" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">prompts • tools • completions</text>
+<rect x="40" y="586" width="1120" height="110" fill="#243B55" stroke="#C04A2B" stroke-width="2.5" rx="8" ry="8"/>
+<text x="600.0" y="610" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ENTERPRISE SECURITY ENVIRONMENT  (Microsoft-aligned)   ★ provided environment tooling</text>
+<rect x="65.0" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="137.14285714285714" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Endpoint / XDR</text>
+<text x="137.14285714285714" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Microsoft Defender</text>
+<rect x="219.28571428571428" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="291.42857142857144" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">SIEM / SOAR</text>
+<text x="291.42857142857144" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Microsoft Sentinel</text>
+<rect x="373.57142857142856" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="445.71428571428567" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Threat Intel</text>
+<text x="445.71428571428567" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Google TI · OpenCTI</text>
+<text x="445.71428571428567" y="673" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">· MS Defender TI</text>
+<rect x="527.8571428571429" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="600.0" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Email Security</text>
+<text x="600.0" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Abnormal</text>
+<rect x="682.1428571428571" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="754.2857142857142" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Network / Cloud</text>
+<text x="754.2857142857142" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Palo Alto NGFW /</text>
+<text x="754.2857142857142" y="673" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Prisma</text>
+<rect x="836.4285714285713" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="908.5714285714284" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">AI Surfaces</text>
+<text x="908.5714285714284" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Claude · Copilot</text>
+<rect x="990.7142857142857" y="624" width="144.28571428571428" height="60" fill="#FFF4E5" stroke="#C04A2B" stroke-width="2" rx="5" ry="5"/>
+<text x="1062.857142857143" y="643" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">Collaboration</text>
+<text x="1062.857142857143" y="660" font-size="10" fill="#3a2a14" text-anchor="middle" font-weight="bold">Microsoft Teams</text>
+<rect x="40.0" y="710" width="363.3333333333333" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="221.66666666666666" y="732" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Technical Dashboard</text>
+<text x="221.66666666666666" y="758" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">Grafana — coverage, MTTR, jailbreak rate, ATLAS heatmap</text>
+<rect x="418.3333333333333" y="710" width="363.3333333333333" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="600.0" y="732" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Executive Dashboard</text>
+<rect x="564.0" y="742" width="72" height="16" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.5" rx="3" ry="3"/>
+<text x="600.0" y="753" font-size="10" fill="#C04A2B" text-anchor="middle" font-weight="bold">Power BI</text>
+<text x="600.0" y="773" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">risk heatmap, portfolio KPIs, compliance</text>
+<rect x="796.6666666666666" y="710" width="363.3333333333333" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="6" ry="6"/>
+<text x="978.3333333333333" y="732" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Compliance Evidence</text>
+<text x="978.3333333333333" y="758" font-size="11" fill="#DCEBFA" text-anchor="middle" font-weight="bold">HIPAA / HITRUST control mapping, audit query</text>
+<line x1="105.0" y1="322" x2="105.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="247.0" y1="300" x2="247.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="389.0" y1="366" x2="389.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="531.0" y1="344" x2="531.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="673.0" y1="315" x2="673.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="815.0" y1="322" x2="815.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="957.0" y1="344" x2="957.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="1099.0" y1="344" x2="1099.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="168.0" y1="472" x2="168.0" y2="484" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="384.0" y1="472" x2="384.0" y2="484" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="600.0" y1="472" x2="600.0" y2="484" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="816.0" y1="472" x2="816.0" y2="484" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="1032.0" y1="472" x2="1032.0" y2="484" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="137.14285714285714" y1="574" x2="137.14285714285714" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="291.42857142857144" y1="574" x2="291.42857142857144" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="445.71428571428567" y1="574" x2="445.71428571428567" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="600.0" y1="574" x2="600.0" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="754.2857142857142" y1="574" x2="754.2857142857142" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="908.5714285714284" y1="574" x2="908.5714285714284" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="1062.857142857143" y1="574" x2="1062.857142857143" y2="586" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="221.66666666666666" y1="696" x2="221.66666666666666" y2="710" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="600.0" y1="696" x2="600.0" y2="710" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="978.3333333333333" y1="696" x2="978.3333333333333" y2="710" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<rect x="40" y="804" width="1120" height="128" fill="#F2FBFD" stroke="#0E7490" stroke-width="2.2" rx="9" ry="9" stroke-dasharray="10 5"/>
+<text x="56" y="827" font-size="13" fill="#0B5566" text-anchor="start" font-weight="bold">FUTURE / PROPOSED ENVIRONMENT STATE</text>
+<text x="340" y="827" font-size="11" fill="#555555" text-anchor="start" font-weight="bold">— proposed additions, not yet deployed</text>
+<rect x="56.0" y="838" width="353.3333333333333" height="82" fill="#E3F6FB" stroke="#0E7490" stroke-width="1.6" rx="6" ry="6" stroke-dasharray="7 4"/>
+<rect x="325.3333333333333" y="846" width="74" height="15" fill="#0E7490" stroke="#0E7490" stroke-width="1" rx="3" ry="3"/>
+<text x="362.3333333333333" y="857" font-size="8.5" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PROPOSED</text>
+<text x="70.0" y="863" font-size="13" fill="#0B5566" text-anchor="start" font-weight="bold">Microsoft Foundry</text>
+<text x="70.0" y="882" font-size="10.5" fill="#222222" text-anchor="start" font-weight="bold">Governed model &amp; agent build / deploy platform</text>
+<text x="70.0" y="910" font-size="10" fill="#0E7490" text-anchor="start" font-weight="bold">extends → Controlled Build Environment</text>
+<rect x="423.3333333333333" y="838" width="353.3333333333333" height="82" fill="#E3F6FB" stroke="#0E7490" stroke-width="1.6" rx="6" ry="6" stroke-dasharray="7 4"/>
+<rect x="692.6666666666666" y="846" width="74" height="15" fill="#0E7490" stroke="#0E7490" stroke-width="1" rx="3" ry="3"/>
+<text x="729.6666666666666" y="857" font-size="8.5" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PROPOSED</text>
+<text x="437.3333333333333" y="863" font-size="13" fill="#0B5566" text-anchor="start" font-weight="bold">Microsoft Agent365</text>
+<text x="437.3333333333333" y="882" font-size="10.5" fill="#222222" text-anchor="start" font-weight="bold">Enterprise agent identity, registry &amp; lifecycle</text>
+<text x="437.3333333333333" y="896" font-size="10.5" fill="#222222" text-anchor="start" font-weight="bold">governance</text>
+<text x="437.3333333333333" y="910" font-size="10" fill="#0E7490" text-anchor="start" font-weight="bold">extends → AI-Production / Agent Runtime</text>
+<rect x="790.6666666666666" y="838" width="353.3333333333333" height="82" fill="#E3F6FB" stroke="#0E7490" stroke-width="1.6" rx="6" ry="6" stroke-dasharray="7 4"/>
+<rect x="1060.0" y="846" width="74" height="15" fill="#0E7490" stroke="#0E7490" stroke-width="1" rx="3" ry="3"/>
+<text x="1097.0" y="857" font-size="8.5" fill="#FFFFFF" text-anchor="middle" font-weight="bold">PROPOSED</text>
+<text x="804.6666666666666" y="863" font-size="13" fill="#0B5566" text-anchor="start" font-weight="bold">Varonis Atlas</text>
+<text x="804.6666666666666" y="882" font-size="10.5" fill="#222222" text-anchor="start" font-weight="bold">AI Detection &amp; Response (DDR) — AI data access &amp;</text>
+<text x="804.6666666666666" y="896" font-size="10.5" fill="#222222" text-anchor="start" font-weight="bold">behavior</text>
+<text x="804.6666666666666" y="910" font-size="10" fill="#0E7490" text-anchor="start" font-weight="bold">extends → Continuous Assurance</text>
+<line x1="221.66666666666666" y1="790" x2="221.66666666666666" y2="804" stroke="#0E7490" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="600.0" y1="790" x2="600.0" y2="804" stroke="#0E7490" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="978.3333333333333" y1="790" x2="978.3333333333333" y2="804" stroke="#0E7490" stroke-width="1" stroke-dasharray="3 3"/>
+</svg>
