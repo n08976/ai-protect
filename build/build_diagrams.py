@@ -1056,9 +1056,10 @@ def diagram_health_presentation(future=False):
               "TruffleHog", "Nuclei", "ZAP", "Schemathesis", "garak", "PyRIT", "ART",
               "PromptFoo", "Auto-PR (AzDO/GH)", "Llama Guard", "NeMo Guard",
               "Telemetry", "Drift det.", "Re-scan cron", "Report card", "DefectDojo"}   # new — green
+    HL_FUT = {"MS Foundry", "MS Agent365", "Varonis Atlas"} if future else set()  # proposed — teal
 
-    def _grp(it):    # orange (existing) at TOP -> green (new) -> plain at BOTTOM (e.g. CMDB tag)
-        return 0 if it in HL else (1 if it in HL_NEW else 2)
+    def _grp(it):    # orange (existing) -> green (new) -> plain -> teal (proposed) at BOTTOM
+        return 0 if it in HL else (1 if it in HL_NEW else (3 if it in HL_FUT else 2))
 
     # ---- title + legends ----
     s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))   # opaque white background
@@ -1073,6 +1074,10 @@ def diagram_health_presentation(future=False):
     s.append(text(lx+18, y0, "Existing", 10, TEXT, "start")); lx += 18 + 8*6.2 + 8
     s.append(box(lx, swy, 13, 12, GRN_FILL, GRN, 1.4, 2))
     s.append(text(lx+18, y0, "New tool", 10, TEXT, "start")); lx += 18 + 8*6.2 + 10
+    if future:
+        s.append(f'<rect x="{lx}" y="{swy}" width="13" height="12" fill="{FUT_FILL}" '
+                 f'stroke="{FUT_BD}" stroke-width="1.4" rx="2" ry="2" stroke-dasharray="3 2"/>')
+        s.append(text(lx+18, y0, "Proposed", 10, TEXT, "start")); lx += 18 + 8*6.2 + 10
     s.append(box(lx, swy-1, 28, 14, GRN, GRN, 1, 3))
     s.append(text(lx+14, y0, "NEW", 8, WHITE, "middle", "bold"))
     s.append(text(lx+32, y0, "= new stage", 10, TEXT, "start")); lx += 32 + 11*6.2 + 20
@@ -1142,6 +1147,11 @@ def diagram_health_presentation(future=False):
         ["Telemetry", "Drift det.", "Re-scan cron", "Mend", "Burp"],                     # 6 (+Mend,Burp)
         ["DefectDojo", "Teams", "Azure Boards", "Jira", "Report card"],                  # 7 (DefectDojo = findings sink)
     ]
+    if future:                                   # proposed additions land in their primary stages
+        tools[0] = tools[0] + ["MS Agent365"]    # Discovery — agent registry / inventory
+        tools[1] = tools[1] + ["MS Agent365"]    # Tiering — agent identity / classification
+        tools[4] = tools[4] + ["MS Foundry"]     # AI Red Team — model evals / red-team
+        tools[6] = tools[6] + ["Varonis Atlas"]  # Monitoring — AI detection & response (DDR)
     ty0 = 195 + DY; tslot = 22; ggap = 7
     box_bottoms = []
     for i, items in enumerate(tools):
@@ -1161,6 +1171,10 @@ def diagram_health_presentation(future=False):
                 s.append(box(x+5, yy-13, sw-10, 18, ORANGE, ACCENT, 1, 3)); tc, tw = ACCENT, "bold"
             elif it in HL_NEW:
                 s.append(box(x+5, yy-13, sw-10, 18, GRN_FILL, GRN, 1, 3)); tc, tw = GRN_TXT, "bold"
+            elif it in HL_FUT:
+                s.append(f'<rect x="{x+5}" y="{yy-13}" width="{sw-10}" height="18" fill="{FUT_FILL}" '
+                         f'stroke="{FUT_BD}" stroke-width="1.2" rx="3" ry="3" stroke-dasharray="4 2.5"/>')
+                tc, tw = FUT_TXT, "bold"
             else:
                 tc, tw = TEXT, "normal"
             s.append(text(x+sw/2, yy, it, 11, tc, "middle", tw))
@@ -1192,13 +1206,23 @@ def diagram_health_presentation(future=False):
     parts = [("LLM Gateway", ["Claude primary", "+ secondary LLM"]), ("MCP Farm", ["curated registry"]),
              ("Agent Runtime", ["SPIFFE ID, scoped"]), ("Data Plane", ["FHIR / vector / RAG"]),
              ("Telemetry Mesh", ["prompts • tools • completions"])]
+    if future:                                   # proposed model/agent platforms join the infra band
+        parts = parts + [("MS Foundry", ["models · evals · agents"]),
+                         ("MS Agent365", ["agent identity · registry"])]
     pw = (W-120)/len(parts); px0 = 60
     for i, (a, subs) in enumerate(parts):
         x = px0 + i*pw
-        s.append(box(x+5, iy+38, pw-10, 42, "#2C547F", "#456A92", 1, 5))
-        s.append(text(x+pw/2, iy+54, a, 12, WHITE, "middle", "bold"))
-        for k, sub in enumerate(subs[:2]):
-            s.append(text(x+pw/2, iy+68+k*12, sub, 11, "#DCEBFA", "middle", "bold"))
+        if a in ("MS Foundry", "MS Agent365"):   # teal, dashed = proposed
+            s.append(f'<rect x="{x+5}" y="{iy+38}" width="{pw-10}" height="42" fill="{FUT_FILL}" '
+                     f'stroke="{FUT_BD}" stroke-width="1.6" rx="5" ry="5" stroke-dasharray="6 3"/>')
+            s.append(text(x+pw/2, iy+54, a, 12, FUT_TXT, "middle", "bold"))
+            for k, sub in enumerate(subs[:2]):
+                s.append(text(x+pw/2, iy+68+k*12, sub, 10, FUT_BD, "middle", "bold"))
+        else:
+            s.append(box(x+5, iy+38, pw-10, 42, "#2C547F", "#456A92", 1, 5))
+            s.append(text(x+pw/2, iy+54, a, 12, WHITE, "middle", "bold"))
+            for k, sub in enumerate(subs[:2]):
+                s.append(text(x+pw/2, iy+68+k*12, sub, 11, "#DCEBFA", "middle", "bold"))
 
     ey = 586; eh = 110
     s.append(box(40, ey, W-80, eh, "#243B55", ACCENT, 2.5, 8))
@@ -1207,11 +1231,18 @@ def diagram_health_presentation(future=False):
            ("Threat Intel", "Google TI · OpenCTI · MS Defender TI"), ("Email Security", "Abnormal"),
            ("Network / Cloud", "Palo Alto NGFW / Prisma"), ("AI Surfaces", "Claude · Copilot"),
            ("Collaboration", "Microsoft Teams")]
+    if future:                                   # proposed AI detection & response joins the SOC stack
+        env = env + [("AI Detection & Response", "Varonis Atlas")]
     ew = (W-120)/len(env); ex0 = 60
     for i, (a, b) in enumerate(env):
         x = ex0 + i*ew
-        s.append(box(x+5, ey+38, ew-10, 60, ORANGE, ACCENT, 2, 5))
-        s.append(text(x+ew/2, ey+57, a, 11, ACCENT, "middle", "bold"))
+        prop = b == "Varonis Atlas"              # teal, dashed = proposed
+        if prop:
+            s.append(f'<rect x="{x+5}" y="{ey+38}" width="{ew-10}" height="60" fill="{FUT_FILL}" '
+                     f'stroke="{FUT_BD}" stroke-width="2" rx="5" ry="5" stroke-dasharray="6 3"/>')
+        else:
+            s.append(box(x+5, ey+38, ew-10, 60, ORANGE, ACCENT, 2, 5))
+        s.append(text(x+ew/2, ey+57, a, 11, FUT_TXT if prop else ACCENT, "middle", "bold"))
         words = b.split(" "); lines = []; cur = ""
         for w in words:
             if len(cur)+len(w)+1 > 20:
@@ -1221,7 +1252,7 @@ def diagram_health_presentation(future=False):
         if cur:
             lines.append(cur)
         for k, ln in enumerate(lines[:2]):
-            s.append(text(x+ew/2, ey+74+k*13, ln, 10, "#3a2a14", "middle", "bold"))
+            s.append(text(x+ew/2, ey+74+k*13, ln, 10, FUT_BD if prop else "#3a2a14", "middle", "bold"))
 
     dy = 710; dh = 80
     # dark-blue cards (same scheme as the bands); Power BI is existing -> orange pill.
@@ -1270,7 +1301,7 @@ def diagram_health_presentation(future=False):
 # DIAGRAM: AI organizational transformation (presentation)
 # ============================================================
 def diagram_ai_transformation(future=False):
-    W, H = 1280, (700 if future else 568)
+    W, H = 1280, (728 if future else 568)
     s = [hdr(W, H), arrow_def()]
     GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
     PROD = "#13643A"; PROD_FILL = "#DCF0E4"
@@ -1301,6 +1332,11 @@ def diagram_ai_transformation(future=False):
         s.append(text(bx+bw/2, byy+34, name, 10, TEXT, "middle", "bold"))
         builder_pts.append((bx+bw, byy+bh/2))
     s.append(text(ax+aw/2, by0+3*(bh+8)+5, "builds: automations · apps · agents · SaaS replacements", 10, TEXT_LT, "middle", "bold"))
+    if future:                                   # proposed governed build platform
+        s.append(f'<rect x="{ax+14}" y="326" width="{aw-28}" height="32" fill="{FUT_FILL}" '
+                 f'stroke="{FUT_BD}" stroke-width="1.4" rx="5" ry="5" stroke-dasharray="6 3"/>')
+        s.append(text(ax+aw/2, 340, "⊕ PROPOSED · Microsoft Foundry", 9.5, FUT_TXT, "middle", "bold"))
+        s.append(text(ax+aw/2, 352, "governed model / agent build platform", 8.5, FUT_BD, "middle", "bold"))
     s.append(box(ax+14, ay+ah-40, aw-28, 30, GRN_FILL, GRN, 1.2, 5))
     s.append(text(ax+aw/2, ay+ah-20, "Build with Claude (primary) · Copilot · paved-road templates", 9.5, GRN_TXT, "middle", "bold"))
 
@@ -1335,23 +1371,33 @@ def diagram_ai_transformation(future=False):
     s.append(text((nx+nw+px_)/2, py_-1, "kicks off", 11.5, ACCENT, "middle", "bold"))
 
     # ---- Zone D: ai-production environment + continuous assurance ----
-    dx, dyy, dw, dh = 1082, 240, 176, 158
+    dx, dyy, dw, dh = 1082, 240, 176, (198 if future else 158)
     s.append(box(dx, dyy, dw, dh, PROD_FILL, PROD, 3, 10))
     s.append(text(dx+dw/2, dyy+24, "AI-PRODUCTION", 15, PROD, "middle", "bold"))
     s.append(text(dx+dw/2, dyy+41, "ENVIRONMENT", 12, PROD, "middle", "bold"))
     s.append(text(dx+dw/2, dyy+58, "sanctioned network zone", 10, TEXT, "middle", "bold"))
-    cax, cay, caw, cah = dx+10, dyy+68, dw-20, 82
+    cax, cay, caw, cah = dx+10, dyy+68, dw-20, (122 if future else 82)
     s.append(box(cax, cay, caw, cah, GRN_FILL, GRN, 1.4, 6))
     s.append(text(cax+caw/2, cay+17, "● CONTINUOUS ASSURANCE", 9.5, GRN_TXT, "middle", "bold"))
-    s.append(text(cax+caw/2, cay+35, "AI red-team", 10.5, TEXT, "middle", "bold"))
-    s.append(text(cax+caw/2, cay+51, "SAST · DAST", 10.5, TEXT, "middle", "bold"))
-    s.append(text(cax+caw/2, cay+69, "always-on, in production", 8.5, TEXT_LT, "middle", "bold"))
+    if future:
+        s.append(text(cax+caw/2, cay+34, "AI red-team · SAST · DAST", 9, TEXT, "middle", "bold"))
+        s.append(f'<line x1="{cax+8}" y1="{cay+42}" x2="{cax+caw-8}" y2="{cay+42}" '
+                 f'stroke="{FUT_BD}" stroke-width="1" stroke-dasharray="4 2"/>')
+        s.append(text(cax+caw/2, cay+56, "⊕ Varonis Atlas", 10, FUT_TXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+68, "AI Detection & Response", 8, FUT_BD, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+88, "⊕ MS Agent365", 10, FUT_TXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+100, "agent identity · registry", 8, FUT_BD, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+116, "always-on, in production", 7.5, TEXT_LT, "middle", "bold"))
+    else:
+        s.append(text(cax+caw/2, cay+35, "AI red-team", 10.5, TEXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+51, "SAST · DAST", 10.5, TEXT, "middle", "bold"))
+        s.append(text(cax+caw/2, cay+69, "always-on, in production", 8.5, TEXT_LT, "middle", "bold"))
     s.append(f'<line x1="{px_+pw_}" y1="{cy}" x2="{dx-2}" y2="{dyy+34}" stroke="{GRN}" stroke-width="2.5" marker-end="url(#arrGr)"/>')
     s.append(text((px_+pw_+dx)/2, py_-14, "launch /", 11.5, GRN_TXT, "middle", "bold"))
     s.append(text((px_+pw_+dx)/2, py_-1, "deploy", 11.5, GRN_TXT, "middle", "bold"))
 
     # ---- Continuous feedback loop: production findings reopen the 7 stages ----
-    fy = 418                                   # feedback lane (below pipeline / production)
+    fy = 452 if future else 418                # feedback lane (below pipeline / production)
     pcx = px_+pw_/2
     s.append(f'<path d="M {dx+dw/2} {dyy+dh} L {dx+dw/2} {fy} L {pcx} {fy} L {pcx} {py_+ph_+2}" '
              f'fill="none" stroke="{FB}" stroke-width="2.4" stroke-dasharray="7 4" marker-end="url(#arrFb)"/>')
@@ -1359,7 +1405,7 @@ def diagram_ai_transformation(future=False):
                   10, FB, "middle", "bold"))
 
     # ---- Legend: tier-aware gate ----
-    lx, ly, lw, lh = 22, 448, W-44, 100
+    lx, ly, lw, lh = 22, (470 if future else 448), W-44, 100
     s.append(box(lx, ly, lw, lh, GRAY_LT, NAVY, 1.5, 8))
     s.append(text(lx+14, ly+22, "TIER-AWARE GATE", 12, NAVY_DK, "start", "bold"))
     s.append(text(lx+150, ly+22, "— the same pipeline runs for every build; the tier decides whether it ships automatically or waits for a human.",
@@ -1379,7 +1425,7 @@ def diagram_ai_transformation(future=False):
         s.append(text(cx+12, cyy+51, decision, 10.5, txt, "start", "bold"))
 
     if future:
-        s.extend(future_state_band(22, 560, W-44, 128))
+        s.extend(future_state_band(22, 584, W-44, 128))
 
     s.append("</svg>")
     return "\n".join(s)
