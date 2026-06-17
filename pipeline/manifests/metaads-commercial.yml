@@ -26,7 +26,9 @@ surfaces:
 
 target:
   base_url: https://fivestaradbuilder.com
-  api_url: https://fivestaradbuilder.com/api/
+  # API lives on the api. subdomain (the old fivestaradbuilder.com/api/ is the
+  # marketing domain + a 404 path). For API-focused DAST, set base_url to this too.
+  api_url: https://api.fivestaradbuilder.com/
   allow_mutation: false
 
 expected_data_scopes:
