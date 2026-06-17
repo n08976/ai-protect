@@ -113,6 +113,9 @@ class Manifest:
     github_repo: str = ""
     github_ref: str = ""                         # branch / tag / SHA; '' uses settings default
     github_clone_depth: int | None = None        # None uses settings default (typically 1, shallow)
+    # Monorepo support: scan only this subdirectory of the cloned repo. '' scans
+    # the whole repo. e.g. github_subdir: commercial → scan <clone>/commercial.
+    github_subdir: str = ""
 
     # --- findings-sink integrations (added 2026-06-11) ---
     # Per-app overrides for where findings are shipped after a scan, e.g.
@@ -164,6 +167,7 @@ class Manifest:
             github_repo=str(data.get("github_repo") or "").strip(),
             github_ref=str(data.get("github_ref") or "").strip(),
             github_clone_depth=data.get("github_clone_depth"),
+            github_subdir=str(data.get("github_subdir") or "").strip().strip("/"),
             integrations=dict(data.get("integrations") or {}),
             raw=data,
         )

@@ -46,6 +46,20 @@ _SAFE_SEGMENT = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._-]*$")   # owner / repo n
 _SAFE_REF = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._/-]*$")       # branch / tag / SHA
 
 
+def _resolve_subdir(root: str, subdir: str) -> str:
+    """Resolve <root>/<subdir> for monorepo scans, refusing traversal escapes.
+    Empty subdir returns the repo root unchanged."""
+    if not subdir:
+        return root
+    rootp = Path(root).resolve()
+    p = (rootp / subdir).resolve()
+    if p != rootp and rootp not in p.parents:
+        raise SourceError(f"github_subdir {subdir!r} escapes the repository root")
+    if not p.is_dir():
+        raise SourceError(f"github_subdir {subdir!r} does not exist in the repository")
+    return str(p)
+
+
 def _require_safe(value: str, pattern: re.Pattern, what: str) -> str:
     if not pattern.match(value):
         raise SourceError(
@@ -84,6 +98,7 @@ class GitHubProvider(SourceProvider):
         token = _resolve_token(owner, repo_name, base_url)
         clone_url = _build_clone_url(base_url, owner, repo_name, token)
         strategy = user_settings.get("github_clone_strategy", "per_scan")
+        subdir = (getattr(manifest, "github_subdir", "") or "").strip().strip("/")
 
         if strategy == "cached":
             cache_dir = Path(user_settings.get("source_cache_dir") or "")
@@ -93,12 +108,12 @@ class GitHubProvider(SourceProvider):
             sha = _head_sha(target)
             try:
                 yield SourceMaterialization(
-                    paths=[str(target)],
+                    paths=[_resolve_subdir(str(target), subdir)],
                     provider=self.name,
                     metadata={
                         "owner": owner, "repo": repo_name, "ref": ref,
                         "sha": sha, "clone_strategy": "cached",
-                        "base_url": base_url,
+                        "base_url": base_url, "subdir": subdir,
                     },
                 )
             finally:
@@ -109,12 +124,12 @@ class GitHubProvider(SourceProvider):
                 self._clone_shallow(clone_url, tmp, ref, depth)
                 sha = _head_sha(Path(tmp))
                 yield SourceMaterialization(
-                    paths=[tmp],
+                    paths=[_resolve_subdir(tmp, subdir)],
                     provider=self.name,
                     metadata={
                         "owner": owner, "repo": repo_name, "ref": ref,
                         "sha": sha, "clone_strategy": "per_scan",
-                        "base_url": base_url,
+                        "base_url": base_url, "subdir": subdir,
                     },
                 )
             finally:
