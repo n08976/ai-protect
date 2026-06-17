@@ -360,14 +360,18 @@ def save(cfg: dict[str, Any]) -> None:
 
 
 def get(key: str, default: Any = None) -> Any:
-    """Look up a key. Falls back to the schema default, then to `default`."""
+    """Look up a key. Falls back to the schema default, then to `default`.
+
+    A present value is honored even when empty for checkbox fields — an empty
+    string is how an UNCHECKED checkbox is stored, and must not silently revert
+    to an "on" schema default (that made on-by-default toggles impossible to
+    turn off, e.g. the DAST scope-prefix guard)."""
     cfg = load()
-    if key in cfg and cfg[key] != "":
+    fld = _field(key)
+    if key in cfg and (cfg[key] != "" or (fld is not None and fld.kind == "checkbox")):
         return cfg[key]
-    for section in SCHEMA:
-        for fld in section.fields:
-            if fld.key == key:
-                return fld.default if fld.default not in (None, "") else default
+    if fld is not None:
+        return fld.default if fld.default not in (None, "") else default
     return default
 
 
