@@ -1149,9 +1149,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     # Scan launcher + status
     # ============================================================
 
-    @app.route("/scan")
-    @app.route("/scan/source")
+    # NOTE: order matters. Decorators apply innermost-first, so "/scan" is the
+    # FIRST-registered rule — which is what url_for('scan_launcher') (no args)
+    # builds. Keep "/scan" innermost so every bare scan-launcher link defaults
+    # to SAST, not the live/DAST route.
     @app.route("/scan/live")
+    @app.route("/scan/source")
+    @app.route("/scan")
     def scan_launcher():
         from ..adapters.registry import REGISTRY
         from ..core import scan_modes as sm
