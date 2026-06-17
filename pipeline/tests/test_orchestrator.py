@@ -60,3 +60,40 @@ def test_low_risk_tier_4_minimal_pipeline(tmp_path):
                      "pip_audit", "dependency_check", "trivy"):
         assert expected in names, f"missing {expected} in tier 4 build"
     assert all(n not in names for n in ("garak", "pyrit", "atomic", "sqlmap", "burp"))
+
+
+def test_dast_and_policy_adapters_run_when_source_materialization_fails(tmp_path, monkeypatch):
+    """A failed source clone (e.g. private repo, no PAT) must NOT block DAST /
+    policy adapters — they probe a live target or read only the manifest, so
+    they need no source. Regression for the orchestrator source-partition fix."""
+    from pipeline.core.orchestrator import AdapterResult
+    from pipeline.core.scan_modes import mode_for, MODE_SAST
+    from pipeline.sources.base import SourceError
+
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=False)
+
+    # Simulate source-provider failure without any real clone/network.
+    def boom():
+        raise SourceError("simulated clone failure")
+    monkeypatch.setattr(orc, "_materialize_source", boom)
+
+    # Stub adapter execution so no real tools/network run; record dispatches.
+    dispatched: list[str] = []
+    def fake_run(call, stage, tier):
+        dispatched.append(call.adapter)
+        return AdapterResult(adapter=call.adapter, blocking=call.blocking, status="ok")
+    monkeypatch.setattr(orc, "_run_adapter", fake_run)
+
+    result = orc.run_stage("build")   # tier-1 build has SAST + DAST + policy adapters
+    names = {ar.adapter for ar in result.adapter_results}
+
+    # Source clone failed -> one _source error, gate fails.
+    assert "_source" in names
+    assert not result.gate_passed
+    # SAST adapters were NOT dispatched (nothing to read).
+    assert not any(mode_for(a) == MODE_SAST for a in dispatched), dispatched
+    # DAST + policy adapters ran anyway.
+    assert "nuclei" in dispatched        # DAST
+    assert "intel_match" in dispatched   # policy

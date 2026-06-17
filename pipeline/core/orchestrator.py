@@ -21,6 +21,7 @@ from ..adapters.registry import get_adapter_class
 from .findings import Finding, FindingStore, Severity
 from .manifest import Manifest
 from .policy import STAGES, AdapterCall, adapters_for
+from .scan_modes import MODE_SAST, mode_for
 from .tiering import TierDecision, classify
 
 log = logging.getLogger("ai-protect.orchestrator")
@@ -93,36 +94,52 @@ class Orchestrator:
             self.manifest.name, stage, decision.tier, decision.score,
         )
 
-        # Materialize source ONCE per stage and mutate manifest.source_paths so
-        # every adapter in the stage sees the same materialized tree. On
-        # provider error (clone failed, auth missing) the whole stage fails
-        # gracefully with a single recorded entry — no adapter is invoked.
-        try:
-            with self._materialize_source() as sm:
-                saved_paths = list(self.manifest.source_paths)
-                saved_path = self.manifest.source_path
-                self.manifest.source_paths = list(sm.paths)
-                self.manifest.source_path = None
-                try:
-                    for call in adapters_for(decision.tier, stage):
-                        ar = self._run_adapter(call, stage, decision.tier)
-                        result.adapter_results.append(ar)
-                        if call.blocking and ar.high_or_above > 0:
-                            result.gate_passed = False
-                            result.gate_reason = (
-                                f"{ar.adapter} produced {ar.high_or_above} HIGH-or-above finding(s) "
-                                f"and is marked blocking in the policy table."
-                            )
-                finally:
-                    self.manifest.source_paths = saved_paths
-                    self.manifest.source_path = saved_path
-        except Exception as e:
-            log.exception("source materialization failed for %s", self.manifest.name)
-            ar = AdapterResult(adapter="_source", blocking=True, status="error")
-            ar.error = f"{type(e).__name__}: {e}"
+        def _dispatch(call):
+            ar = self._run_adapter(call, stage, decision.tier)
             result.adapter_results.append(ar)
-            result.gate_passed = False
-            result.gate_reason = f"source provider failed: {ar.error}"
+            if call.blocking and ar.high_or_above > 0:
+                result.gate_passed = False
+                result.gate_reason = (
+                    f"{ar.adapter} produced {ar.high_or_above} HIGH-or-above finding(s) "
+                    f"and is marked blocking in the policy table."
+                )
+
+        # Partition the stage's adapters by whether they read source on disk.
+        # SAST adapters need a materialized tree; DAST adapters probe a live
+        # target and policy/intel adapters use only the manifest — neither needs
+        # source. A DAST scan must NOT require (or be blocked by) a source clone.
+        calls = adapters_for(decision.tier, stage)
+        source_calls = [c for c in calls if mode_for(c.adapter) == MODE_SAST]
+        target_calls = [c for c in calls if mode_for(c.adapter) != MODE_SAST]
+
+        # Source-backed adapters: materialize ONCE. On provider error (clone
+        # failed, auth missing) record a single _source entry and fail the gate
+        # — but this no longer aborts the DAST/policy adapters below.
+        if source_calls:
+            try:
+                with self._materialize_source() as sm:
+                    saved_paths = list(self.manifest.source_paths)
+                    saved_path = self.manifest.source_path
+                    self.manifest.source_paths = list(sm.paths)
+                    self.manifest.source_path = None
+                    try:
+                        for call in source_calls:
+                            _dispatch(call)
+                    finally:
+                        self.manifest.source_paths = saved_paths
+                        self.manifest.source_path = saved_path
+            except Exception as e:
+                log.exception("source materialization failed for %s", self.manifest.name)
+                ar = AdapterResult(adapter="_source", blocking=True, status="error")
+                ar.error = f"{type(e).__name__}: {e}"
+                result.adapter_results.append(ar)
+                result.gate_passed = False
+                result.gate_reason = f"source provider failed: {ar.error}"
+
+        # DAST / policy adapters: never need source — run regardless of whether
+        # source materialization happened, succeeded, or failed.
+        for call in target_calls:
+            _dispatch(call)
 
         # Auto-resolve: any fingerprint a ran-ok adapter previously emitted but
         # didn't this scan is treated as fixed/gone. We don't auto-resolve when
