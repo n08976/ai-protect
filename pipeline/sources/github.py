@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -35,6 +36,23 @@ from .base import SourceProvider, SourceMaterialization, SourceError
 
 
 GIT = "git"
+
+# Manifest-supplied owner/repo segments and the git ref are interpolated into
+# argv for `git clone`/`checkout`. Even though we never use a shell, a value
+# beginning with '-' would be parsed by git as an OPTION (argument injection,
+# e.g. ref='--upload-pack=...'). Constrain to safe charsets and reject leading
+# dashes. Refs allow '/' (refs/heads/...) but nothing exotic.
+_SAFE_SEGMENT = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._-]*$")   # owner / repo name
+_SAFE_REF = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._/-]*$")       # branch / tag / SHA
+
+
+def _require_safe(value: str, pattern: re.Pattern, what: str) -> str:
+    if not pattern.match(value):
+        raise SourceError(
+            f"unsafe github {what} {value!r}: must match {pattern.pattern} "
+            "(no leading '-'; restricted charset) to prevent git argument injection"
+        )
+    return value
 
 
 class GitHubProvider(SourceProvider):
@@ -60,6 +78,7 @@ class GitHubProvider(SourceProvider):
         except (TypeError, ValueError):
             depth = 1
 
+        ref = _require_safe(ref, _SAFE_REF, "ref")
         base_url = user_settings.get("github_base_url", "https://github.com").rstrip("/")
         owner, repo_name = _split_repo(repo, base_url)
         token = _resolve_token(owner, repo_name, base_url)
@@ -162,7 +181,9 @@ def _split_repo(repo: str, base_url: str) -> tuple[str, str]:
     parts = path.split("/", 1)
     if len(parts) != 2:
         raise SourceError(f"could not parse 'owner/name' from github_repo='{repo}'")
-    return parts[0], parts[1]
+    owner = _require_safe(parts[0], _SAFE_SEGMENT, "repo owner")
+    name = _require_safe(parts[1], _SAFE_SEGMENT, "repo name")
+    return owner, name
 
 
 def _build_clone_url(base_url: str, owner: str, repo_name: str, token: str | None) -> str:

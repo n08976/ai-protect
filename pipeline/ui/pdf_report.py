@@ -10,6 +10,7 @@ that fires on a download click. Output is a multi-section report:
 """
 from __future__ import annotations
 
+import html
 import io
 import time
 from typing import Iterable
@@ -82,14 +83,11 @@ def _styles():
 
 
 def _esc(s) -> str:
+    # Use the stdlib escaper (escapes & < > " ') before embedding values in
+    # reportlab's mini-HTML Paragraph markup — replaces hand-rolled escaping.
     if s is None:
         return ""
-    return (
-        str(s)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return html.escape(str(s), quote=True)
 
 
 def _sev_chip(sev: str, st: dict) -> Table:

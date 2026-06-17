@@ -6,3 +6,4 @@
 # dependencies rather than whatever happens to be installed in the ambient
 # environment.
 -r pipeline/requirements.txt
+-r build/requirements.txt

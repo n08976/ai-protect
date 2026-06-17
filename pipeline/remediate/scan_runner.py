@@ -85,6 +85,9 @@ def main():
 
         # Run the CLI; tee output to log file.
         with open(log_path, "w") as logf:
+            # nosec B603 nosemgrep: dangerous-subprocess-use-tainted-env-args
+            # — list-form (no shell); scan_id/manifest/stage/adapter are validated
+            # by the UI before this runner is spawned.
             proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT)
 
         findings_after = _active_count(findings_path, app_name) if app_name else 0

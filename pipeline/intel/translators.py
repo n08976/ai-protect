@@ -11,7 +11,10 @@ import html
 import json
 import re
 import time
-from xml.etree import ElementTree as ET
+# Parse untrusted feed bytes with defusedxml (XXE / billion-laughs hardening).
+# Element/ParseError types still come from the stdlib; only PARSING is defused.
+from defusedxml.ElementTree import fromstring as _ET_fromstring
+from xml.etree.ElementTree import Element as _Element, ParseError as _ParseError  # nosec B405 — types/exception only; all parsing goes through defusedxml
 
 from .feeds import IntelItem, make_item_id
 
@@ -140,8 +143,8 @@ def _escape_inner_cdata(raw: bytes) -> bytes:
 def translate_rss(raw: bytes, source_feed_id: str) -> list[IntelItem]:
     raw = _escape_inner_cdata(raw)
     try:
-        root = ET.fromstring(raw)
-    except ET.ParseError as e:
+        root = _ET_fromstring(raw)
+    except _ParseError as e:
         raise TranslatorError(f"RSS parse failed: {e}") from e
     if _strip_namespace(root.tag).lower() != "rss":
         raise TranslatorError(f"expected <rss> root, got <{_strip_namespace(root.tag)}>")
@@ -182,8 +185,8 @@ _ATOM_NS = {"a": "http://www.w3.org/2005/Atom"}
 def translate_atom(raw: bytes, source_feed_id: str) -> list[IntelItem]:
     raw = _escape_inner_cdata(raw)
     try:
-        root = ET.fromstring(raw)
-    except ET.ParseError as e:
+        root = _ET_fromstring(raw)
+    except _ParseError as e:
         raise TranslatorError(f"Atom parse failed: {e}") from e
     if _strip_namespace(root.tag).lower() != "feed":
         raise TranslatorError(f"expected <feed> root, got <{_strip_namespace(root.tag)}>")
@@ -236,12 +239,12 @@ def translate_xml_generic(raw: bytes, source_feed_id: str) -> list[IntelItem]:
     cvss, published/date.
     """
     try:
-        root = ET.fromstring(raw)
-    except ET.ParseError as e:
+        root = _ET_fromstring(raw)
+    except _ParseError as e:
         raise TranslatorError(f"XML parse failed: {e}") from e
 
     # Find the repeating element: the most-common child tag at depth 1 or 2.
-    candidates: list[ET.Element] = list(root)
+    candidates: list[_Element] = list(root)
     if len(candidates) == 1:
         candidates = list(candidates[0])
     if not candidates:

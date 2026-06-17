@@ -27,7 +27,8 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import ParseError as _ParseError  # exception type only
+from defusedxml.ElementTree import parse as _ET_parse        # hardened parsing (XXE)
 from pathlib import Path
 
 from ..core.findings import Category, Severity
@@ -77,8 +78,8 @@ class RideAdapter(Adapter):
         findings = []
         for xml_path in sorted(reports_dir.glob("TEST-*.xml")):
             try:
-                tree = ET.parse(xml_path)
-            except ET.ParseError:
+                tree = _ET_parse(xml_path)
+            except _ParseError:
                 continue
             for testcase in tree.iter("testcase"):
                 failure = testcase.find("failure") or testcase.find("error")

@@ -102,6 +102,7 @@
               {% endif %}
 
               {% if fld.help and fld.kind != "checkbox" %}
+                {# nosemgrep: template-unescaped-with-safe — fld.help is static, developer-authored HTML from settings.py SCHEMA (never user input) #}
                 <small class="form-help">{{ fld.help|safe }}</small>
               {% endif %}
               {% if err %}<div class="sev-badge sev-high" style="margin-top:6px">{{ err }}</div>{% endif %}

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,7 +32,9 @@ def run_tests(test_paths: list[str], timeout_s: int = 60) -> list[TestResult]:
     for tp in test_paths:
         try:
             proc = subprocess.run(
-                ["pytest", tp, "-q", "--tb=short", "--no-header"],
+                # Invoke via the current interpreter (absolute path) instead of
+                # bare "pytest" — avoids PATH-resolution ambiguity (bandit B607).
+                [sys.executable, "-m", "pytest", tp, "-q", "--tb=short", "--no-header"],
                 capture_output=True, text=True, timeout=timeout_s, check=False,
             )
             results.append(TestResult(

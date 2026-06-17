@@ -56,7 +56,7 @@ def test_sast_adapters_unavailable_when_cli_missing(cls, bin_name, monkeypatch):
 
 
 def test_ride_requires_mutation(monkeypatch):
-    monkeypatch.setenv("RIDE_TEST_PATH", "/tmp/no-such-suite")
+    monkeypatch.setenv("RIDE_TEST_PATH", "/tmp/no-such-suite")  # nosec B108 — test stub path, never created
     m = _clinical(allow_mutation=False)
     adapter = RideAdapter(m, stage="preprod", config={})
     with pytest.raises(AdapterAuthorizationRequired):

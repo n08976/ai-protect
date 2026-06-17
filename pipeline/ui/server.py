@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -23,6 +24,11 @@ from ..adapters.registry import REGISTRY
 from ..core.findings import FindingStore, Severity
 from ..core.tiering import classify
 from ..core.manifest import Manifest
+from ..core.policy import STAGES
+
+# Scan ids are interpolated into log file paths and subprocess argv. Constrain
+# to a safe charset so a forged id can't traverse paths or inject git/CLI args.
+_SAFE_SCAN_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 from ..remediate.engine import Engine, EngineError
 from ..remediate.registry import remediators_for
 from ..remediate.scans import (
@@ -307,7 +313,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                     if eng and remediators_for(f, eng.manifest.raw):
                         keep.append(f)
                 except Exception:
-                    pass
+                    pass  # nosec B110 — best-effort fixability probe; a broken remediator must not drop the finding
             findings = keep
 
         filters = {
@@ -371,7 +377,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                     if eng and remediators_for(f, eng.manifest.raw):
                         keep.append(f)
                 except Exception:
-                    pass
+                    pass  # nosec B110 — best-effort fixability probe; a broken remediator must not drop the finding
             findings = keep
         findings.sort(key=lambda f: -f.severity_score)
 
@@ -1158,7 +1164,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                         "allow_mutation": bool(m.target and m.target.allow_mutation),
                     })
                 except Exception:
-                    continue
+                    continue  # nosec B112 — skip manifests that fail to load; listing must not 500 on one bad file
 
         adapter_names = list(REGISTRY.keys())
         sast_adapters = sm.adapters_for_mode(sm.MODE_SAST, adapter_names)
@@ -1192,7 +1198,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
 
     @app.route("/scan/start", methods=["POST"])
     def scan_start():
-        import subprocess as sp
+        import subprocess as sp  # nosec B404 — fixed argv, no shell; args validated above
         from ..core import scan_modes as sm
         from ..core import adhoc as adhoc_mod
         from ..core.url_safety import check_url
@@ -1235,6 +1241,22 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         else:
             scan_id = None   # assigned below after the manifest is read
 
+        # --- input validation (these form values flow into argv + a log path) ---
+        if stage not in STAGES:
+            return f"Unknown stage {stage!r} (expected one of {', '.join(STAGES)})", 400
+        if adapter is not None and adapter not in REGISTRY:
+            return f"Unknown adapter {adapter!r}", 400
+        if not (mode == sm.MODE_DAST and dast_sub == "url"):
+            # Operator-supplied manifest path → confine it to the manifests dir
+            # (prevents traversal / pointing the runner at an arbitrary file).
+            md = Path(app.config["MANIFESTS_DIR"]).resolve()
+            try:
+                mp = Path(manifest_path or "").resolve()
+                mp.relative_to(md)
+            except (ValueError, OSError, RuntimeError):
+                return f"Refusing manifest path outside {md}: {manifest_path!r}", 400
+            manifest_path = str(mp)
+
         try:
             m = Manifest.from_yaml(manifest_path)
         except Exception as e:
@@ -1266,7 +1288,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         ]
         env = os.environ.copy()
         env["PATH"] = "/home/user/bin:/home/user/.local/bin:" + env.get("PATH", "")
-        proc = sp.Popen(
+        proc = sp.Popen(  # nosec B603 nosemgrep: dangerous-subprocess-use — list-form (no shell); stage/adapter/manifest validated above
             cmd, env=env, stdout=open(log_path, "w"), stderr=sp.STDOUT,
             cwd=str(Path(__file__).resolve().parent.parent.parent),
             start_new_session=True,
@@ -1280,6 +1302,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
 
     @app.route("/scan/<scan_id>")
     def scan_status(scan_id):
+        if not _SAFE_SCAN_ID.match(scan_id):
+            return "Scan not found", 404
         job = get_scan(scan_id)
         if not job:
             return "Scan not found", 404
@@ -1302,6 +1326,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         """
         import signal as _signal
         import time as _time
+        if not _SAFE_SCAN_ID.match(scan_id):
+            return jsonify({"error": "not found"}), 404
         job = get_scan(scan_id)
         if not job:
             return jsonify({"error": "not found"}), 404
@@ -1359,6 +1385,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     def api_scan(scan_id):
         """JSON poll endpoint for the scan status page — feeds AJAX updates
         so the page doesn't have to reload itself every 3 seconds."""
+        if not _SAFE_SCAN_ID.match(scan_id):
+            return jsonify({"error": "not found"}), 404
         job = get_scan(scan_id)
         if not job:
             return jsonify({"error": "not found"}), 404
@@ -1517,6 +1545,15 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             return render_template("feeds_discover.html",
                                    page_url="", candidates=None,
                                    error="enter a page URL")
+        # SSRF guard: this URL is fetched server-side, so run it through the
+        # same URL-safety policy as DAST targets (deny internal/metadata,
+        # require http(s), re-resolve DNS) before urlopen.
+        from ..core.url_safety import check_url
+        _chk = check_url(page_url)
+        if not _chk.ok:
+            return render_template("feeds_discover.html", page_url=page_url, candidates=None,
+                                   error=f"refusing to fetch {page_url!r}: {_chk.reason}")
+        page_url = _chk.url
         from html.parser import HTMLParser
         from urllib.parse import urljoin
         import urllib.request as _u
@@ -1551,7 +1588,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
 
         try:
             req = _u.Request(page_url, headers={"User-Agent": "ai-protect/1.0 (+feed discovery)"})
-            with _u.urlopen(req, timeout=20) as r:
+            with _u.urlopen(req, timeout=20) as r:  # nosec B310 nosemgrep: dynamic-urllib-use-detected — scheme+host vetted by check_url() above
                 html_body = r.read().decode("utf-8", errors="replace")
         except Exception as e:
             return render_template("feeds_discover.html",
@@ -1636,6 +1673,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             feed = Feed(
                 feed_id=new_feed_id(), name=name, url=url,
                 format=fmt, poll_seconds=poll_seconds, enabled=True,
+                # nosec B311 — non-security: jitters initial poll time so feeds don't all fire at once
                 last_fetch_ts=now - random.uniform(0, poll_seconds),
             )
             store.write(feed)
@@ -1877,7 +1915,9 @@ def main():
     ap.add_argument("--findings", required=True)
     ap.add_argument("--manifests-dir",
                     default=str(Path(__file__).resolve().parent.parent / "manifests"))
-    ap.add_argument("--host", default="0.0.0.0")
+    # Bind loopback by default (clears bandit B104). Pass --host 0.0.0.0 to
+    # expose the UI on all interfaces deliberately.
+    ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--debug", action="store_true")
     args = ap.parse_args()

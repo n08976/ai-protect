@@ -30,7 +30,7 @@
         <tbody>
           {% for i in items %}
             <tr>
-              <td class="mono small">{% if i.link %}<a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.cve_id or '—' }}</a>{% else %}{{ i.cve_id or '—' }}{% endif %}</td>
+              <td class="mono small">{% if i.link and (i.link.startswith('https://') or i.link.startswith('http://')) %}<a href="{{ i.link }}" target="_blank" rel="noopener">{{ i.cve_id or '—' }}</a>{% else %}{{ i.cve_id or '—' }}{% endif %}</td>
               <td>{% if i.severity %}<span class="sev-badge sev-{{ i.severity }}">{{ i.severity }}</span>{% else %}—{% endif %}</td>
               <td class="mono small">{{ '%.1f'|format(i.cvss) if i.cvss is not none else '—' }}</td>
               <td class="small">{{ i.title }}</td>
