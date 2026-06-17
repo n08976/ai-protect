@@ -1,0 +1,68 @@
+# ai-protect scanning itself (dogfooding / self-scan).
+# Source is fetched from the public GitHub repo via the `github` source
+# provider — no token required (public, per-scan shallow clone). When
+# source_provider=github the orchestrator scans the whole cloned tree and
+# `source_excludes` (below) trims noise; `source_paths` is only the local
+# fallback if you flip source_provider to 'local'.
+name: ai-protect
+owner: 71745984+n08976@users.noreply.github.com      # TODO: replace with a real AppSec distribution list
+on_call: 71745984+n08976@users.noreply.github.com    # TODO: replace with a real on-call alias
+description: >-
+  ai-protect — the AI security assurance pipeline itself. CLI + Flask UI that
+  scans AI applications (SAST/SCA/secrets, DAST, AI red-team), risk-tiers them,
+  auto-remediates via LLM-generated pull requests, and exports findings to
+  DefectDojo. High-privilege internal tool: holds repo and CI tokens and can
+  open PRs / gate deployments. No PHI.
+
+# --- risk-tiering dimensions (→ Tier 2, score 11) ---
+data_sensitivity: confidential      # scan findings about other apps + tokens via env; repo code itself is public
+decision_impact: automated_action   # auto-gates deploys and opens auto-PRs
+integration_footprint: external_action  # opens PRs, runs live DAST, calls GitHub/AzDO/DefectDojo APIs
+user_population: team               # operated by the AppSec / security team
+
+# ai-protect uses an LLM for AI red-team generation (garak/PyRIT) and auto-remediation PRs.
+models:
+- name: claude-sonnet-gateway
+  provider: anthropic
+  model: claude-sonnet-4-6
+  via_gateway: true
+  baa_covered: false
+  auth_env: ANTHROPIC_API_KEY
+
+# Attacker-controllable inputs that drive AI red-team surface selection:
+# it ingests the source it scans + CVE/intel feeds, and CI events trigger scans.
+surfaces:
+  has_document_ingest: true
+  has_webhook: true
+
+expected_data_scopes:
+- internal
+- confidential
+
+# --- source provider: pull the repo straight from public GitHub ---
+source_provider: github
+github_repo: n08976/ai-protect
+github_ref: main
+# github_clone_depth omitted → uses the central settings default (shallow=1).
+# Set to a larger value (or full history) if you want TruffleHog to scan git history.
+
+# Local fallback only (used if source_provider is switched to 'local'):
+source_paths:
+- .
+source_excludes:
+- diagrams/
+- .git
+- __pycache__
+- "*.pyc"
+- node_modules/
+- .venv
+- venv/
+- "*.png"
+- "*.svg"
+
+# Findings-sink override: import this app's findings into its own DefectDojo
+# product/engagement. Falls back to /settings defaults if DefectDojo is unset.
+integrations:
+  defectdojo:
+    product: ai-protect
+    engagement: ai-protect self-scan
