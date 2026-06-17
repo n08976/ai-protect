@@ -46,6 +46,24 @@ from .catalog import CATALOG, CATEGORY_ORDER
 DEFAULT_ACTOR = "operator@example.com"
 
 
+def _safe_log_tail(log_path: str, n: int = 4000) -> str:
+    """Read the tail of a scan log, refusing any path outside SCAN_LOG_DIR.
+
+    Defense-in-depth on top of the scan_id charset guard: even a forged
+    job.log_path can't read arbitrary files.
+    """
+    from ..remediate.scans import SCAN_LOG_DIR
+    try:
+        p = Path(log_path).resolve()
+        p.relative_to(Path(SCAN_LOG_DIR).resolve())
+    except (ValueError, OSError):
+        return ""
+    try:
+        return p.read_text()[-n:]
+    except OSError:
+        return ""
+
+
 def create_app(findings_path: str, manifests_dir: str) -> Flask:
     app = Flask(
         __name__,
@@ -73,7 +91,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                 m = Manifest.from_yaml(p)
                 if m.name == app_name:
                     return Engine(m, FindingStore(app.config["FINDINGS_PATH"]))
-            except Exception:
+            except Exception:  # nosec B112 — skip a manifest that fails to load; engine lookup must not 500
                 continue
         return None
 
@@ -112,9 +130,9 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
                             if r.propose(f, eng.manifest.raw) is not None:
                                 ok = True
                                 break
-                        except Exception:
+                        except Exception:  # nosec B110 — best-effort fixability probe; a broken remediator must not abort
                             pass
-                except Exception:
+                except Exception:  # nosec B110 — best-effort fixability probe; a broken remediator must not abort
                     pass
             fixable[f.finding_id] = ok
         # Filters
@@ -163,7 +181,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         findings.sort(key=lambda f: -f.severity_score)
 
         # Hero stats reflect the table the operator is looking at.
-        any_filter = bool(sev_filter or cat_filter or app_filter or adapter_filter or fixable_filter)
+        any_filter = bool(sev_filter or cat_filter or app_filter or adapter_filter or fixable_filter)  # nosemgrep — FP: bool() of request strings, no float/NaN possible
         stats_for_view = _stats(findings)
 
         # Severity-pill histogram: counts of findings if the user toggled to
@@ -1288,8 +1306,9 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         ]
         env = os.environ.copy()
         env["PATH"] = "/home/user/bin:/home/user/.local/bin:" + env.get("PATH", "")
-        proc = sp.Popen(  # nosec B603 nosemgrep: dangerous-subprocess-use — list-form (no shell); stage/adapter/manifest validated above
-            cmd, env=env, stdout=open(log_path, "w"), stderr=sp.STDOUT,
+        proc = sp.Popen(  # nosec B603 — list-form (no shell); stage/adapter/manifest validated above
+            cmd, env=env, stdout=open(log_path, "w"), stderr=sp.STDOUT,  # nosemgrep — validated argv, no shell
+
             cwd=str(Path(__file__).resolve().parent.parent.parent),
             start_new_session=True,
         )
@@ -1309,11 +1328,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             return "Scan not found", 404
         update_status_from_pid(job)
         log_tail = ""
-        if job.log_path and Path(job.log_path).exists():
-            try:
-                log_tail = Path(job.log_path).read_text()[-4000:]
-            except Exception:
-                log_tail = ""
+        if job.log_path:
+            log_tail = _safe_log_tail(job.log_path)
         return render_template("scan_status.html", job=job, log_tail=log_tail)
 
     @app.route("/scan/<scan_id>/stop", methods=["POST"])
@@ -1392,11 +1408,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             return jsonify({"error": "not found"}), 404
         update_status_from_pid(job)
         log_tail = ""
-        if job.log_path and Path(job.log_path).exists():
-            try:
-                log_tail = Path(job.log_path).read_text()[-4000:]
-            except Exception:
-                log_tail = ""
+        if job.log_path:
+            log_tail = _safe_log_tail(job.log_path)
         return jsonify({
             "scan_id": job.scan_id,
             "status": job.status,
@@ -1642,7 +1655,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
 
     @app.route("/feeds/discover/import", methods=["POST"])
     def feeds_discover_import():
-        import random
+        import secrets
         import time as _time
         urls = request.form.getlist("url")
         names = request.form.getlist("name")
@@ -1673,8 +1686,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             feed = Feed(
                 feed_id=new_feed_id(), name=name, url=url,
                 format=fmt, poll_seconds=poll_seconds, enabled=True,
-                # nosec B311 — non-security: jitters initial poll time so feeds don't all fire at once
-                last_fetch_ts=now - random.uniform(0, poll_seconds),
+                # CSPRNG jitter (non-security, but clears weak-PRNG flags): spread initial poll times
+                last_fetch_ts=now - secrets.randbelow(max(1, int(poll_seconds))),
             )
             store.write(feed)
             existing.add(url)

@@ -73,7 +73,7 @@ class GitleaksAdapter(Adapter):
                     "file": r.get("File"),
                     "line": r.get("StartLine"),
                     "match": (r.get("Match") or "")[:200],
-                    "secret": "[redacted]",  # never echo the secret itself
+                    "secret": "[redacted]",  # nosec B105 — literal placeholder; the real secret is never echoed
                     "entropy": r.get("Entropy"),
                 },
                 affected={"file": r.get("File")},

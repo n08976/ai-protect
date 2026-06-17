@@ -51,7 +51,7 @@ class GrypeAdapter(Adapter):
 
     def _scan_one(self, path: str) -> list:
         # If a Syft SBOM was generated for this manifest+path, prefer it.
-        sbom_dir = Path(self.config.get("sbom_dir", "/tmp/sboms"))
+        sbom_dir = Path(self.config.get("sbom_dir") or (Path(tempfile.gettempdir()) / "ai-protect-sboms"))
         path_slug = path.strip("/").replace("/", "_") or "root"
         sbom_path = sbom_dir / f"{self.manifest.name}.{path_slug}.cdx.json"
         # Back-compat fallback: legacy SBOM name (pre-multi-path).

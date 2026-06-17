@@ -9,6 +9,7 @@ from __future__ import annotations
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from .feeds import Feed, FeedFetch, FeedFetchStore, FeedStore, IntelStore
@@ -20,9 +21,12 @@ HTTP_TIMEOUT = 20
 
 
 def _http_get(url: str) -> tuple[int, bytes]:
+    # Restrict to http(s) — blocks file:// / ftp:// and similar via urlopen.
+    if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
+        raise ValueError(f"refusing non-http(s) feed URL: {url!r}")
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:  # nosec B310 — scheme restricted to http(s) above
             return resp.status, resp.read()
     except urllib.error.HTTPError as e:
         return e.code, b""

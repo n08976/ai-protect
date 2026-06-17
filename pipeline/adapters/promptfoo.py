@@ -18,6 +18,7 @@ import json
 import logging
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from ..core.findings import Category, Severity
@@ -56,17 +57,19 @@ class PromptfooAdapter(Adapter):
             raise AdapterUnavailable(
                 "promptfoo requires config_path in adapter config (path to promptfoo YAML)."
             )
-        try:
-            proc = subprocess.run(
-                ["promptfoo", "eval", "-c", config, "-o", "/tmp/promptfoo_out.json", "--no-progress-bar"],
-                capture_output=True, text=True, timeout=900, check=False,
-            )
-        except subprocess.TimeoutExpired:
-            raise AdapterUnavailable("promptfoo timed out")
-        try:
-            data = json.loads(Path("/tmp/promptfoo_out.json").read_text())
-        except Exception:
-            return []
+        with tempfile.TemporaryDirectory(prefix="ai-protect-promptfoo-") as td:
+            out_path = str(Path(td) / "promptfoo_out.json")
+            try:
+                proc = subprocess.run(
+                    ["promptfoo", "eval", "-c", config, "-o", out_path, "--no-progress-bar"],
+                    capture_output=True, text=True, timeout=900, check=False,
+                )
+            except subprocess.TimeoutExpired:
+                raise AdapterUnavailable("promptfoo timed out")
+            try:
+                data = json.loads(Path(out_path).read_text())
+            except Exception:
+                return []
         return list(self._parse_promptfoo(data))
 
     def _parse_promptfoo(self, data: dict):

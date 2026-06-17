@@ -51,6 +51,7 @@ source_paths:
 - .
 source_excludes:
 - diagrams/
+- build/            # diagram-generation / doc build tooling — not the runtime product surface
 - .git
 - __pycache__
 - "*.pyc"
@@ -59,6 +60,10 @@ source_excludes:
 - venv/
 - "*.png"
 - "*.svg"
+# Test suite: excluded from the self-scan. The SAST linters flag hundreds of
+# B101 (assert), B105/B106 (test credential fixtures), B108 (/tmp stub paths)
+# and the intentional fake-PAT bait — all test-only noise, not product risk.
+- pipeline/tests/
 
 # Findings-sink override: import this app's findings into its own DefectDojo
 # product/engagement. Falls back to /settings defaults if DefectDojo is unset.
