@@ -50,7 +50,7 @@
     {% macro feed_row(f, show_history=True) -%}
       <tr>
         <td><strong>{{ f.name }}</strong>{% if not f.enabled %} <span class="sev-badge sev-low" title="disabled">paused</span>{% endif %}</td>
-        <td class="mono small"><a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.url }}</a></td>
+        <td class="mono small"><a href="{{ f.url|httpsafe }}" target="_blank" rel="noopener">{{ f.url }}</a></td>
         <td class="mono">{{ f.format }}</td>
         <td class="mono small">{{ f.poll_seconds }}s</td>
         <td>

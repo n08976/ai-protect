@@ -73,6 +73,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     app.config["FINDINGS_PATH"] = findings_path
     app.config["MANIFESTS_DIR"] = manifests_dir
 
+    @app.template_filter("httpsafe")
+    def _httpsafe(u):
+        """Return a URL only if it's http(s); else '#'. Blocks javascript:/data:
+        URIs in hrefs sourced from feeds/findings (Jinja already HTML-escapes)."""
+        u = u or ""
+        return u if isinstance(u, str) and (u.startswith("https://") or u.startswith("http://")) else "#"
+
     # Jinja filter: format any epoch timestamp in the operator's configured TZ.
     # Re-reads config.json each call so a settings change takes effect without
     # restarting the UI.

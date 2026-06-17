@@ -67,6 +67,15 @@ class SemgrepAdapter(Adapter):
         cmd = ["semgrep", "scan", "--json", "--quiet", "--no-git-ignore", "--metrics=off"]
         for c in configs:
             cmd.extend(["--config", c])
+        # Honor a scanned repo's .semgrep-exclude (one rule id per line) so a
+        # project can suppress its own categorical false positives.
+        from pathlib import Path as _P
+        excl = _P(path) / ".semgrep-exclude"
+        if excl.is_file():
+            for line in excl.read_text().splitlines():
+                rid = line.strip()
+                if rid and not rid.startswith("#"):
+                    cmd.extend(["--exclude-rule", rid])
         cmd.append(path)
         try:
             proc = subprocess.run(
