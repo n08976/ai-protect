@@ -1150,7 +1150,7 @@ def diagram_health_presentation(future=False):
     if future:                                   # proposed additions land in their primary stages
         tools[0] = tools[0] + ["MS Agent365"]    # Discovery — agent registry / inventory
         tools[1] = tools[1] + ["MS Agent365"]    # Tiering — agent identity / classification
-        tools[4] = tools[4] + ["MS Foundry"]     # AI Red Team — model evals / red-team
+        tools[4] = tools[4] + ["MS Foundry", "Varonis Atlas"]  # Red Team — Foundry evals + Atlas DDR (purple-team: confirms attacks reach sensitive data)
         tools[6] = tools[6] + ["Varonis Atlas"]  # Monitoring — AI detection & response (DDR)
     ty0 = 195 + DY; tslot = 22; ggap = 7
     box_bottoms = []
