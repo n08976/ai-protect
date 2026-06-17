@@ -74,7 +74,7 @@ def scan_status() -> dict[str, Any]:
 
 
 def store_status(findings_path: str) -> dict[str, Any]:
-    if findings_path.startswith("/tmp"):
+    if findings_path.startswith("/tmp"):  # nosec B108 — guard that WARNS against /tmp storage; not creating a temp path
         return {
             "level": "red",
             "detail": f"findings path '{findings_path}' is on /tmp — results lost on reboot",

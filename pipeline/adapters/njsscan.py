@@ -58,9 +58,17 @@ class NjsscanAdapter(Adapter):
     def _scan_one(self, path: str) -> list:
         with tempfile.TemporaryDirectory() as td:
             report = Path(td) / "njsscan.json"
+            cmd = ["njsscan", "--json", "-o", str(report)]
+            # Honor a .njsscan config committed in the scanned repo (njsscan does
+            # not auto-load it). Lets a project suppress its own false positives
+            # — e.g. a Python/Jinja repo silencing JS-template rules.
+            cfg = Path(path) / ".njsscan"
+            if cfg.is_file():
+                cmd += ["-c", str(cfg)]
+            cmd.append(path)
             try:
-                subprocess.run(
-                    ["njsscan", "--json", "-o", str(report), path],
+                subprocess.run(  # nosec B603 — fixed argv, no shell
+                    cmd,
                     capture_output=True, text=True, timeout=600, check=False,
                 )
             except subprocess.TimeoutExpired:

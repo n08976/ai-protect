@@ -13,8 +13,7 @@ import re
 import time
 # Parse untrusted feed bytes with defusedxml (XXE / billion-laughs hardening).
 # Element/ParseError types still come from the stdlib; only PARSING is defused.
-from defusedxml.ElementTree import fromstring as _ET_fromstring
-from xml.etree.ElementTree import Element as _Element, ParseError as _ParseError  # nosec B405 — types/exception only; all parsing goes through defusedxml
+from defusedxml.ElementTree import fromstring as _ET_fromstring, ParseError as _ParseError
 
 from .feeds import IntelItem, make_item_id
 
@@ -244,7 +243,7 @@ def translate_xml_generic(raw: bytes, source_feed_id: str) -> list[IntelItem]:
         raise TranslatorError(f"XML parse failed: {e}") from e
 
     # Find the repeating element: the most-common child tag at depth 1 or 2.
-    candidates: list[_Element] = list(root)
+    candidates: list = list(root)
     if len(candidates) == 1:
         candidates = list(candidates[0])
     if not candidates:

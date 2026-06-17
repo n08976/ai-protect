@@ -1,0 +1,7 @@
+# njsscan is a Node.js/JavaScript SAST tool. This repo is Python + Jinja2.
+# njsscan's template engine misreads Jinja {{ }} as Squirrelly/handlebars JS
+# templates (squirrelly_template false positives). Skip the Jinja templates dir.
+ignore-paths:
+  - pipeline/ui/templates
+ignore-rules:
+  - squirrelly_template

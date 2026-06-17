@@ -23,7 +23,7 @@ import json
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404 — used only for git with fixed argv (no shell); inputs validated
 import tempfile
 import time
 from contextlib import contextmanager
@@ -259,7 +259,7 @@ def _exchange_app_token(owner: str, repo_name: str, base_url: str) -> str | None
         data=b"",   # empty body required
     )
     try:
-        with _u.urlopen(req, timeout=15) as r:
+        with _u.urlopen(req, timeout=15) as r:  # nosec B310 nosemgrep — URL is the configured GitHub(-ES) API host, not user input
             body = json.loads(r.read())
             return body.get("token")
     except Exception as e:
@@ -286,7 +286,7 @@ def _looks_like_sha(ref: str) -> bool:
 
 def _head_sha(target: Path) -> str:
     try:
-        out = subprocess.check_output(
+        out = subprocess.check_output(  # nosec B603 — git, fixed argv, no shell
             [GIT, "-C", str(target), "rev-parse", "HEAD"],
             stderr=subprocess.DEVNULL, timeout=10,
         )
@@ -299,7 +299,7 @@ def _run_or_raise(cmd: list[str], what: str) -> None:
     """Run a subprocess; on failure raise SourceError with the redacted command + stderr."""
     redacted_cmd = [_redact(c) if isinstance(c, str) and c.startswith(("http://", "https://")) else c for c in cmd]
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603 — git, fixed argv, no shell; owner/repo/ref validated against safe charset
             cmd, capture_output=True, text=True, timeout=300, check=False,
         )
     except subprocess.TimeoutExpired:

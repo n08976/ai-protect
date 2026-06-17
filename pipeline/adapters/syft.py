@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from ..core.findings import Category, Severity
@@ -45,7 +46,7 @@ class SyftAdapter(Adapter):
         return self.filter_findings(findings)
 
     def _scan_one(self, path: str) -> list:
-        out_dir = Path(self.config.get("output_dir", "/tmp/sboms"))
+        out_dir = Path(self.config.get("output_dir") or (Path(tempfile.gettempdir()) / "ai-protect-sboms"))
         out_dir.mkdir(parents=True, exist_ok=True)
         # Path-suffixed SBOM filename so multi-path manifests don't collide.
         path_slug = path.strip("/").replace("/", "_") or "root"

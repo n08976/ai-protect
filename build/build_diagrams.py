@@ -2,6 +2,7 @@
 Palette mirrors v2.1: navy #1F3A5F, takeaway #EAF3FA, callout #FFF4E5,
 alt-row #F2F5F9, accent #C04A2B, white #FFFFFF.
 """
+import html
 import os
 import cairosvg
 
@@ -35,7 +36,8 @@ def box(x, y, w, h, fill, stroke=NAVY, sw=1, rx=6):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" rx="{rx}" ry="{rx}"/>'
 
 def _esc(t):
-    return str(t).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # stdlib escaper (escapes & < > " ') for embedding text in SVG markup
+    return html.escape(str(t))
 
 def text(x, y, t, size=12, fill=TEXT, anchor="start", weight="normal"):
     return f'<text x="{x}" y="{y}" font-size="{size}" fill="{fill}" text-anchor="{anchor}" font-weight="{weight}">{_esc(t)}</text>'

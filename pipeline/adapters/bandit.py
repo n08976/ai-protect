@@ -4,15 +4,22 @@ Complements Semgrep with a different (more Python-aware) ruleset. Bandit
 catches a different slice of issues — exec/eval, weak crypto, weak SSL,
 hardcoded passwords, subprocess shell=True, etc.
 
-Default skip-list:
-    B113 (request_without_timeout) — fires on every requests.get/post without
-        an explicit timeout. Reliability anti-pattern, not a security issue,
-        and bandit's own confidence tag is LOW. Without this skip, B113 alone
-        produces ~70% of bandit's volume on real Python code, drowning the
-        signal-rich findings (B324 weak crypto, B105/B106/B107 hardcoded
-        passwords, B602/B604 shell=True, B301 pickle).
+Default skip-list — all bandit LOW-severity, high-volume informational checks
+that drown the signal-rich findings. The signal checks (B324 weak crypto,
+B105/B106/B107 hardcoded passwords, B602/B604 shell=True, B301 pickle, B608
+SQLi, the B5xx SSL/TLS family) are all kept.
 
-    Override via config: pass skip_tests=[] or a different list to keep B113.
+    B113  request_without_timeout — reliability anti-pattern, not security.
+    B101  assert_used — asserts are normal, especially in tests.
+    B110/B112  try_except_pass / try_except_continue — best-effort error
+        handling; flags intent, not a vulnerability.
+    B404  import subprocess — purely informational ("you imported subprocess").
+    B603/B607  subprocess_without_shell_equals_true / partial-path — these fire
+        on EVERY list-form CLI invocation. For a tool-orchestrator (and any app
+        that shells out by design) that's categorical noise; the real risk is
+        shell=True (B602) and shell-metachar use (B604/B605/B606), which stay.
+
+    Override via config: pass skip_tests=[] or a custom list to re-enable any.
 
 Repo: https://github.com/PyCQA/bandit
 """
@@ -66,7 +73,10 @@ class BanditAdapter(Adapter):
         return self.filter_findings(findings)
 
     def _scan_one(self, path: str) -> list:
-        skip_tests = self.config.get("skip_tests", ["B113"])
+        skip_tests = self.config.get(
+            "skip_tests",
+            ["B113", "B101", "B110", "B112", "B404", "B603", "B607"],
+        )
         cmd = ["bandit", "-r", "-f", "json", "-q", path]
         if skip_tests:
             cmd += ["-s", ",".join(skip_tests)]

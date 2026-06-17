@@ -27,8 +27,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from xml.etree.ElementTree import ParseError as _ParseError  # exception type only
-from defusedxml.ElementTree import parse as _ET_parse        # hardened parsing (XXE)
+from defusedxml.ElementTree import parse as _ET_parse, ParseError as _ParseError  # hardened parsing (XXE)
 from pathlib import Path
 
 from ..core.findings import Category, Severity
@@ -59,7 +58,7 @@ class RideAdapter(Adapter):
         suite = self.config.get("test_path") or os.environ["RIDE_TEST_PATH"]
         timeout_s = self.config.get("timeout_s", 1800)
         try:
-            subprocess.run(
+            subprocess.run(  # nosec B607 B603 — `mvn` is intentionally resolved from PATH (build tool); fixed argv, no shell
                 ["mvn", "-q", "-B", "test"],
                 cwd=suite,
                 capture_output=True,
