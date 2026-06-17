@@ -1,0 +1,52 @@
+# FSAB / Five Star Ad Builder — commercial SaaS. Scanned from GitHub by the
+# ai-protect UI (separate from the in-repo .ai-protect/manifest.yml that drives
+# the CI gate). Source is the `commercial/` subdir of the private monorepo
+# n08976/MetaAdsMCPServers.
+#
+# PREREQUISITE: the repo is PRIVATE, so /settings → Source providers needs
+# github_visibility=private + a PAT (or GitHub App) with read access to it.
+name: metaads-commercial
+owner: 71745984+n08976@users.noreply.github.com      # TODO: real AppSec owner alias
+on_call: 71745984+n08976@users.noreply.github.com    # TODO: real on-call alias
+description: >-
+  Multi-tenant Meta Ads commercial SaaS (Five Star Ad Builder, fivestaradbuilder.com).
+  FastAPI backend (app/main.py, njha-api/app.py), OAuth + JWT auth, Stripe billing,
+  AES-GCM workspace-secret encryption, Supabase RLS, Nginx + Docker. Customer-facing;
+  accepts customer auth and processes payment + ad-account data.
+
+# Forced Tier 1: external-facing + non-advisory (also financial data).
+data_sensitivity: financial
+decision_impact: automated_action
+integration_footprint: external_action
+user_population: external
+
+surfaces:
+  has_document_ingest: true
+  has_webhook: true
+
+target:
+  base_url: https://fivestaradbuilder.com
+  api_url: https://fivestaradbuilder.com/api/
+  allow_mutation: false
+
+expected_data_scopes:
+- financial
+- pii
+
+# --- source: the commercial/ subdir of the private monorepo on GitHub ---
+source_provider: github
+github_repo: n08976/MetaAdsMCPServers
+github_ref: main
+github_subdir: commercial
+source_excludes:
+- marketing-site
+- docs
+- node_modules
+- .git
+- __pycache__
+- "*.pyc"
+
+integrations:
+  defectdojo:
+    product: FSAB Commercial
+    engagement: ai-protect preprod
