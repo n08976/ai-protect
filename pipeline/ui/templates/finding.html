@@ -101,7 +101,7 @@
       <h2>References</h2>
       <ul>
         {% for r in finding.references %}
-          <li><a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a></li>
+          <li><a href="{{ r|httpsafe }}" target="_blank" rel="noopener">{{ r }}</a></li>
         {% endfor %}
       </ul>
     </section>
@@ -126,7 +126,7 @@
           <tbody>
             {% for r in related_intel %}
               <tr>
-                <td class="mono small">{% if r.item.link %}<a href="{{ r.item.link }}" target="_blank" rel="noopener">{{ r.item.cve_id }}</a>{% else %}{{ r.item.cve_id }}{% endif %}</td>
+                <td class="mono small">{% if r.item.link %}<a href="{{ r.item.link|httpsafe }}" target="_blank" rel="noopener">{{ r.item.cve_id }}</a>{% else %}{{ r.item.cve_id }}{% endif %}</td>
                 <td>{% if r.item.severity %}<span class="sev-badge sev-{{ r.item.severity }}">{{ r.item.severity }}</span>{% else %}—{% endif %}</td>
                 <td class="mono small">{{ '%.1f'|format(r.item.cvss) if r.item.cvss is not none else '—' }}</td>
                 <td class="small">{{ r.item.title }}</td>

@@ -1,0 +1,10 @@
+# Semgrep rule IDs suppressed for the ai-protect self-scan (categorical FPs for
+# a security-tool orchestrator). Honored by the semgrep adapter via --exclude-rule.
+# var-in-href: Jinja auto-escapes; feed/finding-sourced hrefs are http(s)-guarded
+#   via the |httpsafe filter. url_for() links are internal.
+generic.html-templates.security.var-in-href.var-in-href
+# Every adapter builds a list-form CLI invocation (no shell) from manifest/config —
+# not actually injectable; shell=True would still be caught elsewhere.
+python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
+# Feed fetcher / GitHub API client urlopen — scheme restricted to http(s).
+python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected

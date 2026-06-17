@@ -307,7 +307,7 @@
                     <dt>References</dt>
                     <dd>
                       {% for r in f.references %}
-                        {% if r %}<div class="mono small"><a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a></div>{% endif %}
+                        {% if r %}<div class="mono small"><a href="{{ r|httpsafe }}" target="_blank" rel="noopener">{{ r }}</a></div>{% endif %}
                       {% endfor %}
                     </dd>
                   {% endif %}

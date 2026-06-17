@@ -71,6 +71,14 @@ class BearerAdapter(Adapter):
                 "--quiet", "--exit-code", "0",
                 "--skip-path", ".git,node_modules,.venv,venv,__pycache__",
             ]
+            # Honor a scanned repo's .bearer-skip (one rule id per line) so a
+            # project can suppress its own categorical false positives.
+            skip = Path(path) / ".bearer-skip"
+            if skip.is_file():
+                ids = [ln.strip() for ln in skip.read_text().splitlines()
+                       if ln.strip() and not ln.strip().startswith("#")]
+                if ids:
+                    cmd += ["--skip-rule", ",".join(ids)]
             try:
                 subprocess.run(cmd, capture_output=True, text=True, timeout=900, check=False)
             except subprocess.TimeoutExpired:

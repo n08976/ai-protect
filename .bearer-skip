@@ -1,0 +1,14 @@
+# Bearer rule IDs skipped for the ai-protect self-scan. Honored by the bearer
+# adapter via --skip-rule.
+# ai-protect is a security-tool ORCHESTRATOR: ~40 adapters shell out to their
+# CLI (nuclei, trufflehog, semgrep, ...) with list-form argv (no shell), so
+# bearer's command-injection rule fires categorically. There is no shell=True
+# anywhere (confirmed by bandit), and inputs are validated. The signal-bearing
+# bearer rules (path traversal, weak crypto, etc.) remain enabled.
+python_lang_os_command_injection
+# Path operations throughout read/write files by OPERATOR/CONFIG-derived paths
+# (findings.jsonl, manifest YAML, SBOM/tool reports) — not web-request input.
+# The web-facing path inputs ARE validated at the boundary: scan_id (^[A-Za-z0-9._-]+$),
+# manifest path confined to the manifests dir, and log reads confined to SCAN_LOG_DIR.
+# NOTE: keep that boundary validation — this rule is off for the self-scan.
+python_lang_path_traversal
