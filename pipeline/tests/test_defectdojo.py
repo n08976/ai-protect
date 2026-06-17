@@ -261,8 +261,8 @@ def test_config_missing_raises(monkeypatch):
 def test_config_explicit_args_override_env(monkeypatch):
     monkeypatch.delenv("DEFECTDOJO_URL", raising=False)
     monkeypatch.delenv("DEFECTDOJO_API_TOKEN", raising=False)
-    cfg = DefectDojoConfig.from_env(url="https://x", token="y")
-    assert cfg.url == "https://x" and cfg.token == "y"
+    cfg = DefectDojoConfig.from_env(url="https://x", token="y")  # nosec B106 — test fixture, not a real credential
+    assert cfg.url == "https://x" and cfg.token == "y"  # nosec B105 — test fixture
 
 
 # ---- manifest integration mapping ---------------------------------------- #

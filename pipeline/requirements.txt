@@ -1,9 +1,10 @@
 # Core
 pyyaml>=6.0
-requests>=2.31
+requests>=2.33.0   # GHSA-9hjg-9r4m-mvj7 / gc5v-m9x4-r6x2 / 9wx4-h78v-vm56
+defusedxml>=0.7.1  # hardened XML parsing (feed translators, ride.py) — XXE/billion-laughs
 
 # UI / dashboard
-Flask>=3.0       # /, /scan, /finding, /findings.csv, /findings.pdf, etc.
+Flask>=3.1.3     # GHSA-68rp-wp8r-4726 (missing Vary: Cookie). /, /scan, /finding, /findings.csv, /findings.pdf, etc.
 reportlab==4.5.1 # PDF report generation (pipeline/ui/pdf_report.py)
 
 # AI red-team adapters (install only the ones you'll exercise locally)
@@ -18,4 +19,4 @@ reportlab==4.5.1 # PDF report generation (pipeline/ui/pdf_report.py)
 # burp REST API:   set BURP_API_URL + BURP_API_KEY
 
 # Test deps
-pytest>=8.0
+pytest>=9.0.3    # GHSA-6w46-j5rx-g56g (insecure /tmp pytest dir on UNIX)

@@ -99,4 +99,4 @@ def test_zap_policy_baseline_for_low_tiers():
         calls = adapters_for(tier, "preprod")
         zap_calls = [c for c in calls if c.adapter == "zap"]
         if zap_calls:
-            assert any(c.config.get("mode") == "baseline" for c in zap_calls)
+            assert any(c.config.get("mode") == "baseline" for c in zap_calls)  # nosec B101 — asserts are expected in tests

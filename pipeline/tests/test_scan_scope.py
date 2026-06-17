@@ -226,7 +226,7 @@ def test_adapter_filter_findings_no_excludes_passthrough():
 
 # Realistic-shape fake credentials trufflehog catches deterministically.
 # Both are syntactically valid pattern matches but obviously not real secrets.
-FAKE_GITHUB_PAT = "ghp_xJ8KqL2mN9pR4tV6wY3zA1bC5dE7fG0hI8jK"
+FAKE_GITHUB_PAT = "ghp_xJ8KqL2mN9pR4tV6wY3zA1bC5dE7fG0hI8jK"  # gitleaks:allow trufflehog:ignore — intentional bait for secret-scanner tests
 
 
 def test_trufflehog_loops_over_paths(tmp_path):
