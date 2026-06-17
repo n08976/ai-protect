@@ -133,7 +133,7 @@
 <text x="531.0" y="304" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">ZAP</text>
 <rect x="471" y="313" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="531.0" y="326" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">Schemathesis</text>
-<rect x="608" y="213" width="130" height="131" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
+<rect x="608" y="213" width="130" height="153" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="613" y="218" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
 <text x="673.0" y="231" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">garak</text>
 <rect x="613" y="240" width="120" height="18" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1" rx="3" ry="3"/>
@@ -144,6 +144,8 @@
 <text x="673.0" y="297" font-size="11" fill="#15692F" text-anchor="middle" font-weight="bold">PromptFoo</text>
 <rect x="613" y="313" width="120" height="18" fill="#E3F6FB" stroke="#0E7490" stroke-width="1.2" rx="3" ry="3" stroke-dasharray="4 2.5"/>
 <text x="673.0" y="326" font-size="11" fill="#0B5566" text-anchor="middle" font-weight="bold">MS Foundry</text>
+<rect x="613" y="335" width="120" height="18" fill="#E3F6FB" stroke="#0E7490" stroke-width="1.2" rx="3" ry="3" stroke-dasharray="4 2.5"/>
+<text x="673.0" y="348" font-size="11" fill="#0B5566" text-anchor="middle" font-weight="bold">Varonis Atlas</text>
 <rect x="750" y="213" width="130" height="109" fill="#FFFFFF" stroke="#8A95A8" stroke-width="1" rx="4" ry="4"/>
 <rect x="755" y="218" width="120" height="18" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1" rx="3" ry="3"/>
 <text x="815.0" y="231" font-size="11" fill="#C04A2B" text-anchor="middle" font-weight="bold">WAF (Palo Alto)</text>
@@ -264,7 +266,7 @@
 <line x1="247.0" y1="329" x2="247.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="389.0" y1="366" x2="389.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="531.0" y1="344" x2="531.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
-<line x1="673.0" y1="344" x2="673.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="673.0" y1="366" x2="673.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="815.0" y1="322" x2="815.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="957.0" y1="373" x2="957.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
 <line x1="1099.0" y1="344" x2="1099.0" y2="382" stroke="#8A95A8" stroke-width="1" stroke-dasharray="3 3"/>
