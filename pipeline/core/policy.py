@@ -65,6 +65,11 @@ POLICY: dict[int, dict[str, list[AdapterCall]]] = {
             AdapterCall("pyrit", config={"strategies": ["multiturn", "encoding", "injection", "crescendo"]}, blocking=True),
             AdapterCall("mcp_scope", blocking=True),
             AdapterCall("burp", config={"scan": "active"}),
+            # Passive baseline (spider + passive rules) — non-mutating, so it runs
+            # on production manifests (allow_mutation=false) where the active
+            # full/api passes below are correctly gated off. Gives Tier-1 prod
+            # apps continuous passive ZAP coverage; Tiers 2/3 already have this.
+            AdapterCall("zap", config={"mode": "baseline"}),
             AdapterCall("zap", config={"mode": "full"}),
             AdapterCall("zap", config={"mode": "api"}),
             AdapterCall("nikto"),
