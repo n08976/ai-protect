@@ -155,6 +155,19 @@ class ZAPAdapter(Adapter):
         dc = DastConfig.from_manifest(self.manifest)
         target = self.manifest.target.base_url
         mode = self.config.get("mode", "spider").lower()
+        # Fresh session per scan: the ZAP daemon ACCUMULATES alerts (and the
+        # sites tree) across runs, and _collect_alerts pulls all of them by
+        # baseurl — so without this every scan re-reports prior runs' findings
+        # (e.g. a fixed missing-header alert lingers forever). newSession clears
+        # alerts + tree before we crawl.
+        try:
+            requests.get(
+                f"{self._api()}/JSON/core/action/newSession/",
+                params=self._params(name="ai-protect", overwrite="true"),
+                timeout=15,
+            )
+        except Exception:
+            pass
         # Universal timebox: ZAP runs polling-based scans against a daemon,
         # so we enforce the cap via deadline checks rather than subprocess
         # timeout. Per-call config can request shorter; never longer than dc.
