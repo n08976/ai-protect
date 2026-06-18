@@ -268,6 +268,19 @@ SCHEMA: list[Section] = [
                 help="Base URL of a running OWASP ZAP daemon (e.g. http://127.0.0.1:8090). Required for the ZAP adapter. The ZAP_API_URL environment variable, if set, takes precedence.",
                 help_anchor="dast-zap-api-url",
             ),
+            Field(
+                key="dast_test_token", label="Authenticated-scan token",
+                kind="password", default="",
+                placeholder="Bearer eyJhbGciOi...",
+                help="Full auth header VALUE for authenticated DAST (e.g. 'Bearer <JWT>' for token auth, or 'session=...' for cookie auth). ZAP injects it on every request so the crawl reaches pages behind login. Use a low-privilege TEST account. Stored chmod-600 in config.json. A manifest's target.test_user_token_env (env var) takes precedence.",
+                help_anchor="dast-test-token",
+            ),
+            Field(
+                key="dast_test_token_header", label="Authenticated-scan header name",
+                kind="text", default="Authorization",
+                help="Header the token value is sent in. 'Authorization' for Bearer/JWT (default); 'Cookie' for cookie-session auth; or a custom header name.",
+                help_anchor="dast-test-token",
+            ),
         ],
     ),
     Section(
