@@ -41,7 +41,7 @@ expected_data_scopes:
 # --- source: the commercial/ subdir of the private monorepo on GitHub ---
 source_provider: github
 github_repo: n08976/MetaAdsMCPServers
-github_ref: main
+github_ref: master
 github_subdir: commercial
 source_excludes:
 - marketing-site
