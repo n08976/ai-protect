@@ -97,3 +97,34 @@ def test_dast_and_policy_adapters_run_when_source_materialization_fails(tmp_path
     # DAST + policy adapters ran anyway.
     assert "nuclei" in dispatched        # DAST
     assert "intel_match" in dispatched   # policy
+
+
+def test_dast_mode_never_materializes_source(tmp_path, monkeypatch):
+    """mode='dast' must skip source materialization entirely (no clone, no
+    _source error) and run only DAST + policy adapters."""
+    from pipeline.core.orchestrator import AdapterResult
+    from pipeline.core.scan_modes import mode_for, MODE_SAST
+
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=False, mode="dast")
+
+    called = {"materialize": False}
+    def boom():
+        called["materialize"] = True
+        raise AssertionError("DAST mode must not materialize source")
+    monkeypatch.setattr(orc, "_materialize_source", boom)
+
+    dispatched: list[str] = []
+    def fake_run(call, stage, tier):
+        dispatched.append(call.adapter)
+        return AdapterResult(adapter=call.adapter, blocking=call.blocking, status="ok")
+    monkeypatch.setattr(orc, "_run_adapter", fake_run)
+
+    result = orc.run_stage("build")   # tier-1 build has SAST + DAST + policy
+    names = {ar.adapter for ar in result.adapter_results}
+    assert called["materialize"] is False    # never even attempted a clone
+    assert "_source" not in names            # so no source error
+    assert all(mode_for(a) != MODE_SAST for a in dispatched), dispatched  # no SAST ran
+    assert "nuclei" in dispatched            # DAST ran
+    assert "intel_match" in dispatched       # policy ran

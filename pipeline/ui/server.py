@@ -1314,6 +1314,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             "python3", "-m", "pipeline.remediate.scan_runner",
             scan_id, manifest_path, stage, adapter or "-",
             app.config["FINDINGS_PATH"],
+            mode,   # 'sast' | 'dast' — DAST skips source materialization entirely
         ]
         env = os.environ.copy()
         env["PATH"] = "/home/user/bin:/home/user/.local/bin:" + env.get("PATH", "")

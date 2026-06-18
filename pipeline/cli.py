@@ -47,7 +47,7 @@ def cmd_tier(args):
 def cmd_run(args):
     m = Manifest.from_yaml(args.manifest)
     store = FindingStore(args.findings)
-    orc = Orchestrator(m, store, dry_run=args.dry_run)
+    orc = Orchestrator(m, store, dry_run=args.dry_run, mode=getattr(args, "mode", "all"))
     if getattr(args, "scan_id", None):
         orc.scan_id = args.scan_id
     # Optional adapter filter — temporarily narrows the policy table to one adapter.
@@ -342,6 +342,10 @@ def main(argv: list[str] | None = None) -> int:
     p_run = sub.add_parser("run", help="Run one or all pipeline stages for a manifest")
     p_run.add_argument("manifest")
     p_run.add_argument("--stage", choices=STAGES, default="preprod")
+    p_run.add_argument("--mode", choices=["all", "sast", "dast"], default="all",
+                       help="'dast' runs only live-target + policy adapters and never "
+                            "materializes source (no clone); 'sast' runs only source "
+                            "adapters + policy. Default 'all'.")
     p_run.add_argument("--all", action="store_true", help="Run every stage in sequence")
     p_run.add_argument("--no-halt", action="store_true",
                        help="With --all, continue past failing gates")

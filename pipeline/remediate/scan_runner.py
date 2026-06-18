@@ -38,6 +38,7 @@ def _active_count(findings_path: str, app_name: str) -> int:
 def main():
     scan_id, manifest_path, stage, adapter = sys.argv[1:5]
     findings_path = sys.argv[5]
+    mode = sys.argv[6] if len(sys.argv) > 6 else "all"   # all | sast | dast
     if adapter == "-":
         adapter = None
     log_path = SCAN_LOG_DIR / f"{scan_id}.log"
@@ -79,6 +80,7 @@ def main():
             "run", manifest_path,
             "--stage", stage,
             "--scan-id", scan_id,
+            "--mode", mode,
         ]
         if adapter:
             cmd += ["--adapter", adapter]

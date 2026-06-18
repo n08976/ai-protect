@@ -21,7 +21,7 @@ from ..adapters.registry import get_adapter_class
 from .findings import Finding, FindingStore, Severity
 from .manifest import Manifest
 from .policy import STAGES, AdapterCall, adapters_for
-from .scan_modes import MODE_SAST, mode_for
+from .scan_modes import MODE_DAST, MODE_SAST, mode_for
 from .tiering import TierDecision, classify
 
 log = logging.getLogger("ai-protect.orchestrator")
@@ -73,10 +73,13 @@ class RunResult:
 
 
 class Orchestrator:
-    def __init__(self, manifest: Manifest, store: FindingStore, dry_run: bool = False):
+    def __init__(self, manifest: Manifest, store: FindingStore, dry_run: bool = False,
+                 mode: str = "all"):
         self.manifest = manifest
         self.store = store
         self.dry_run = dry_run
+        # 'all' (default) | 'sast' | 'dast'. DAST never materializes source.
+        self.scan_mode = (mode or "all").lower()
 
     def run_stage(self, stage: str) -> RunResult:
         if stage not in STAGES:
@@ -104,18 +107,31 @@ class Orchestrator:
                     f"and is marked blocking in the policy table."
                 )
 
-        # Partition the stage's adapters by whether they read source on disk.
-        # SAST adapters need a materialized tree; DAST adapters probe a live
-        # target and policy/intel adapters use only the manifest — neither needs
-        # source. A DAST scan must NOT require (or be blocked by) a source clone.
+        # Partition by what each adapter needs: SAST reads source on disk; DAST
+        # probes a live target; policy/intel read only the manifest. The scan
+        # mode gates which run — a DAST scan must never materialize (or be
+        # blocked by) a source clone, and a SAST scan needn't touch the target.
         calls = adapters_for(decision.tier, stage)
         source_calls = [c for c in calls if mode_for(c.adapter) == MODE_SAST]
-        target_calls = [c for c in calls if mode_for(c.adapter) != MODE_SAST]
+        dast_calls   = [c for c in calls if mode_for(c.adapter) == MODE_DAST]
+        other_calls  = [c for c in calls if mode_for(c.adapter) not in (MODE_SAST, MODE_DAST)]
+        run_source = self.scan_mode in ("all", "sast")
+        run_dast   = self.scan_mode in ("all", "dast")
 
-        # Source-backed adapters: materialize ONCE. On provider error (clone
-        # failed, auth missing) record a single _source entry and fail the gate
-        # — but this no longer aborts the DAST/policy adapters below.
-        if source_calls:
+        # Policy / intel adapters always run — no source, no target needed.
+        for call in other_calls:
+            _dispatch(call)
+
+        # DAST adapters: live target, no source.
+        if run_dast:
+            for call in dast_calls:
+                _dispatch(call)
+
+        # SAST adapters: materialize source ONCE. SKIPPED ENTIRELY in DAST mode
+        # (run_source is False) so a DAST scan never clones — or gets blocked by
+        # — the repo. On provider error record a single _source entry + fail the
+        # gate, without aborting the adapters already run above.
+        if run_source and source_calls:
             try:
                 with self._materialize_source() as sm:
                     saved_paths = list(self.manifest.source_paths)
@@ -135,11 +151,6 @@ class Orchestrator:
                 result.adapter_results.append(ar)
                 result.gate_passed = False
                 result.gate_reason = f"source provider failed: {ar.error}"
-
-        # DAST / policy adapters: never need source — run regardless of whether
-        # source materialization happened, succeeded, or failed.
-        for call in target_calls:
-            _dispatch(call)
 
         # Auto-resolve: any fingerprint a ran-ok adapter previously emitted but
         # didn't this scan is treated as fixed/gone. We don't auto-resolve when
