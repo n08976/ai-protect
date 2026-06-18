@@ -13,11 +13,12 @@ Repo: https://github.com/sullo/nikto
 """
 from __future__ import annotations
 
-import json
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+
+from defusedxml.ElementTree import ParseError as _XmlParseError, fromstring as _xml_fromstring
 
 from ..core.dast_config import DastConfig
 from ..core.findings import Category, Severity
@@ -50,11 +51,15 @@ class NiktoAdapter(Adapter):
         timeout = dc.subprocess_timeout(override=1200)
 
         with tempfile.TemporaryDirectory() as td:
-            out_file = Path(td) / "nikto.json"
+            # XML, not JSON: many packaged nikto builds (e.g. 2.1.5) reject
+            # "-Format json" with "Invalid output format" and abort instantly,
+            # writing nothing — which looked like a 0-finding scan. XML is
+            # supported everywhere and is structured.
+            out_file = Path(td) / "nikto.xml"
             cmd = [
                 "nikto",
                 "-h", target,
-                "-Format", "json",
+                "-Format", "xml",
                 "-output", str(out_file),
                 "-nointeractive",
                 "-ask", "no",
@@ -74,42 +79,37 @@ class NiktoAdapter(Adapter):
         if not raw.strip():
             return []
         try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
+            root = _xml_fromstring(raw)   # defusedxml: DTD present but no entity expansion
+        except _XmlParseError:
             return []
-        # Nikto emits either a single host object or a list of them.
-        hosts = data if isinstance(data, list) else [data]
 
         tier = classify(self.manifest).tier
         findings = []
-        for host in hosts:
-            if not isinstance(host, dict):
+        for item in root.iter("item"):
+            msg = (item.findtext("description") or "").strip()
+            if not msg:
                 continue
-            for vuln in host.get("vulnerabilities", []) or []:
-                msg = (vuln.get("msg") or "").strip()
-                if not msg:
-                    continue
-                url = vuln.get("url") or target
-                osvdb = vuln.get("OSVDB") or vuln.get("id")
-                findings.append(self.make_finding(
-                    tier=tier,
-                    category=Category.INFRA_VULN,
-                    severity=Severity.MEDIUM,
-                    title=f"Nikto: {msg[:120]}",
-                    description=msg[:1500],
-                    evidence={
-                        "id": vuln.get("id"),
-                        "osvdb": osvdb,
-                        "method": vuln.get("method"),
-                        "url": url,
-                    },
-                    affected={"target": target, "url": url},
-                    remediation=(
-                        "Triage the flagged path/header: remove backup or debug files, "
-                        "patch outdated server software, and tighten response headers."
-                    ),
-                    references=(
-                        [f"https://www.osvdb.org/{osvdb}"] if str(osvdb or "").isdigit() else []
-                    ),
-                ))
+            url = (item.findtext("namelink") or item.findtext("uri") or "").strip() or target
+            osvdb = (item.get("osvdbid") or "").strip()
+            findings.append(self.make_finding(
+                tier=tier,
+                category=Category.INFRA_VULN,
+                severity=Severity.MEDIUM,
+                title=f"Nikto: {msg[:120]}",
+                description=msg[:1500],
+                evidence={
+                    "id": item.get("id"),
+                    "osvdb": osvdb,
+                    "method": item.get("method"),
+                    "url": url,
+                },
+                affected={"target": target, "url": url},
+                remediation=(
+                    "Triage the flagged path/header: remove backup or debug files, "
+                    "patch outdated server software, and tighten response headers."
+                ),
+                references=(
+                    [f"https://www.osvdb.org/{osvdb}"] if osvdb.isdigit() and osvdb != "0" else []
+                ),
+            ))
         return self.filter_findings(findings)
