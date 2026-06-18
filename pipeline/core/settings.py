@@ -261,6 +261,13 @@ SCHEMA: list[Section] = [
                 help="When checked, crawler-class adapters (ZAP spider, katana, owasp_noir) refuse to run against a bare origin (path = '/' or empty). The operator must supply a scope prefix like https://target/app/ so the crawl doesn't escape into unrelated content. Strongly recommended.",
                 help_anchor="dast-scope-prefix",
             ),
+            Field(
+                key="zap_api_url", label="ZAP daemon API URL",
+                kind="text", default="",
+                placeholder="http://127.0.0.1:8090",
+                help="Base URL of a running OWASP ZAP daemon (e.g. http://127.0.0.1:8090). Required for the ZAP adapter. The ZAP_API_URL environment variable, if set, takes precedence.",
+                help_anchor="dast-zap-api-url",
+            ),
         ],
     ),
     Section(

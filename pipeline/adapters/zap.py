@@ -37,9 +37,16 @@ import time
 
 import requests
 
+from ..core import settings as user_settings
 from ..core.findings import Category, Severity
 from ..core.tiering import classify
 from .base import Adapter, AdapterUnavailable
+
+
+def _resolve_zap_api_url() -> str:
+    """ZAP daemon API base URL: ZAP_API_URL env wins, else the zap_api_url
+    setting. Lets the daemon be configured durably (survives any UI launch)."""
+    return (os.environ.get("ZAP_API_URL") or user_settings.get("zap_api_url", "") or "").rstrip("/")
 
 log = logging.getLogger("ai-protect.zap")
 
@@ -80,9 +87,10 @@ class ZAPAdapter(Adapter):
         super().preflight()
         if not self.manifest.target.base_url:
             raise AdapterUnavailable("Manifest has no target.base_url to scan.")
-        if not os.environ.get("ZAP_API_URL"):
+        if not _resolve_zap_api_url():
             raise AdapterUnavailable(
-                "ZAP_API_URL not set. Start ZAP daemon and export the URL."
+                "ZAP daemon URL not configured. Start a ZAP daemon and set the "
+                "ZAP_API_URL env var or the zap_api_url setting (/settings → DAST)."
             )
         mode = self.config.get("mode", "spider").lower()
         if mode not in SUPPORTED_MODES:
@@ -100,7 +108,7 @@ class ZAPAdapter(Adapter):
             raise AdapterUnavailable(refusal)
 
     def _api(self) -> str:
-        return os.environ["ZAP_API_URL"].rstrip("/")
+        return _resolve_zap_api_url()
 
     def _key(self) -> str:
         return os.environ.get("ZAP_API_KEY", "")
