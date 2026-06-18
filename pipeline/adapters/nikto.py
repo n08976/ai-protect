@@ -67,13 +67,20 @@ class NiktoAdapter(Adapter):
                 # slow host; -maxtime accepts seconds.
                 "-maxtime", str(timeout),
             ]
+            # Nikto honors -maxtime by self-terminating AND writing its report,
+            # but it overshoots the wall-clock budget substantially (a 60s
+            # -maxtime run takes ~86s). If we SIGKILL too early it dies before
+            # flushing the XML -> zero findings. Give it generous headroom over
+            # -maxtime so it exits cleanly on its own and the report lands.
+            proc_timeout = timeout * 2 + 60
             try:
                 subprocess.run(
                     cmd, capture_output=True, text=True,
-                    timeout=timeout + 30, check=False,
+                    timeout=proc_timeout, check=False,
                 )
             except subprocess.TimeoutExpired:
-                raise AdapterUnavailable(f"nikto exceeded timebox ({timeout}s)")
+                # Killed past the hard ceiling — parse whatever nikto flushed.
+                pass
             raw = out_file.read_text() if out_file.exists() else ""
 
         if not raw.strip():
