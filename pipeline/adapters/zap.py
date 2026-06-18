@@ -118,6 +118,37 @@ class ZAPAdapter(Adapter):
         p.update(extra)
         return p
 
+    def _resolve_test_token(self) -> str:
+        """Test auth-header value for authenticated scans. Resolves from the
+        manifest's test_user_token_env (env var) first, then the durable
+        dast_test_token setting. The value is the full header value, e.g.
+        'Bearer eyJ...' or a 'session=...' cookie."""
+        env_name = (self.manifest.target.test_user_token_env or "").strip()
+        if env_name and os.environ.get(env_name):
+            return os.environ[env_name]
+        return user_settings.get("dast_test_token", "") or ""
+
+    def _apply_auth(self) -> None:
+        """Add a ZAP replacer rule injecting the auth header on every request,
+        so the spider/scanner reaches authenticated pages. No-op if no token."""
+        token = self._resolve_test_token()
+        if not token:
+            return
+        header = user_settings.get("dast_test_token_header", "Authorization") or "Authorization"
+        try:
+            requests.get(
+                f"{self._api()}/JSON/replacer/action/addRule/",
+                params=self._params(
+                    description="ai-protect-auth", enabled="true",
+                    matchType="REQ_HEADER", matchString=header,
+                    matchRegex="false", replacement=token,
+                ),
+                timeout=10,
+            )
+            log.info("ZAP: authenticated scan — injecting %s header on all requests", header)
+        except Exception:
+            log.warning("ZAP: failed to set auth replacer rule; continuing unauthenticated")
+
     def run(self):
         self.preflight()
         from ..core.dast_config import DastConfig
@@ -140,6 +171,10 @@ class ZAPAdapter(Adapter):
             )
         except Exception:
             pass
+
+        # Authenticated scan: inject the test token header on every request the
+        # spider/scanner sends, so ZAP crawls behind the login wall.
+        self._apply_auth()
 
         if mode == "api":
             self._import_api_spec()

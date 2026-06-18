@@ -30,6 +30,9 @@ target:
   # marketing domain + a 404 path). For API-focused DAST, set base_url to this too.
   api_url: https://api.fivestaradbuilder.com/
   allow_mutation: false
+  # Authenticated scanning: env var holding a TEST account's auth header value.
+  # If unset, ZAP falls back to the dast_test_token setting (/settings → DAST).
+  test_user_token_env: FSAB_TEST_TOKEN
 
 expected_data_scopes:
 - financial
