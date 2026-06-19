@@ -22,8 +22,8 @@
 <line x1="330.0" y1="144.0" x2="336.0" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
 <rect x="337.0" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
 <text x="409.75" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">2</text>
-<text x="409.75" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod · QA</text>
-<text x="409.75" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Test · SAST/SCA</text>
+<text x="409.75" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod · QA · Test</text>
+<text x="409.75" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">SAST/SCA</text>
 <line x1="483.5" y1="144.0" x2="489.5" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
 <rect x="490.5" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
 <text x="563.25" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">3</text>
