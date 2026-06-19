@@ -1507,7 +1507,7 @@ def diagram_ai_transformation_exec(future=False):
 
 
 def diagram_health_presentation_exec(future=False):
-    W, H = 1280, (638 if future else 518)
+    W, H = 1280, (660 if future else 540)
     s = [hdr(W, H), arrow_def()]
     s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))
     s.append(box(0, 0, W, 66, NAVY, NAVY, 0, 0))
@@ -1521,7 +1521,19 @@ def diagram_health_presentation_exec(future=False):
               ("2", ["Pre-Prod · QA · Test", "SAST/SCA"]),
               ("3", ["Dynamic AppSec", "(DAST)"]), ("4", ["AI", "Red Team"]), ("5", ["Remediation"]),
               ("6", ["Reporting"]), ("7", ["Continuous", "Monitoring"])]
-    m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 88; sh = 112
+    m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 104; sh = 112
+    # Phase headers — chunk the 8 stages into four readable phases so the arc
+    # reads at a glance (Intake -> Test & Attack -> Fix & Ship -> Operate).
+    phases = [("INTAKE", 0, 1, NAVY),
+              ("TEST & ATTACK", 2, 4, ACCENT),
+              ("FIX & SHIP", 5, 5, GREEN),
+              ("OPERATE", 6, 7, "#5B6E8C")]
+    ybar = sy - 34
+    for name, a, b, col in phases:
+        x0 = m + a*(sw+gap)
+        x1 = m + b*(sw+gap) + sw
+        s.append(box(x0, ybar, x1-x0, 24, col, col, 0, 8))
+        s.append(text((x0+x1)/2, ybar+16, name, 13, WHITE, "middle", "bold"))
     for i, (num, lab) in enumerate(stages):
         x = m + i*(sw+gap)
         s.append(box(x, sy, sw, sh, BLUE, NAVY, 2, 8))
