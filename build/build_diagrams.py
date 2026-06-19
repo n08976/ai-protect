@@ -1518,7 +1518,7 @@ def diagram_health_presentation_exec(future=False):
     # feedback loop from monitoring (7) back into reporting shows reporting also
     # recurs after monitoring — one block, two report points.
     stages = [("0", ["Discovery"]), ("1", ["Triage &", "Tiering"]),
-              ("2", ["Pre-Prod · QA", "Test · SAST/SCA"]),
+              ("2", ["Pre-Prod · QA · Test", "SAST/SCA"]),
               ("3", ["Dynamic AppSec", "(DAST)"]), ("4", ["AI", "Red Team"]), ("5", ["Remediation"]),
               ("6", ["Reporting"]), ("7", ["Continuous", "Monitoring"])]
     m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 88; sh = 112
