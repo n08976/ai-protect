@@ -1456,17 +1456,23 @@ def diagram_ai_transformation_exec(future=False):
     m = 40; gap = 64
     bw = (W - 2*m - 2*gap) / 3; by = 110; bh = 200
     blocks = [
-        (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · paved road"),
-        (NAVY, NAVY_DK, WHITE, BLUE, "ONE GOVERNED PIPELINE", "ai-protect", "scan → fix → verify → gate"),
-        (GRN_FILL, GRN, GRN_TXT, GRN_TXT, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · AI red-team · SAST · DAST"),
+        (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · paved road", None),
+        (NAVY, NAVY_DK, WHITE, BLUE, "ONE GOVERNED PIPELINE", "ai-protect", "scan → fix → verify → gate", "AI red-team · SAST · DAST"),
+        (GRN_FILL, GRN, GRN_TXT, GRN_TXT, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · monitored", None),
     ]
-    for i, (fill, stroke, head_c, l1_c, head, l1, l2) in enumerate(blocks):
+    for i, (fill, stroke, head_c, l1_c, head, l1, l2, l3) in enumerate(blocks):
         x = m + i*(bw+gap)
         s.append(box(x, by, bw, bh, fill, stroke, 3, 12))
         l2_c = "#9EC5EA" if fill == NAVY else TEXT_LT
-        s.append(text(x+bw/2, by+62, head, 21, head_c, "middle", "bold"))
-        s.append(text(x+bw/2, by+112, l1, 18, l1_c, "middle", "bold"))
-        s.append(text(x+bw/2, by+150, l2, 13.5, l2_c, "middle", "bold"))
+        if l3:
+            s.append(text(x+bw/2, by+54, head, 21, head_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+102, l1, 18, l1_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+138, l2, 13.5, l2_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+166, l3, 13.5, l2_c, "middle", "bold"))
+        else:
+            s.append(text(x+bw/2, by+62, head, 21, head_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+112, l1, 18, l1_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+150, l2, 13.5, l2_c, "middle", "bold"))
         if i < 2:
             ax = x+bw+10; ay = by+bh/2
             s.append(f'<line x1="{ax}" y1="{ay}" x2="{ax+gap-20}" y2="{ay}" stroke="{ACCENT}" stroke-width="6" marker-end="url(#arrBig)"/>')
@@ -1501,16 +1507,20 @@ def diagram_ai_transformation_exec(future=False):
 
 
 def diagram_health_presentation_exec(future=False):
-    W, H = 1280, (600 if future else 480)
+    W, H = 1280, (638 if future else 518)
     s = [hdr(W, H), arrow_def()]
     s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))
     s.append(box(0, 0, W, 66, NAVY, NAVY, 0, 0))
     s.append(text(W/2, 30, "AI Security Assurance Pipeline", 26, WHITE, "middle", "bold"))
     s.append(text(W/2, 54, "Every AI app flows through eight governed stages — automated for low risk, human-reviewed for high.", 14, "#DCEBFA", "middle", "bold"))
 
-    stages = [("0", ["Discovery"]), ("1", ["Triage &", "Tiering"]), ("2", ["Pre-Prod", "SAST / SCA"]),
+    # Reporting (6) sits AFTER remediation and BEFORE continuous monitoring; a
+    # feedback loop from monitoring (7) back into reporting shows reporting also
+    # recurs after monitoring — one block, two report points.
+    stages = [("0", ["Discovery"]), ("1", ["Triage &", "Tiering"]),
+              ("2", ["Pre-Prod · QA", "Test · SAST/SCA"]),
               ("3", ["Dynamic", "AppSec"]), ("4", ["AI", "Red Team"]), ("5", ["Remediation"]),
-              ("6", ["Continuous", "Monitoring"]), ("7", ["Reporting"])]
+              ("6", ["Reporting"]), ("7", ["Continuous", "Monitoring"])]
     m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 88; sh = 112
     for i, (num, lab) in enumerate(stages):
         x = m + i*(sw+gap)
@@ -1522,7 +1532,15 @@ def diagram_health_presentation_exec(future=False):
         if i < 7:
             s.append(f'<line x1="{x+sw+1}" y1="{sy+sh/2}" x2="{x+sw+gap-1}" y2="{sy+sh/2}" stroke="{NAVY}" stroke-width="2.5" marker-end="url(#arr)"/>')
 
-    gy = sy + sh + 18
+    # feedback loop: Continuous Monitoring (7) -> Reporting (6)
+    x6c = m + 6*(sw+gap) + sw/2
+    x7c = m + 7*(sw+gap) + sw/2
+    bbot = sy + sh; ly = bbot + 26
+    s.append(f'<path d="M {x7c} {bbot} L {x7c} {ly} L {x6c} {ly} L {x6c} {bbot+1}" '
+             f'fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrA)"/>')
+    s.append(text((x6c+x7c)/2, ly+15, "reporting recurs after monitoring", 10.5, ACCENT, "middle", "bold"))
+
+    gy = sy + sh + 56
     s.append(box(m, gy, W-2*m, 36, ORANGE, ACCENT, 1.8, 8))
     s.append(text(W/2, gy+23, "TIER-AWARE GATES        Tier 1–2: human-reviewed        Tier 3–4: automated", 15, ACCENT, "middle", "bold"))
 
