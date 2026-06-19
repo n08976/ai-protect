@@ -1554,18 +1554,19 @@ diagrams = {
     "01_pipeline_overview.svg": diagram_1(),
     "ai_organizational_transformation.svg": diagram_ai_transformation(),
     "ai_organizational_transformation_future.svg": diagram_ai_transformation(future=True),
-    "health-01_pipeline_overview_presentation.svg": diagram_health_presentation(),
-    "health-01_pipeline_overview_presentation_future.svg": diagram_health_presentation(future=True),
-    # Executive (big-block, succinct) variants of the four presentation
-    # diagrams. Routed into the JU/ subfolder.
-    "JU/ai_organizational_transformation_exec.svg": diagram_ai_transformation_exec(),
-    "JU/ai_organizational_transformation_future_exec.svg": diagram_ai_transformation_exec(future=True),
-    "JU/health-01_pipeline_overview_presentation_exec.svg": diagram_health_presentation_exec(),
-    "JU/health-01_pipeline_overview_presentation_future_exec.svg": diagram_health_presentation_exec(future=True),
+    # Non-exec healthcare diagrams — grouped under the JU/ subfolder.
+    "JU/health-01_pipeline_overview_presentation.svg": diagram_health_presentation(),
+    "JU/health-01_pipeline_overview_presentation_future.svg": diagram_health_presentation(future=True),
     # Health-environment variant: same overview with the provided enterprise
     # tooling (Defender, Sentinel, Google TI / OpenCTI / MS Defender TI, Armis,
     # Rapid7, Palo Alto, Mend.io, Abnormal, Copilot, Teams, GitHub) highlighted.
-    "health-01_pipeline_overview.svg": diagram_1(highlight=True),
+    "JU/health-01_pipeline_overview.svg": diagram_1(highlight=True),
+    # Executive (big-block, succinct) variants of the four presentation
+    # diagrams. Routed into the JU-Executive/ subfolder.
+    "JU-Executive/ai_organizational_transformation_exec.svg": diagram_ai_transformation_exec(),
+    "JU-Executive/ai_organizational_transformation_future_exec.svg": diagram_ai_transformation_exec(future=True),
+    "JU-Executive/health-01_pipeline_overview_presentation_exec.svg": diagram_health_presentation_exec(),
+    "JU-Executive/health-01_pipeline_overview_presentation_future_exec.svg": diagram_health_presentation_exec(future=True),
     "02_v21_mapping.svg": diagram_2(),
     "03_ai_redteam_killchain.svg": diagram_3(),
     "04_vertical_ownership.svg": diagram_4(),
