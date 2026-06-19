@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" font-family="Arial, Helvetica, sans-serif">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/></marker>
+<marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#8A95A8"/></marker>
+<marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#C04A2B"/></marker>
+</defs>
+<rect x="0" y="0" width="1280" height="480" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0" rx="0" ry="0"/>
+<rect x="0" y="0" width="1280" height="66" fill="#1F3A5F" stroke="#1F3A5F" stroke-width="0" rx="0" ry="0"/>
+<text x="640.0" y="30" font-size="26" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI Security Assurance Pipeline</text>
+<text x="640.0" y="54" font-size="14" fill="#DCEBFA" text-anchor="middle" font-weight="bold">Every AI app flows through eight governed stages — automated for low risk, human-reviewed for high.</text>
+<rect x="30.0" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="102.75" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">0</text>
+<text x="102.75" y="158" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Discovery</text>
+<line x1="176.5" y1="144.0" x2="182.5" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="183.5" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="256.25" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">1</text>
+<text x="256.25" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Triage &amp;</text>
+<text x="256.25" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Tiering</text>
+<line x1="330.0" y1="144.0" x2="336.0" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="337.0" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="409.75" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">2</text>
+<text x="409.75" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod</text>
+<text x="409.75" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">SAST / SCA</text>
+<line x1="483.5" y1="144.0" x2="489.5" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="490.5" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="563.25" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">3</text>
+<text x="563.25" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Dynamic</text>
+<text x="563.25" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">AppSec</text>
+<line x1="637.0" y1="144.0" x2="643.0" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="644.0" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="716.75" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">4</text>
+<text x="716.75" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">AI</text>
+<text x="716.75" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Red Team</text>
+<line x1="790.5" y1="144.0" x2="796.5" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="797.5" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="870.25" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">5</text>
+<text x="870.25" y="158" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Remediation</text>
+<line x1="944.0" y1="144.0" x2="950.0" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="951.0" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="1023.75" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">6</text>
+<text x="1023.75" y="152" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Continuous</text>
+<text x="1023.75" y="168" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Monitoring</text>
+<line x1="1097.5" y1="144.0" x2="1103.5" y2="144.0" stroke="#1F3A5F" stroke-width="2.5" marker-end="url(#arr)"/>
+<rect x="1104.5" y="88" width="145.5" height="112" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="2" rx="8" ry="8"/>
+<text x="1177.25" y="128" font-size="30" fill="#15293F" text-anchor="middle" font-weight="bold">7</text>
+<text x="1177.25" y="158" font-size="12.5" fill="#222222" text-anchor="middle" font-weight="bold">Reporting</text>
+<rect x="30" y="218" width="1220" height="36" fill="#FFF4E5" stroke="#C04A2B" stroke-width="1.8" rx="8" ry="8"/>
+<text x="640.0" y="241" font-size="15" fill="#C04A2B" text-anchor="middle" font-weight="bold">TIER-AWARE GATES        Tier 1–2: human-reviewed        Tier 3–4: automated</text>
+<rect x="30" y="276" width="1220" height="80" fill="#1F3A5F" stroke="#15293F" stroke-width="1.5" rx="10" ry="10"/>
+<text x="640.0" y="309" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ENTERPRISE SECURITY STACK</text>
+<text x="640.0" y="334" font-size="14" fill="#DCEBFA" text-anchor="middle" font-weight="bold">Microsoft Defender XDR  ·  Sentinel SIEM/SOAR  ·  Threat Intel  ·  Palo Alto WAF  ·  Abnormal email</text>
+<rect x="30" y="370" width="1220" height="80" fill="#243B55" stroke="#15293F" stroke-width="1.5" rx="10" ry="10"/>
+<text x="640.0" y="403" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="bold">SANCTIONED AI INFRASTRUCTURE</text>
+<text x="640.0" y="428" font-size="14" fill="#DCEBFA" text-anchor="middle" font-weight="bold">LLM gateway (Claude primary)  ·  MCP registry  ·  agent runtime  ·  telemetry mesh</text>
+</svg>

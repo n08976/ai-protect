@@ -1440,6 +1440,114 @@ def diagram_ai_transformation(future=False):
 
 
 # ============================================================
+# EXECUTIVE variants — big-block, succinct, minimal detail. Same palette;
+# few large blocks, large type, no tool-pill minutia.
+# ============================================================
+def diagram_ai_transformation_exec(future=False):
+    W, H = 1280, (684 if future else 500)
+    GRN = "#1E8E4E"; GRN_FILL = "#D8F0DF"; GRN_TXT = "#15692F"
+    s = [hdr(W, H)]
+    s.append('<defs><marker id="arrBig" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#C04A2B"/></marker></defs>')
+    s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))
+    s.append(box(0, 0, W, 74, NAVY, NAVY, 0, 0))
+    s.append(text(W/2, 34, "AI Organizational Transformation", 28, WHITE, "middle", "bold"))
+    s.append(text(W/2, 60, "Anyone builds with AI — everything ships through ONE governed pipeline into sanctioned production.", 15, "#DCEBFA", "middle", "bold"))
+
+    m = 40; gap = 64
+    bw = (W - 2*m - 2*gap) / 3; by = 110; bh = 200
+    blocks = [
+        (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · paved road"),
+        (NAVY, NAVY_DK, WHITE, BLUE, "ONE GOVERNED PIPELINE", "ai-protect", "scan → fix → verify → gate"),
+        (GRN_FILL, GRN, GRN_TXT, GRN_TXT, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · AI red-team · SAST · DAST"),
+    ]
+    for i, (fill, stroke, head_c, l1_c, head, l1, l2) in enumerate(blocks):
+        x = m + i*(bw+gap)
+        s.append(box(x, by, bw, bh, fill, stroke, 3, 12))
+        l2_c = "#9EC5EA" if fill == NAVY else TEXT_LT
+        s.append(text(x+bw/2, by+62, head, 21, head_c, "middle", "bold"))
+        s.append(text(x+bw/2, by+112, l1, 18, l1_c, "middle", "bold"))
+        s.append(text(x+bw/2, by+150, l2, 13.5, l2_c, "middle", "bold"))
+        if i < 2:
+            ax = x+bw+10; ay = by+bh/2
+            s.append(f'<line x1="{ax}" y1="{ay}" x2="{ax+gap-20}" y2="{ay}" stroke="{ACCENT}" stroke-width="6" marker-end="url(#arrBig)"/>')
+
+    ty = by + bh + 40; th = 116
+    s.append(text(m, ty-12, "TIER-AWARE GATE", 15, NAVY_DK, "start", "bold"))
+    s.append(text(m+178, ty-12, "— the gate decides: ship automatically, or wait for a human.", 13, TEXT_LT, "start", "bold"))
+    half = (W - 2*m - 20) / 2
+    s.append(box(m, ty, half, th, "#F7DAD2", ACCENT, 2.5, 10))
+    s.append(text(m+half/2, ty+46, "TIER 1–2 · CRITICAL", 23, ACCENT, "middle", "bold"))
+    s.append(text(m+half/2, ty+82, "Human approval to ship", 16, TEXT, "middle", "bold"))
+    s.append(box(m+half+20, ty, half, th, GRN_FILL, GRN, 2.5, 10))
+    s.append(text(m+half+20+half/2, ty+46, "TIER 3–4 · LOW", 23, GRN_TXT, "middle", "bold"))
+    s.append(text(m+half+20+half/2, ty+82, "Auto-gate when scan is clean", 16, TEXT, "middle", "bold"))
+
+    if future:
+        fy = ty + th + 38; fh = 132
+        s.append(f'<rect x="{m}" y="{fy}" width="{W-2*m}" height="{fh}" fill="{FUT_BG}" stroke="{FUT_BD}" stroke-width="2.5" rx="10" ry="10" stroke-dasharray="10 5"/>')
+        s.append(text(m+18, fy+28, "PROPOSED ADDITIONS", 16, FUT_TXT, "start", "bold"))
+        cards = [("Microsoft Foundry", "Governed model & agent build"),
+                 ("Microsoft Agent365", "Agent identity · registry · lifecycle"),
+                 ("Varonis Atlas", "AI Detection & Response (DDR)")]
+        cw = (W-2*m-32-2*16)/3; cy = fy+42
+        for i, (a, b) in enumerate(cards):
+            cx = m+16+i*(cw+16)
+            s.append(box(cx, cy, cw, fh-56, FUT_FILL, FUT_BD, 1.8, 8))
+            s.append(text(cx+cw/2, cy+32, a, 18, FUT_TXT, "middle", "bold"))
+            s.append(text(cx+cw/2, cy+56, b, 13, FUT_BD, "middle", "bold"))
+
+    s.append("</svg>")
+    return "\n".join(s)
+
+
+def diagram_health_presentation_exec(future=False):
+    W, H = 1280, (600 if future else 480)
+    s = [hdr(W, H), arrow_def()]
+    s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))
+    s.append(box(0, 0, W, 66, NAVY, NAVY, 0, 0))
+    s.append(text(W/2, 30, "AI Security Assurance Pipeline", 26, WHITE, "middle", "bold"))
+    s.append(text(W/2, 54, "Every AI app flows through eight governed stages — automated for low risk, human-reviewed for high.", 14, "#DCEBFA", "middle", "bold"))
+
+    stages = [("0", ["Discovery"]), ("1", ["Triage &", "Tiering"]), ("2", ["Pre-Prod", "SAST / SCA"]),
+              ("3", ["Dynamic", "AppSec"]), ("4", ["AI", "Red Team"]), ("5", ["Remediation"]),
+              ("6", ["Continuous", "Monitoring"]), ("7", ["Reporting"])]
+    m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 88; sh = 112
+    for i, (num, lab) in enumerate(stages):
+        x = m + i*(sw+gap)
+        s.append(box(x, sy, sw, sh, BLUE, NAVY, 2, 8))
+        s.append(text(x+sw/2, sy+40, num, 30, NAVY_DK, "middle", "bold"))
+        y0 = sy+64 if len(lab) > 1 else sy+70
+        for k, ln in enumerate(lab):
+            s.append(text(x+sw/2, y0+k*16, ln, 12.5, TEXT, "middle", "bold"))
+        if i < 7:
+            s.append(f'<line x1="{x+sw+1}" y1="{sy+sh/2}" x2="{x+sw+gap-1}" y2="{sy+sh/2}" stroke="{NAVY}" stroke-width="2.5" marker-end="url(#arr)"/>')
+
+    gy = sy + sh + 18
+    s.append(box(m, gy, W-2*m, 36, ORANGE, ACCENT, 1.8, 8))
+    s.append(text(W/2, gy+23, "TIER-AWARE GATES        Tier 1–2: human-reviewed        Tier 3–4: automated", 15, ACCENT, "middle", "bold"))
+
+    bands = [
+        (NAVY, WHITE, "ENTERPRISE SECURITY STACK", "Microsoft Defender XDR  ·  Sentinel SIEM/SOAR  ·  Threat Intel  ·  Palo Alto WAF  ·  Abnormal email"),
+        ("#243B55", WHITE, "SANCTIONED AI INFRASTRUCTURE", "LLM gateway (Claude primary)  ·  MCP registry  ·  agent runtime  ·  telemetry mesh"),
+    ]
+    bh = 80; bgap = 14; bstart = gy + 36 + 22
+    for i, (fill, txt, head, sub) in enumerate(bands):
+        y = bstart + i*(bh+bgap)
+        s.append(box(m, y, W-2*m, bh, fill, NAVY_DK, 1.5, 10))
+        s.append(text(W/2, y+33, head, 18, txt, "middle", "bold"))
+        s.append(text(W/2, y+58, sub, 14, "#DCEBFA", "middle", "bold"))
+
+    if future:
+        y = bstart + 2*(bh+bgap)
+        s.append(f'<rect x="{m}" y="{y}" width="{W-2*m}" height="{bh}" fill="{FUT_BG}" stroke="{FUT_BD}" stroke-width="2.5" rx="10" ry="10" stroke-dasharray="10 5"/>')
+        s.append(text(W/2, y+31, "PROPOSED ADDITIONS", 17, FUT_TXT, "middle", "bold"))
+        s.append(text(W/2, y+58, "Microsoft Foundry      ·      Microsoft Agent365      ·      Varonis Atlas (AI Detection & Response)", 15, FUT_BD, "middle", "bold"))
+
+    s.append("</svg>")
+    return "\n".join(s)
+
+
+# ============================================================
 # Build all
 # ============================================================
 diagrams = {
@@ -1448,6 +1556,12 @@ diagrams = {
     "ai_organizational_transformation_future.svg": diagram_ai_transformation(future=True),
     "health-01_pipeline_overview_presentation.svg": diagram_health_presentation(),
     "health-01_pipeline_overview_presentation_future.svg": diagram_health_presentation(future=True),
+    # Executive (big-block, succinct) variants of the four presentation
+    # diagrams. Routed into the JU/ subfolder.
+    "JU/ai_organizational_transformation_exec.svg": diagram_ai_transformation_exec(),
+    "JU/ai_organizational_transformation_future_exec.svg": diagram_ai_transformation_exec(future=True),
+    "JU/health-01_pipeline_overview_presentation_exec.svg": diagram_health_presentation_exec(),
+    "JU/health-01_pipeline_overview_presentation_future_exec.svg": diagram_health_presentation_exec(future=True),
     # Health-environment variant: same overview with the provided enterprise
     # tooling (Defender, Sentinel, Google TI / OpenCTI / MS Defender TI, Armis,
     # Rapid7, Palo Alto, Mend.io, Abnormal, Copilot, Teams, GitHub) highlighted.
@@ -1463,6 +1577,7 @@ diagrams = {
 
 for fn, content in diagrams.items():
     path = os.path.join(OUT, fn)
+    os.makedirs(os.path.dirname(path), exist_ok=True)   # honor subfolders in fn (e.g. JU/)
     with open(path, "w") as f:
         f.write(content)
     # Also rasterize to PNG (since python-docx can't take SVG natively)
