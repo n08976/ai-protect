@@ -1456,7 +1456,7 @@ def diagram_ai_transformation_exec(future=False):
     m = 40; gap = 64
     bw = (W - 2*m - 2*gap) / 3; by = 110; bh = 200
     blocks = [
-        (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · paved road", None),
+        (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · misc LLM", None),
         (NAVY, NAVY_DK, WHITE, BLUE, "ONE GOVERNED PIPELINE", "ai-protect", "scan → fix → verify → gate", "AI red-team · SAST · DAST"),
         (GRN_FILL, GRN, GRN_TXT, GRN_TXT, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · monitored", None),
     ]
