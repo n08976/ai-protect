@@ -85,5 +85,5 @@
 <text x="846.0" y="680" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Self-service control attestation</text>
 <text x="846.0" y="698" font-size="10" fill="#222222" text-anchor="start" font-weight="normal">• Real-time control drift alerts</text>
 <rect x="40" y="710" width="1120" height="32" fill="#FFF4E5" stroke="#E0A555" stroke-width="1" rx="6" ry="6"/>
-<text x="60" y="730" font-size="12" fill="#15293F" text-anchor="start" font-weight="italic">Phase 1 honors v2.1's modesty constraint: no new headcount; demo red team is the asset that earns the Phase 2 ask.</text>
+<text x="60" y="730" font-size="12" fill="#15293F" text-anchor="start" font-weight="italic">Phase 1 honors v2.1&#x27;s modesty constraint: no new headcount; demo red team is the asset that earns the Phase 2 ask.</text>
 </svg>
