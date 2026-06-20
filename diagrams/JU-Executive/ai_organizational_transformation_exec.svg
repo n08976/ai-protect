@@ -15,9 +15,9 @@
 <text x="640.0" y="248" font-size="13.5" fill="#9EC5EA" text-anchor="middle" font-weight="bold">scan → fix → verify → gate</text>
 <text x="640.0" y="276" font-size="13.5" fill="#9EC5EA" text-anchor="middle" font-weight="bold">AI red-team · SAST · DAST</text>
 <line x1="828.6666666666666" y1="210.0" x2="872.6666666666666" y2="210.0" stroke="#C04A2B" stroke-width="6" marker-end="url(#arrBig)"/>
-<rect x="882.6666666666666" y="110" width="357.3333333333333" height="200" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="3" rx="12" ry="12"/>
-<text x="1061.3333333333333" y="172" font-size="21" fill="#15692F" text-anchor="middle" font-weight="bold">SANCTIONED AI-PRODUCTION</text>
-<text x="1061.3333333333333" y="222" font-size="18" fill="#15692F" text-anchor="middle" font-weight="bold">Continuous assurance</text>
+<rect x="882.6666666666666" y="110" width="357.3333333333333" height="200" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="3" rx="12" ry="12"/>
+<text x="1061.3333333333333" y="172" font-size="21" fill="#1F3A5F" text-anchor="middle" font-weight="bold">SANCTIONED AI-PRODUCTION</text>
+<text x="1061.3333333333333" y="222" font-size="18" fill="#1F3A5F" text-anchor="middle" font-weight="bold">Continuous assurance</text>
 <text x="1061.3333333333333" y="260" font-size="13.5" fill="#555555" text-anchor="middle" font-weight="bold">always-on · monitored</text>
 <text x="40" y="338" font-size="15" fill="#15293F" text-anchor="start" font-weight="bold">TIER-AWARE GATE</text>
 <text x="218" y="338" font-size="13" fill="#555555" text-anchor="start" font-weight="bold">— the gate decides: ship automatically, or wait for a human.</text>

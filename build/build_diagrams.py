@@ -1458,7 +1458,7 @@ def diagram_ai_transformation_exec(future=False):
     blocks = [
         (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · misc LLM", None),
         (NAVY, NAVY_DK, WHITE, BLUE, "ONE GOVERNED PIPELINE", "ai-protect", "scan → fix → verify → gate", "AI red-team · SAST · DAST"),
-        (GRN_FILL, GRN, GRN_TXT, GRN_TXT, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · monitored", None),
+        (BLUE, NAVY, NAVY, NAVY, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · monitored", None),
     ]
     for i, (fill, stroke, head_c, l1_c, head, l1, l2, l3) in enumerate(blocks):
         x = m + i*(bw+gap)
