@@ -1552,6 +1552,18 @@ def diagram_health_presentation_exec(future=False):
              f'fill="none" stroke="{ACCENT}" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrA)"/>')
     s.append(text((x6c+x7c)/2, ly+15, "reporting recurs after monitoring", 10.5, ACCENT, "middle", "bold"))
 
+    # Remediation modes (stage 5): the dev team performs the fix; low-risk
+    # findings can be auto-remediated. Two chips branch from the block.
+    x5 = m + 5*(sw+gap); x5c = x5 + sw/2
+    rcw = (sw - 6) / 2; rcy = bbot + 14; rch = 28
+    s.append(f'<line x1="{x5c}" y1="{bbot}" x2="{x5c}" y2="{rcy}" stroke="{GRAY_DK}" stroke-width="1.5"/>')
+    s.append(f'<line x1="{x5}" y1="{rcy}" x2="{x5+sw}" y2="{rcy}" stroke="{GRAY_DK}" stroke-width="1.5"/>')
+    s.append(box(x5, rcy, rcw, rch, BLUE, NAVY, 1.5, 6))
+    s.append(text(x5+rcw/2, rcy+18, "Dev team", 11, NAVY, "middle", "bold"))
+    s.append(box(x5+rcw+6, rcy, rcw, rch, GREEN_LT, GREEN, 1.5, 6))
+    s.append(text(x5+rcw+6+rcw/2, rcy+18, "Auto-fix", 11, GREEN, "middle", "bold"))
+    s.append(text(x5c, rcy+rch+13, "low-risk can auto-fix", 10, TEXT_LT, "middle", "bold"))
+
     gy = sy + sh + 56
     s.append(box(m, gy, W-2*m, 36, ORANGE, ACCENT, 1.8, 8))
     s.append(text(W/2, gy+23, "TIER-AWARE GATES        Tier 1–2: human-reviewed        Tier 3–4: automated", 15, ACCENT, "middle", "bold"))
