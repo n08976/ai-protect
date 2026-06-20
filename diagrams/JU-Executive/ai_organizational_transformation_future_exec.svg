@@ -7,7 +7,7 @@
 <rect x="40.0" y="110" width="357.3333333333333" height="200" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="3" rx="12" ry="12"/>
 <text x="218.66666666666666" y="172" font-size="21" fill="#1F3A5F" text-anchor="middle" font-weight="bold">EMPOWERED BUILDING</text>
 <text x="218.66666666666666" y="222" font-size="18" fill="#1F3A5F" text-anchor="middle" font-weight="bold">Any team builds with AI</text>
-<text x="218.66666666666666" y="260" font-size="13.5" fill="#555555" text-anchor="middle" font-weight="bold">Claude · Copilot · paved road</text>
+<text x="218.66666666666666" y="260" font-size="13.5" fill="#555555" text-anchor="middle" font-weight="bold">Claude · Copilot · misc LLM</text>
 <line x1="407.3333333333333" y1="210.0" x2="451.3333333333333" y2="210.0" stroke="#C04A2B" stroke-width="6" marker-end="url(#arrBig)"/>
 <rect x="461.3333333333333" y="110" width="357.3333333333333" height="200" fill="#1F3A5F" stroke="#15293F" stroke-width="3" rx="12" ry="12"/>
 <text x="640.0" y="164" font-size="21" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ONE GOVERNED PIPELINE</text>
