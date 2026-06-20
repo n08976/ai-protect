@@ -1457,20 +1457,22 @@ def diagram_ai_transformation_exec(future=False):
     bw = (W - 2*m - 2*gap) / 3; by = 110; bh = 200
     blocks = [
         (BLUE, NAVY, NAVY, NAVY, "EMPOWERED BUILDING", "Any team builds with AI", "Claude · Copilot · misc LLM", None),
-        (NAVY, NAVY_DK, WHITE, BLUE, "ONE GOVERNED PIPELINE", "ai-protect", "scan → fix → verify → gate", "AI red-team · SAST · DAST"),
+        (NAVY, NAVY_DK, WHITE, BLUE, "AI SECURITY ASSURANCE PIPELINE", "ai-protect", "scan → fix → verify → gate", "AI red-team · SAST · DAST"),
         (BLUE, NAVY, NAVY, NAVY, "SANCTIONED AI-PRODUCTION", "Continuous assurance", "always-on · monitored", None),
     ]
     for i, (fill, stroke, head_c, l1_c, head, l1, l2, l3) in enumerate(blocks):
         x = m + i*(bw+gap)
         s.append(box(x, by, bw, bh, fill, stroke, 3, 12))
         l2_c = "#9EC5EA" if fill == NAVY else TEXT_LT
+        # shrink long headers so they don't overflow the block width
+        hs = 21 if len(head) <= 24 else 16.5
         if l3:
-            s.append(text(x+bw/2, by+54, head, 21, head_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+54, head, hs, head_c, "middle", "bold"))
             s.append(text(x+bw/2, by+102, l1, 18, l1_c, "middle", "bold"))
             s.append(text(x+bw/2, by+138, l2, 13.5, l2_c, "middle", "bold"))
             s.append(text(x+bw/2, by+166, l3, 13.5, l2_c, "middle", "bold"))
         else:
-            s.append(text(x+bw/2, by+62, head, 21, head_c, "middle", "bold"))
+            s.append(text(x+bw/2, by+62, head, hs, head_c, "middle", "bold"))
             s.append(text(x+bw/2, by+112, l1, 18, l1_c, "middle", "bold"))
             s.append(text(x+bw/2, by+150, l2, 13.5, l2_c, "middle", "bold"))
         if i < 2:
@@ -1507,7 +1509,7 @@ def diagram_ai_transformation_exec(future=False):
 
 
 def diagram_health_presentation_exec(future=False):
-    W, H = 1280, (660 if future else 540)
+    W, H = 1280, (684 if future else 564)
     s = [hdr(W, H), arrow_def()]
     s.append(box(0, 0, W, H, WHITE, WHITE, 0, 0))
     s.append(box(0, 0, W, 66, NAVY, NAVY, 0, 0))
@@ -1518,10 +1520,10 @@ def diagram_health_presentation_exec(future=False):
     # feedback loop from monitoring (7) back into reporting shows reporting also
     # recurs after monitoring — one block, two report points.
     stages = [("0", ["Discovery"]), ("1", ["Triage &", "Tiering"]),
-              ("2", ["Pre-Prod · QA · Test", "SAST/SCA"]),
+              ("2", ["Test · QA · Pre-Prod", "SAST/SCA"]),
               ("3", ["Dynamic AppSec", "(DAST)"]), ("4", ["AI", "Red Team"]), ("5", ["Remediation"]),
               ("6", ["Reporting"]), ("7", ["Continuous", "Monitoring"])]
-    m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 104; sh = 112
+    m = 30; gap = 8; sw = (W - 2*m - 7*gap) / 8; sy = 128; sh = 112
     # Phase headers — chunk the 8 stages into four readable phases so the arc
     # reads at a glance (Intake -> Test & Attack -> Fix & Ship -> Operate).
     phases = [("INTAKE", 0, 1, NAVY),
