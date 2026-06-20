@@ -10,7 +10,7 @@
 <text x="218.66666666666666" y="260" font-size="13.5" fill="#555555" text-anchor="middle" font-weight="bold">Claude · Copilot · misc LLM</text>
 <line x1="407.3333333333333" y1="210.0" x2="451.3333333333333" y2="210.0" stroke="#C04A2B" stroke-width="6" marker-end="url(#arrBig)"/>
 <rect x="461.3333333333333" y="110" width="357.3333333333333" height="200" fill="#1F3A5F" stroke="#15293F" stroke-width="3" rx="12" ry="12"/>
-<text x="640.0" y="164" font-size="21" fill="#FFFFFF" text-anchor="middle" font-weight="bold">ONE GOVERNED PIPELINE</text>
+<text x="640.0" y="164" font-size="16.5" fill="#FFFFFF" text-anchor="middle" font-weight="bold">AI SECURITY ASSURANCE PIPELINE</text>
 <text x="640.0" y="212" font-size="18" fill="#EAF3FA" text-anchor="middle" font-weight="bold">ai-protect</text>
 <text x="640.0" y="248" font-size="13.5" fill="#9EC5EA" text-anchor="middle" font-weight="bold">scan → fix → verify → gate</text>
 <text x="640.0" y="276" font-size="13.5" fill="#9EC5EA" text-anchor="middle" font-weight="bold">AI red-team · SAST · DAST</text>
