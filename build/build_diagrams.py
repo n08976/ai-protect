@@ -1093,7 +1093,7 @@ def diagram_health_presentation(future=False):
 
     # ---- stages (with NEW badge + human-in-the-loop pill) ----
     stages = [("Stage 0", "Discovery &", "Intake"), ("Stage 1", "Triage &", "Tiering"),
-              ("Stage 2", "Pre-Prod", ""), ("Stage 3", "Dynamic", "AppSec"),
+              ("Stage 2", "Test · QA", "Pre-Prod"), ("Stage 3", "Dynamic", "AppSec"),
               ("Stage 4", "AI", "Red Team"), ("Stage 5", "Remediation", ""),
               ("Stage 6", "Continuous", "Monitoring"), ("Stage 7", "Reporting &", "Notification")]
     # Stage 5 is tier-gated: human required (Tier 1-2) OR optional/auto (Tier 3-4) → show both.

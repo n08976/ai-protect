@@ -46,7 +46,8 @@
 <line x1="313" y1="146.0" x2="323" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
 <rect x="324" y="98" width="130" height="96" fill="#EAF3FA" stroke="#1F3A5F" stroke-width="1.5" rx="6" ry="6"/>
 <text x="389.0" y="121" font-size="16" fill="#15293F" text-anchor="middle" font-weight="bold">Stage 2</text>
-<text x="389.0" y="149" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod</text>
+<text x="389.0" y="141" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Test · QA</text>
+<text x="389.0" y="156" font-size="12" fill="#222222" text-anchor="middle" font-weight="bold">Pre-Prod</text>
 <rect x="331.0" y="172" width="116.0" height="15" fill="#D8F0DF" stroke="#1E8E4E" stroke-width="1.4" rx="3" ry="3"/>
 <text x="389.0" y="183" font-size="7.5" fill="#1E8E4E" text-anchor="middle" font-weight="bold">AUTOMATED</text>
 <line x1="455" y1="146.0" x2="465" y2="146.0" stroke="#1F3A5F" stroke-width="2" marker-end="url(#arr)"/>
