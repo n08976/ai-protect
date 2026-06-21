@@ -333,6 +333,19 @@ def cmd_policy(args):
         print(f"  - {c.adapter}{flag}{cfg}")
 
 
+def cmd_doctor(args):
+    from .core import doctor
+    report = doctor.diagnose()
+    if args.format == "json":
+        print(json.dumps(report, indent=2))
+    else:
+        print(doctor.render_text(report))
+    # Non-zero exit only when the user asked us to enforce a minimum.
+    if getattr(args, "require_all", False) and report["summary"].get("needs_setup", 0):
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ai-protect", description="Offensive security pipeline for AI workloads")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -427,6 +440,13 @@ def main(argv: list[str] | None = None) -> int:
     p_adp.add_argument("--format", choices=["text", "json"], default="text")
     p_adp.set_defaults(func=cmd_adapters)
 
+    p_doc = sub.add_parser("doctor",
+                           help="Environment + adapter capability check (what works, what needs setup)")
+    p_doc.add_argument("--format", choices=["text", "json"], default="text")
+    p_doc.add_argument("--require-all", action="store_true",
+                       help="Exit non-zero if any adapter needs setup (for CI gating).")
+    p_doc.set_defaults(func=cmd_doctor)
+
     p_pol = sub.add_parser("policy", help="Show the policy table for a tier × stage")
     p_pol.add_argument("--tier", type=int, required=True, choices=[1, 2, 3, 4])
     p_pol.add_argument("--stage", required=True, choices=STAGES)
@@ -439,8 +459,8 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
     firstrun.maybe_welcome()
-    args.func(args)
-    return 0
+    rc = args.func(args)
+    return rc if isinstance(rc, int) else 0
 
 
 if __name__ == "__main__":
