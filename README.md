@@ -129,17 +129,17 @@ The runnable counterpart to v2.1 and the technical companion. An AI app or agent
 ```bash
 pip install -r pipeline/requirements.txt
 
-# Tier-classify
-python -m pipeline.cli tier pipeline/manifests/example_clinical_assistant.yml
+# Tier-classify a sample app
+python -m pipeline.cli tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
 
-# Run preprod gates end-to-end (degrades gracefully when external tools aren't installed)
-# NB: --findings must point at a DURABLE path. Never /tmp — reboots wipe it.
-python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl run \
-    pipeline/manifests/example_clinical_assistant.yml --stage preprod
+# Run preprod gates end-to-end (degrades gracefully when external tools aren't installed).
+# Findings default to the durable data home (~/.ai-protect/findings.jsonl) — no flag needed.
+python -m pipeline.cli run \
+    pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml --stage preprod
 
 # Dashboards
-python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl report --kind executive
-python -m pipeline.cli --findings ~/.ai-protect/findings.jsonl report --kind technical
+python -m pipeline.cli report --kind executive
+python -m pipeline.cli report --kind technical
 
 # What runs where
 python -m pipeline.cli adapters
@@ -148,9 +148,9 @@ python -m pipeline.cli policy --tier 1 --stage preprod
 # Tests
 python -m pytest pipeline/tests/ -q
 
-# Web UI + background feed poller (one process). See pipeline/README.md → Web UI.
-python -m pipeline.ui.server --findings ~/.ai-protect/findings.jsonl --port 3005
-# open http://localhost:3005/
+# Web UI + background feed poller (one process). Zero-config — reads the same
+# durable findings store. See pipeline/README.md → Web UI.
+python -m pipeline.ui.server          # open http://localhost:8000/
 ```
 
 The pipeline ships with three example manifests covering the spread: Tier 1 clinical assistant, Tier 3 HR-policy advisor, Tier 4 single-user code summarizer. Adapters that need an external tool (garak, nuclei, etc.) raise `AdapterUnavailable` and are skipped non-fatally — install the tools you actually plan to exercise.

@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import re
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -34,13 +35,14 @@ from ..remediate.registry import remediators_for
 from ..remediate.scans import (
     ScanJob, all_scans, emit_event, get_scan, new_scan_id, update_status_from_pid, write_scan,
 )
-from ..remediate.state import ChangeState, ChangeStore, EventStore
+from ..remediate.state import ChangeState, ChangeStore, EventStore, REMEDIATE_HOME
 from ..intel.feeds import (
     Feed, FeedStore, FeedFetchStore, IntelStore, VALID_FORMATS, new_feed_id,
 )
 from ..intel.fetcher import detect_feed_format, fetch_feed, start_poller, validate_feed
 from ..intel.status import overall_status
 from ..core import settings as user_settings
+from ..core import firstrun
 from .catalog import CATALOG, CATEGORY_ORDER
 
 DEFAULT_ACTOR = "operator@example.com"
@@ -1936,8 +1938,14 @@ def _stats(findings) -> dict:
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--findings", required=True)
+    ap = argparse.ArgumentParser(prog="ai-protect-ui",
+                                 description="ai-protect findings dashboard")
+    # Zero-config launch: default to the durable data home so `python -m
+    # pipeline.ui.server` just works. A configured findings_path (Settings →
+    # Paths) wins; --findings overrides both. The store auto-creates the dir.
+    default_findings = user_settings.get("findings_path", "") or str(REMEDIATE_HOME / "findings.jsonl")
+    ap.add_argument("--findings", default=default_findings,
+                    help="Findings JSONL store (default: %(default)s)")
     ap.add_argument("--manifests-dir",
                     default=str(Path(__file__).resolve().parent.parent / "manifests"))
     # Bind loopback by default (clears bandit B104). Pass --host 0.0.0.0 to
@@ -1946,7 +1954,10 @@ def main():
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--debug", action="store_true")
     args = ap.parse_args()
+    firstrun.maybe_welcome()
     app = create_app(args.findings, args.manifests_dir)
+    print(f"ai-protect UI → http://{args.host}:{args.port}/   (findings: {args.findings})",
+          file=sys.stderr)
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 
