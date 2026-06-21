@@ -4,6 +4,27 @@ Offensive security operating model for the enterprise AI transformation in a maj
 
 The work is anchored on a single strategic reframe: offensive security as the **empirical truth function for AI risk** — the team that proves what does and does not work, while every other voice in the AI conversation (vendors, sponsors, even AI governance) has incentives to be optimistic.
 
+> **Two things live in this repo:** a **runnable security tool** (the `pipeline/` package — install and use it below) and the **strategy** that shaped it (everything after the Quickstart). Just want to try the tool? Start here.
+
+## Quickstart — run it locally
+
+```bash
+git clone https://github.com/n08976/ai-protect && cd ai-protect
+python3 -m venv .venv && source .venv/bin/activate   # recommended
+pip install .                # installs the `ai-protect` + `ai-protect-ui` commands
+
+ai-protect doctor            # what works on your machine — and what needs installing
+ai-protect tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
+ai-protect-ui                # dashboard → http://localhost:8000
+```
+
+No configuration required. Everything is written under `~/.ai-protect/`, and nothing
+leaves your machine except the CVE/threat feeds you opt into. Scanners that need an
+external tool (nuclei, trufflehog, garak, …) are skipped automatically until you
+install them — **`ai-protect doctor`** shows exactly which ones and how. The
+built-in policy and AI checks work with zero setup. See [The pipeline](#the-pipeline-pipeline)
+for the full tour.
+
 ---
 
 ## Why this exists
@@ -124,10 +145,13 @@ The runnable counterpart to v2.1 and the technical companion. An AI app or agent
 - **From [RedTeam-Tools](https://github.com/A-poc/RedTeam-Tools):** [Nuclei](https://github.com/projectdiscovery/nuclei), [TruffleHog](https://github.com/trufflesecurity/trufflehog).
 - **Built-in policy gates:** `manifest_validator` (intake), `threat_model_check` (design, Tier 1-2), `telemetry_drift` (production).
 
-**Quickstart:**
+**From a checkout (no install — for development):** the [Quickstart](#quickstart--run-it-locally) above installs the `ai-protect` command; the equivalents below run straight from a clone via `python -m`.
 
 ```bash
 pip install -r pipeline/requirements.txt
+
+# What works on this machine, and what each missing tool needs
+python -m pipeline.cli doctor
 
 # Tier-classify a sample app
 python -m pipeline.cli tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
