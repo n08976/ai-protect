@@ -1,0 +1,42 @@
+# ai-protect — full local stack: the UI (with baked-in scanners) plus a ZAP
+# DAST daemon wired in automatically.
+#
+#   docker compose up --build       # → dashboard at http://localhost:8000
+#
+# The ai-protect container already carries the SAST / secrets / SCA / container
+# scanners (see `docker compose run --rm ai-protect ai-protect doctor`). The zap
+# service adds dynamic web scanning; the app reaches it at http://zap:8090.
+name: ai-protect
+
+services:
+  ai-protect:
+    build: .
+    image: ai-protect:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # The ZAP adapter picks this up automatically (no /settings edit needed).
+      ZAP_API_URL: http://zap:8090
+      ZAP_API_KEY: ""
+    volumes:
+      # Persist findings, config and intel cache across restarts.
+      - ai-protect-data:/home/aip/.ai-protect
+    depends_on:
+      - zap
+    restart: unless-stopped
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    # Daemon mode; key disabled and API opened to the compose network only
+    # (the port is never published to the host — see `expose`, not `ports`).
+    command: >
+      zap.sh -daemon -host 0.0.0.0 -port 8090
+      -config api.disablekey=true
+      -config api.addrs.addr.name=.*
+      -config api.addrs.addr.regex=true
+    expose:
+      - "8090"
+    restart: unless-stopped
+
+volumes:
+  ai-protect-data:

@@ -1,0 +1,18 @@
+# Keep the build context small + reproducible. The image needs the pipeline
+# package, pyproject, README and LICENSE — not history, docs, or artifacts.
+.git
+.github
+diagrams
+docs
+build
+dist
+*.egg-info
+.eggs
+.venv
+venv
+**/__pycache__
+*.pyc
+.pytest_cache
+.deepeval
+.ruff_cache
+.mypy_cache
