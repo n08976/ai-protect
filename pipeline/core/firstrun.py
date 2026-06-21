@@ -39,7 +39,7 @@ _BANNER = """\
               install them — a zero-setup run still works using the
               built-in checks.
 
-  Next      : python -m pipeline.cli adapters       # see what's wired in
+  Next      : python -m pipeline.cli doctor        # what works on this box
               python -m pipeline.cli tier <manifest>  # classify an app
               python -m pipeline.ui.server            # open the dashboard
 └────────────────────────────────────────────────┘
