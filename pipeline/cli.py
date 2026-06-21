@@ -26,6 +26,7 @@ import logging
 import sys
 from pathlib import Path
 
+from . import __version__
 from .adapters.registry import REGISTRY
 from .core import firstrun
 from .core.findings import FindingStore
@@ -334,6 +335,7 @@ def cmd_policy(args):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ai-protect", description="Offensive security pipeline for AI workloads")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--findings", default=str(DEFAULT_FINDINGS),
                         help="Path to findings JSONL store (append-only).")
     parser.add_argument("-v", "--verbose", action="store_true")
