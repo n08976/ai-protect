@@ -169,3 +169,49 @@ jobs:
           pip install pytest
       - name: Test
         run: python -m pytest pipeline/tests/ -q
+
+  quickstart:
+    # Docs-as-tests: prove the README Quickstart actually works on a clean
+    # machine. This is the install path a stranger from GitHub follows — if it
+    # breaks, this job fails before the broken commands reach a user.
+    name: README quickstart smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install via the documented path (pip install .)
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: ai-protect --version
+        run: ai-protect --version
+
+      - name: ai-protect doctor (must run clean, zero config)
+        run: ai-protect doctor
+
+      - name: ai-protect adapters (registry non-empty)
+        run: |
+          n=$(ai-protect adapters | grep -c .)
+          echo "adapters listed: $n"
+          test "$n" -ge 40
+
+      - name: ai-protect tier <sample> (bundled manifest resolves)
+        run: ai-protect tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
+
+      - name: ai-protect-ui serves the dashboard
+        run: |
+          ai-protect-ui --port 8000 &
+          ui_pid=$!
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          kill "$ui_pid" 2>/dev/null || true
+          echo "HTTP $code"
+          test "$code" = "200"
