@@ -1,0 +1,37 @@
+name: docker image
+
+# Build the batteries-included image and prove it runs. Path-filtered so it
+# only fires when something that affects the image changes — unrelated PRs are
+# unaffected (and never wait on a skipped check).
+on:
+  push:
+    branches: [main]
+    paths: [Dockerfile, docker-compose.yml, .dockerignore, pyproject.toml, 'pipeline/**']
+  pull_request:
+    branches: [main]
+    paths: [Dockerfile, docker-compose.yml, .dockerignore, pyproject.toml, 'pipeline/**']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build image + doctor smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build image
+        run: docker build -t ai-protect:ci .
+
+      - name: doctor runs inside the image (baked-in scanners report live)
+        run: |
+          out=$(docker run --rm ai-protect:ci ai-protect doctor)
+          echo "$out"
+          # The image must light up clearly more than the built-ins alone.
+          live=$(echo "$out" | sed -n 's/^  \([0-9]\+\) live.*/\1/p')
+          echo "live adapters in image: $live"
+          test "${live:-0}" -ge 18
+
+      - name: docker compose config is valid
+        run: docker compose config >/dev/null

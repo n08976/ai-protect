@@ -25,6 +25,24 @@ install them — **`ai-protect doctor`** shows exactly which ones and how. The
 built-in policy and AI checks work with zero setup. See [The pipeline](#the-pipeline-pipeline)
 for the full tour.
 
+### …or run it with Docker (scanners pre-installed)
+
+No Python setup, no tool installs. The image bakes in the SAST / secrets / SCA /
+container scanners (semgrep, bandit, gosec, trufflehog, detect-secrets,
+pip-audit, checkov, trivy, grype, syft, …) so they report **live** out of the box.
+
+```bash
+docker compose up --build        # UI at http://localhost:8000, plus a ZAP DAST daemon
+# or just the app, no DAST:
+docker run --rm -p 8000:8000 -v ai-protect-data:/home/aip/.ai-protect ai-protect
+```
+
+`docker compose` also starts a ZAP daemon wired in automatically (the app finds it
+at `http://zap:8090`), so dynamic web scans work too. Check what's live inside the
+image with `docker compose run --rm ai-protect ai-protect doctor`. Findings and
+config persist in the `ai-protect-data` volume. Credentialed adapters (Burp,
+Metasploit, CodeQL, garak/pyrit) stay opt-in.
+
 ---
 
 ## Why this exists
