@@ -5,6 +5,14 @@ __pycache__/
 venv/
 .python-version
 
+# Packaging artifacts (the tracked build/ dir holds the diagram scripts;
+# only ignore the setuptools output under it, not the whole directory)
+/dist/
+/build/lib/
+/build/bdist.*/
+*.egg-info/
+.eggs/
+
 # OS / editor
 .DS_Store
 Thumbs.db
