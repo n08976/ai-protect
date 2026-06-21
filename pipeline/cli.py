@@ -27,15 +27,20 @@ import sys
 from pathlib import Path
 
 from .adapters.registry import REGISTRY
+from .core import firstrun
 from .core.findings import FindingStore
 from .core.manifest import Manifest
 from .core.orchestrator import Orchestrator
 from .core.policy import STAGES, adapters_for
 from .core.tiering import classify
+from .remediate.state import REMEDIATE_HOME
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_FINDINGS = REPO_ROOT / "pipeline" / "findings" / "findings.jsonl"
+# Durable, documented data home — matches the web UI and the README. A bare
+# `python -m pipeline.cli run <manifest>` writes here instead of cluttering the
+# checkout. The store auto-creates the directory.
+DEFAULT_FINDINGS = REMEDIATE_HOME / "findings.jsonl"
 
 
 def cmd_tier(args):
@@ -431,6 +436,7 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
+    firstrun.maybe_welcome()
     args.func(args)
     return 0
 
