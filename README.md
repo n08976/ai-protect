@@ -4,6 +4,14 @@
 [![Python](https://img.shields.io/pypi/pyversions/ai-protect.svg)](https://pypi.org/project/ai-protect/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+> ## 📣 ai-protect is now on PyPI
+>
+> **`v0.1.1` — the first public release is live.** Install it in one line:
+> ```bash
+> pip install ai-protect
+> ```
+> 48 security scanner adapters (SAST · DAST · AI red-team) with graceful degradation, a zero-config first run, a Flask findings dashboard, CVE intel feeds, and a batteries-included Docker image — all MIT-licensed. Jump to the [Quickstart](#quickstart--run-it-locally), or run `ai-protect doctor` to see what lights up on your machine.
+
 Offensive security operating model for the enterprise AI transformation in a major healthcare organization. This repository contains the strategic proposal, two single-page distribution variants, the technical companion that operationalizes the proposal, the seven SVG diagrams that appear inside them, and the build scripts that generate every document deterministically from source.
 
 The work is anchored on a single strategic reframe: offensive security as the **empirical truth function for AI risk** — the team that proves what does and does not work, while every other voice in the AI conversation (vendors, sponsors, even AI governance) has incentives to be optimistic.
