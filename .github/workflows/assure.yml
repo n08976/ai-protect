@@ -3,7 +3,7 @@
 # Drop ai-protect into ANY project's deploy pipeline as a blocking gate between
 # build and deploy. It scans → auto-fixes (Tier 3-4) or proposes (Tier 1-2) →
 # re-scans to verify → opens a fix PR → emits a gate/tier verdict the caller
-# uses to decide deploy. See pipeline/README.md → "CI/CD: insert into a deploy".
+# uses to decide deploy. See ai_protect/README.md → "CI/CD: insert into a deploy".
 #
 # CALLER (your project's deploy.yml):
 #
@@ -106,7 +106,7 @@ jobs:
           git clone --depth 1 --branch "${{ inputs.ai_protect_ref }}" \
             https://github.com/n08976/ai-protect /tmp/ai-protect
           python -m pip install --upgrade pip
-          pip install -r /tmp/ai-protect/pipeline/requirements.txt
+          pip install -r /tmp/ai-protect/ai_protect/requirements.txt
           # run ai-protect against the app checkout (cwd) via PYTHONPATH
           echo "PYTHONPATH=/tmp/ai-protect" >> "$GITHUB_ENV"
           # findings live OUTSIDE the workspace so they never land in the fix PR
@@ -118,7 +118,7 @@ jobs:
       - name: Tier classify
         id: tier
         run: |
-          T=$(python -m pipeline.cli tier "${{ inputs.manifest }}" \
+          T=$(python -m ai_protect.cli tier "${{ inputs.manifest }}" \
                 | python -c "import sys,json;print(json.load(sys.stdin)['tier'])")
           echo "tier=$T" >> "$GITHUB_OUTPUT"
           if [ "$T" -le 2 ]; then
@@ -132,7 +132,7 @@ jobs:
         id: scan
         continue-on-error: true        # exit 2 on gate fail; handled below
         run: |
-          python -m pipeline.cli --findings "$AIP_FINDINGS" \
+          python -m ai_protect.cli --findings "$AIP_FINDINGS" \
             run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}" \
             --fail-on-severity "${{ inputs.severity }}"
 
@@ -140,7 +140,7 @@ jobs:
         id: fix
         if: ${{ inputs.auto_fix && steps.scan.outcome == 'failure' }}
         run: |
-          python -m pipeline.cli --findings "$AIP_FINDINGS" \
+          python -m ai_protect.cli --findings "$AIP_FINDINGS" \
             remediate "${{ inputs.manifest }}" --auto \
             --severity "${{ inputs.severity }}" --format json | tee /tmp/remediate.json
           echo "fixed=$(python -c "import json;print(json.load(open('/tmp/remediate.json'))['outcomes'].get('fixed_verified',0))")" >> "$GITHUB_OUTPUT"
@@ -165,7 +165,7 @@ jobs:
         id: regate
         run: |
           rm -f "$AIP_FINDINGS"          # fresh findings for an honest re-scan
-          if python -m pipeline.cli --findings "$AIP_FINDINGS" \
+          if python -m ai_protect.cli --findings "$AIP_FINDINGS" \
                run "${{ inputs.manifest }}" --stage "${{ inputs.stage }}" \
                --fail-on-severity "${{ inputs.severity }}"; then
             echo "gate=pass" >> "$GITHUB_OUTPUT"
@@ -183,7 +183,7 @@ jobs:
         # on re-scan); close_old_findings lets DefectDojo mitigate remediated ones.
         if: ${{ always() && env.DEFECTDOJO_URL != '' && env.DEFECTDOJO_API_TOKEN != '' }}
         run: |
-          python -m pipeline.cli --findings "$AIP_FINDINGS" defectdojo \
+          python -m ai_protect.cli --findings "$AIP_FINDINGS" defectdojo \
             --manifest "${{ inputs.manifest }}" \
             --test-title "ai-protect ${{ inputs.stage }}" || true
 

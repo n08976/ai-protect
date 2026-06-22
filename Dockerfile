@@ -35,7 +35,7 @@ WORKDIR /app
 # Install the project first (its own deps), then the pip-installable scanners
 # as a second layer so a project-only change doesn't re-resolve the scanners.
 COPY pyproject.toml README.md LICENSE ./
-COPY pipeline ./pipeline
+COPY ai_protect ./ai_protect
 RUN pip install . \
  && pip install \
         semgrep \

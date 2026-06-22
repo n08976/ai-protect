@@ -4,7 +4,7 @@ Offensive security operating model for the enterprise AI transformation in a maj
 
 The work is anchored on a single strategic reframe: offensive security as the **empirical truth function for AI risk** — the team that proves what does and does not work, while every other voice in the AI conversation (vendors, sponsors, even AI governance) has incentives to be optimistic.
 
-> **Two things live in this repo:** a **runnable security tool** (the `pipeline/` package — install and use it below) and the **strategy** that shaped it (everything after the Quickstart). Just want to try the tool? Start here.
+> **Two things live in this repo:** a **runnable security tool** (the `ai_protect/` package — install and use it below) and the **strategy** that shaped it (everything after the Quickstart). Just want to try the tool? Start here.
 
 ## Quickstart — run it locally
 
@@ -14,7 +14,7 @@ python3 -m venv .venv && source .venv/bin/activate   # recommended
 pip install .                # installs the `ai-protect` + `ai-protect-ui` commands
 
 ai-protect doctor            # what works on your machine — and what needs installing
-ai-protect tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
+ai-protect tier ai_protect/manifests/SAMPLE-clinical-assistant-prototype.yml
 ai-protect-ui                # dashboard → http://localhost:8000
 ```
 
@@ -22,7 +22,7 @@ No configuration required. Everything is written under `~/.ai-protect/`, and not
 leaves your machine except the CVE/threat feeds you opt into. Scanners that need an
 external tool (nuclei, trufflehog, garak, …) are skipped automatically until you
 install them — **`ai-protect doctor`** shows exactly which ones and how. The
-built-in policy and AI checks work with zero setup. See [The pipeline](#the-pipeline-pipeline)
+built-in policy and AI checks work with zero setup. See [The pipeline](#the-pipeline-ai_protect)
 for the full tour.
 
 ### …or run it with Docker (scanners pre-installed)
@@ -152,11 +152,11 @@ Every recommendation in this repo assumes the healthcare context. These constrai
 
 ---
 
-## The pipeline (`pipeline/`)
+## The pipeline (`ai_protect/`)
 
-The runnable counterpart to v2.1 and the technical companion. An AI app or agent registers a YAML manifest, the pipeline tier-classifies it, then routes it to the right tools at the right tier × stage. Every adapter normalizes output to the same finding schema; every finding auto-tags HIPAA / HITRUST / NIST AI RMF / MITRE ATLAS controls. See **[`pipeline/README.md`](pipeline/README.md)** for the full architecture and adapter catalog.
+The runnable counterpart to v2.1 and the technical companion. An AI app or agent registers a YAML manifest, the pipeline tier-classifies it, then routes it to the right tools at the right tier × stage. Every adapter normalizes output to the same finding schema; every finding auto-tags HIPAA / HITRUST / NIST AI RMF / MITRE ATLAS controls. See **[`ai_protect/README.md`](ai_protect/README.md)** for the full architecture and adapter catalog.
 
-**Tools wired in today** — 48 adapters: **SAST 23 · DAST 20 · pre-flight policy 3 · production telemetry 2** (`pipeline/adapters/`):
+**Tools wired in today** — 48 adapters: **SAST 23 · DAST 20 · pre-flight policy 3 · production telemetry 2** (`ai_protect/adapters/`):
 
 - **AI-native:** [NVIDIA garak](https://github.com/NVIDIA/garak), [Microsoft PyRIT](https://github.com/Azure/PyRIT), built-in `mcp_scope` validator (the highest-leverage control in v2.1), built-in `eval_suite` (hallucination / bias / jailbreak gates).
 - **Classical pen test:** [PortSwigger Burp Suite](https://portswigger.net/burp) (REST), [Rapid7 Metasploit](https://github.com/rapid7/metasploit-framework) (RPC, auxiliary by default), [Red Canary Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) (MITRE ATT&CK technique emulation against the agent runtime host).
@@ -166,47 +166,47 @@ The runnable counterpart to v2.1 and the technical companion. An AI app or agent
 **From a checkout (no install — for development):** the [Quickstart](#quickstart--run-it-locally) above installs the `ai-protect` command; the equivalents below run straight from a clone via `python -m`.
 
 ```bash
-pip install -r pipeline/requirements.txt
+pip install -r ai_protect/requirements.txt
 
 # What works on this machine, and what each missing tool needs
-python -m pipeline.cli doctor
+python -m ai_protect.cli doctor
 
 # Tier-classify a sample app
-python -m pipeline.cli tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
+python -m ai_protect.cli tier ai_protect/manifests/SAMPLE-clinical-assistant-prototype.yml
 
 # Run preprod gates end-to-end (degrades gracefully when external tools aren't installed).
 # Findings default to the durable data home (~/.ai-protect/findings.jsonl) — no flag needed.
-python -m pipeline.cli run \
-    pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml --stage preprod
+python -m ai_protect.cli run \
+    ai_protect/manifests/SAMPLE-clinical-assistant-prototype.yml --stage preprod
 
 # Dashboards
-python -m pipeline.cli report --kind executive
-python -m pipeline.cli report --kind technical
+python -m ai_protect.cli report --kind executive
+python -m ai_protect.cli report --kind technical
 
 # What runs where
-python -m pipeline.cli adapters
-python -m pipeline.cli policy --tier 1 --stage preprod
+python -m ai_protect.cli adapters
+python -m ai_protect.cli policy --tier 1 --stage preprod
 
 # Tests
-python -m pytest pipeline/tests/ -q
+python -m pytest ai_protect/tests/ -q
 
 # Web UI + background feed poller (one process). Zero-config — reads the same
-# durable findings store. See pipeline/README.md → Web UI.
-python -m pipeline.ui.server          # open http://localhost:8000/
+# durable findings store. See ai_protect/README.md → Web UI.
+python -m ai_protect.ui.server          # open http://localhost:8000/
 ```
 
 The pipeline ships with three example manifests covering the spread: Tier 1 clinical assistant, Tier 3 HR-policy advisor, Tier 4 single-user code summarizer. Adapters that need an external tool (garak, nuclei, etc.) raise `AdapterUnavailable` and are skipped non-fatally — install the tools you actually plan to exercise.
 
-**Web UI.** The Flask app under `pipeline/ui/` is more than a dashboard:
+**Web UI.** The Flask app under `ai_protect/ui/` is more than a dashboard:
 
 - **Scan modes (SAST / DAST split)** — `/scan` has a top-level segmented control. Source code (SAST) keeps the original manifest + stage + adapter form; Live target (DAST) adds a Known-app / Arbitrary-URL sub-tab with URL safety guards (hard-deny cloud metadata + non-`http(s)` schemes + embedded creds; default-deny RFC1918 / loopback / link-local etc. with typed-confirmation override; DNS re-resolved every check; HTTPS by default). DAST execution is constrained by a typed `DastConfig` carrier — rate-limit, concurrency, hard timebox, scope-prefix enforcement for crawlers (ZAP, nuclei, katana, burp).
 - **Scanning from GitHub** — `/settings → Source providers` configures public / PAT / GitHub-App auth, per-scan or cached clone, github.com or GHES. Manifest declares `source_provider: github` + `github_repo` + `github_ref`; the orchestrator clones to a temp dir or persistent cache before adapter dispatch and cleans up via try/finally even on adapter errors.
 - **Intel feeds + system status lamp** — background poller fetches external CVE / threat feeds (CISA KEV, cvedaily.com per-tag feeds, cvefeed.io, custom JSON/Atom/RSS/XML). Overall green/yellow/red lamp on the home page (worst-of feeds, scans, findings-store health).
 - **Intel-scan integration** — feeds participate in scans two ways: (a) **Enrichment** stamps intel context onto every scanner finding before persist; CVEs on CISA KEV ratchet up to CRITICAL. (b) **Detection** — an `intel_match` adapter cross-references manifest-declared assets against the intel store and emits findings the structured scanners didn't catch.
 - **Auto-resolve on re-scan absence** — when a re-scan's `status=ok` adapters don't re-emit a previously-emitted fingerprint, the system automatically writes a Change with `state=applied` and `strategy=auto_resolve_absent`. Scanner is treated as ground truth. Guards: adapter scope, stage scope, honor-revert, skip-already-resolved.
-- **Schema-driven settings + /docs** — `/settings` is generated from `pipeline/core/settings.py`'s `SCHEMA` (5 sections / 20+ fields, progressive disclosure for nested choices). Every help bubble links to a step-by-step setup walkthrough on `/docs` (PAT creation, GitHub App + installation-id retrieval, GHES URL format, DAST safety matrix, auto-resolve guards, etc.).
+- **Schema-driven settings + /docs** — `/settings` is generated from `ai_protect/core/settings.py`'s `SCHEMA` (5 sections / 20+ fields, progressive disclosure for nested choices). Every help bubble links to a step-by-step setup walkthrough on `/docs` (PAT creation, GitHub App + installation-id retrieval, GHES URL format, DAST safety matrix, auto-resolve guards, etc.).
 
-See [`pipeline/README.md`](pipeline/README.md) for the full picture: routes, classification, URL safety, source providers, auto-resolve, intel feeds, scan-mode tools, and the JSON API.
+See [`ai_protect/README.md`](ai_protect/README.md) for the full picture: routes, classification, URL safety, source providers, auto-resolve, intel feeds, scan-mode tools, and the JSON API.
 
 ---
 
@@ -216,7 +216,7 @@ See [`pipeline/README.md`](pipeline/README.md) for the full picture: routes, cla
 ai-protect/
 ├── README.md                       # This file
 ├── .gitignore
-├── pipeline/                       # The runnable AI assurance pipeline
+├── ai_protect/                       # The runnable AI assurance pipeline
 │   ├── README.md                   # Pipeline architecture, adapter catalog, extension guide
 │   ├── cli.py
 │   ├── requirements.txt
@@ -416,15 +416,15 @@ Curated awesome-list / red-team-tradecraft repositories the user referenced. Pic
 
 ### Wired-in adapters (current state)
 
-Adapters present in `pipeline/adapters/` and live in the policy table. Group by category matches the `/about` page in the live UI.
+Adapters present in `ai_protect/adapters/` and live in the policy table. Group by category matches the `/about` page in the live UI.
 
 #### Policy gates (built-in and runtime)
 
 | Adapter | Source |
 | --- | --- |
-| `manifest_validator` | (built-in) — `pipeline/adapters/manifest_validator.py` |
-| `threat_model_check` | (built-in) — `pipeline/adapters/threat_model_check.py` |
-| `mcp_scope` | (built-in) — `pipeline/adapters/mcp_scope.py` |
+| `manifest_validator` | (built-in) — `ai_protect/adapters/manifest_validator.py` |
+| `threat_model_check` | (built-in) — `ai_protect/adapters/threat_model_check.py` |
+| `mcp_scope` | (built-in) — `ai_protect/adapters/mcp_scope.py` |
 | `guardrails` (NeMo) | https://github.com/NVIDIA/NeMo-Guardrails |
 
 #### Static analysis · secrets · dependencies
@@ -482,7 +482,7 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 > normalized-`Finding` model. Instead we mined its tool list for genuine DAST gaps
 > and wrote thin local adapters on the existing contract. The NoSQL slot was scoped
 > to NoSQLMap but swapped to **nosqli** (NoSQLMap is Python-2-only and interactive,
-> so it cannot run headless in a scan). See `pipeline/README.md` for install paths.
+> so it cannot run headless in a scan). See `ai_protect/README.md` for install paths.
 
 #### AI red team · eval
 
@@ -492,39 +492,39 @@ Adapters present in `pipeline/adapters/` and live in the policy table. Group by 
 | `pyrit` | https://github.com/Azure/PyRIT |
 | `promptfoo` | https://github.com/promptfoo/promptfoo |
 | `deepeval` (fallback for promptfoo adapter) | https://github.com/confident-ai/deepeval |
-| `eval_suite` | (built-in) — `pipeline/adapters/eval_suite.py` |
+| `eval_suite` | (built-in) — `ai_protect/adapters/eval_suite.py` |
 
 #### Production · telemetry
 
 | Adapter | Source |
 | --- | --- |
-| `telemetry_drift` | (built-in) — `pipeline/adapters/telemetry_drift.py` |
-| `anomaly_detector` (alias) | (built-in) — `pipeline/adapters/telemetry_drift.py` |
+| `telemetry_drift` | (built-in) — `ai_protect/adapters/telemetry_drift.py` |
+| `anomaly_detector` (alias) | (built-in) — `ai_protect/adapters/telemetry_drift.py` |
 
 #### Findings management / export — findings sinks
 
-Findings ship to external destinations through a small, pluggable **sink** layer (`pipeline/integrations/`). A sink implements `FindingsSink` (`is_configured()` + `push()`), registers in `pipeline/integrations/registry.py`, and is then reachable from `cli run --sink <name>`, the standalone exporter, and the `cli sinks` listing — no orchestrator or CLI changes. DefectDojo is the first concrete sink; the same seam fits SARIF/OCSF files, ServiceNow, or a webhook next.
+Findings ship to external destinations through a small, pluggable **sink** layer (`ai_protect/integrations/`). A sink implements `FindingsSink` (`is_configured()` + `push()`), registers in `ai_protect/integrations/registry.py`, and is then reachable from `cli run --sink <name>`, the standalone exporter, and the `cli sinks` listing — no orchestrator or CLI changes. DefectDojo is the first concrete sink; the same seam fits SARIF/OCSF files, ServiceNow, or a webhook next.
 
 | Sink | Source |
 | --- | --- |
-| DefectDojo (open source) | `pipeline/integrations/defectdojo/` — `config` · `serialize` · `client` · `sink` |
+| DefectDojo (open source) | `ai_protect/integrations/defectdojo/` — `config` · `serialize` · `client` · `sink` |
 
 Normalized findings push to an open-source [DefectDojo](https://github.com/DefectDojo/django-DefectDojo) instance (aggregation, triage, waivers, trend tracking) via its **Generic Findings Import** API:
 
 ```bash
 # Preview exactly what would be sent (no creds, no network):
-python -m pipeline.cli defectdojo --app commercial --min-severity high --dry-run
+python -m ai_protect.cli defectdojo --app commercial --min-severity high --dry-run
 
 # Standalone export of the findings store:
 export DEFECTDOJO_URL=https://defectdojo.internal
 export DEFECTDOJO_API_TOKEN=...        # DefectDojo → API v2 Key; inject from Vault/Key Vault
-python -m pipeline.cli defectdojo --product commercial --engagement "ai-protect preprod"
+python -m ai_protect.cli defectdojo --product commercial --engagement "ai-protect preprod"
 
 # Or push automatically right after a scan:
-python -m pipeline.cli run .ai-protect/manifest.yml --stage preprod --sink defectdojo
+python -m ai_protect.cli run .ai-protect/manifest.yml --stage preprod --sink defectdojo
 
 # See which sinks are configured:
-python -m pipeline.cli sinks
+python -m ai_protect.cli sinks
 ```
 
 **Config resolves from CLI args → environment → `/settings`** (so CI injects creds from Vault/Key Vault while a local operator configures it once in the dashboard's *Findings sinks* section). Per-app product/engagement names come from the manifest:
@@ -541,7 +541,7 @@ Each finding carries a stable `unique_id_from_tool` (the pipeline fingerprint), 
 
 ### Reviewed but not yet wired
 
-Tools that have been evaluated and are documented for future wiring. Each line is a pre-baked candidate — when scope changes (cloud presence, AD-integrated workloads, K8s deployment, mobile surface), add them as adapters under `pipeline/adapters/` and register in `pipeline/adapters/registry.py` + `pipeline/core/policy.py`.
+Tools that have been evaluated and are documented for future wiring. Each line is a pre-baked candidate — when scope changes (cloud presence, AD-integrated workloads, K8s deployment, mobile surface), add them as adapters under `ai_protect/adapters/` and register in `ai_protect/adapters/registry.py` + `ai_protect/core/policy.py`.
 
 #### AD attack-path / network identity (out of scope today; pull in once AI workloads are AD-integrated)
 
@@ -757,7 +757,7 @@ This is recorded as deferred — pull in when the team actually wants ephemeral 
 Where it would fit if integrated:
 
 - **Claude Code skills for the five verticals** — curate down (754 is far too many to load wholesale) to Threat Hunt (~55 skills), Red Team (~24), Incident Response (~25), Digital Forensics (~37), Malware Analysis (~39), Threat Intel. Drop the curated subset into `~/.claude/skills/`. Entry point: `npx skills add mukul975/Anthropic-Cybersecurity-Skills`.
-- **Remediation side of the pipeline, not the scanning side** — for findings that need judgment rather than a deterministic one-line patch (e.g. a Bearer critical that warrants an investigation), an agent following an IR / threat-hunt skill is the right shape. Future hook in `pipeline/remediate/`, not `pipeline/adapters/`.
+- **Remediation side of the pipeline, not the scanning side** — for findings that need judgment rather than a deterministic one-line patch (e.g. a Bearer critical that warrants an investigation), an agent following an IR / threat-hunt skill is the right shape. Future hook in `ai_protect/remediate/`, not `ai_protect/adapters/`.
 - **Phase 1 playbook-as-code scaffold** — provides a template structure (prerequisites → workflow → verification) with MITRE ATT&CK / ATLAS / NIST CSF 2.0 / D3FEND / NIST AI RMF mappings already wired, which lines up with HIPAA/HITRUST audit-evidence needs (those map through NIST). A starting library for codifying the team's own playbooks, not a finished product.
 
 Caveats to resolve before integrating: **zero healthcare-specific skills** (no HIPAA breach containment, no PHI minimum-necessary audit, no medical-device forensics — the team would fill that gap); community-maintained, so fine for procedural scaffolding but not for anything cited as compliance evidence without vetting; v1.2.0 as of April 2026, 6.2k stars.
@@ -774,10 +774,10 @@ Single-tool repositories evaluated and explicitly skipped. Recorded so the catal
 
 1. Pick the source from the catalogues above (or add a new one to the relevant table here first).
 2. Install the binary or pip package; add to `~/bin/` or `~/.local/bin/`.
-3. Create `pipeline/adapters/<name>.py` subclassing `Adapter`.
-4. Register in `pipeline/adapters/registry.py` and add a `pipeline/ui/catalog.py` entry.
-5. Add the call to the relevant `pipeline/core/policy.py` tier × stage.
-6. Add a test in `pipeline/tests/`.
+3. Create `ai_protect/adapters/<name>.py` subclassing `Adapter`.
+4. Register in `ai_protect/adapters/registry.py` and add a `ai_protect/ui/catalog.py` entry.
+5. Add the call to the relevant `ai_protect/core/policy.py` tier × stage.
+6. Add a test in `ai_protect/tests/`.
 7. Update this section of the README so the source is recorded.
 
 ---
