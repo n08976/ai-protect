@@ -1,5 +1,9 @@
 # ai-protect
 
+[![PyPI](https://img.shields.io/pypi/v/ai-protect.svg)](https://pypi.org/project/ai-protect/)
+[![Python](https://img.shields.io/pypi/pyversions/ai-protect.svg)](https://pypi.org/project/ai-protect/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Offensive security operating model for the enterprise AI transformation in a major healthcare organization. This repository contains the strategic proposal, two single-page distribution variants, the technical companion that operationalizes the proposal, the seven SVG diagrams that appear inside them, and the build scripts that generate every document deterministically from source.
 
 The work is anchored on a single strategic reframe: offensive security as the **empirical truth function for AI risk** — the team that proves what does and does not work, while every other voice in the AI conversation (vendors, sponsors, even AI governance) has incentives to be optimistic.
