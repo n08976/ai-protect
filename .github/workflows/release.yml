@@ -63,9 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     # Only a published Release actually uploads; manual runs stop after build.
     if: github.event_name == 'release'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/ai-protect
+    # No GitHub environment — the trusted publisher matches on owner/repo/
+    # workflow only (configure the PyPI pending publisher with Environment blank).
     permissions:
       id-token: write   # OIDC token for Trusted Publishing
     steps:

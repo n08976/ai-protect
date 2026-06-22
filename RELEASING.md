@@ -18,10 +18,9 @@ publisher so the first release can create the project:
    | Owner | `n08976` |
    | Repository name | `ai-protect` |
    | Workflow name | `release.yml` |
-   | Environment name | `pypi` |
-3. (Optional but recommended) In the GitHub repo → **Settings → Environments**,
-   create an environment named `pypi` and add required reviewers so a human
-   approves each publish.
+   | Environment name | (leave blank) |
+   Leave **Environment name blank** — the workflow does not pin a GitHub
+   environment, so the four fields above are the entire match.
 
 ## Cut a release
 
