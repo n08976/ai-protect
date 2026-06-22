@@ -9,13 +9,19 @@ The work is anchored on a single strategic reframe: offensive security as the **
 ## Quickstart — run it locally
 
 ```bash
-git clone https://github.com/n08976/ai-protect && cd ai-protect
-python3 -m venv .venv && source .venv/bin/activate   # recommended
-pip install .                # installs the `ai-protect` + `ai-protect-ui` commands
+pip install ai-protect       # installs the `ai-protect` + `ai-protect-ui` commands
 
 ai-protect doctor            # what works on your machine — and what needs installing
-ai-protect tier ai_protect/manifests/SAMPLE-clinical-assistant-prototype.yml
 ai-protect-ui                # dashboard → http://localhost:8000
+```
+
+Prefer to run from source (for development)?
+
+```bash
+git clone https://github.com/n08976/ai-protect && cd ai-protect
+python3 -m venv .venv && source .venv/bin/activate
+pip install .
+ai-protect tier ai_protect/manifests/SAMPLE-clinical-assistant-prototype.yml
 ```
 
 No configuration required. Everything is written under `~/.ai-protect/`, and nothing
