@@ -1,9 +1,9 @@
 # ai-protect dependency entrypoint.
 #
-# The real dependency set lives in pipeline/requirements.txt. This top-level
+# The real dependency set lives in ai_protect/requirements.txt. This top-level
 # file defers to it so tooling that expects a root requirements.txt — pip-audit,
 # Dependabot, `pip install -r requirements.txt` — resolves the project's ACTUAL
 # dependencies rather than whatever happens to be installed in the ambient
 # environment.
--r pipeline/requirements.txt
+-r ai_protect/requirements.txt
 -r build/requirements.txt

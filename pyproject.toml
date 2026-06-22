@@ -32,20 +32,20 @@ dependencies = [
 dev = ["pytest>=9.0.3"]
 
 [project.scripts]
-ai-protect = "pipeline.cli:main"
-ai-protect-ui = "pipeline.ui.server:main"
+ai-protect = "ai_protect.cli:main"
+ai-protect-ui = "ai_protect.ui.server:main"
 
 [project.urls]
 Homepage = "https://github.com/n08976/ai-protect"
 Repository = "https://github.com/n08976/ai-protect"
 
 [tool.setuptools.dynamic]
-version = { attr = "pipeline.__version__" }
+version = { attr = "ai_protect.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["pipeline*"]
-exclude = ["pipeline.tests*"]
+include = ["ai_protect*"]
+exclude = ["ai_protect.tests*"]
 
 [tool.setuptools.package-data]
-"pipeline" = ["manifests/*.yml"]
-"pipeline.ui" = ["templates/*", "static/*"]
+"ai_protect" = ["manifests/*.yml"]
+"ai_protect.ui" = ["templates/*", "static/*"]

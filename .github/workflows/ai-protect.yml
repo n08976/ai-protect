@@ -1,17 +1,17 @@
 name: ai-protect pipeline
 
 # Runs the ai-protect AI assurance pipeline against every example manifest in
-# pipeline/manifests/. Adapters that need an external tool (garak, gosec,
+# ai_protect/manifests/. Adapters that need an external tool (garak, gosec,
 # nuclei, etc.) raise AdapterUnavailable and are skipped non-fatally — the
 # pipeline still gates on what *is* installed plus the built-in policy gates
 # (manifest_validator, threat_model_check, mcp_scope, eval_suite).
 #
 # To wire CI/CD coverage for a real AI workload:
-#   1. Drop a manifest into pipeline/manifests/ describing the app/agent.
+#   1. Drop a manifest into ai_protect/manifests/ describing the app/agent.
 #   2. The matrix below picks it up automatically.
 #   3. Install the additional adapter binaries you actually want enforced
 #      (semgrep, bandit, trufflehog, gitleaks, gosec, etc.) in the
-#      "Install pipeline tooling" step before `python -m pipeline.cli run`.
+#      "Install pipeline tooling" step before `python -m ai_protect.cli run`.
 #   4. Configure secrets for credentialed adapters (NVD_API_KEY for
 #      dependency_check; CALDERA_API_URL/KEY; ZAP_API_URL; etc.) as needed.
 
@@ -48,7 +48,7 @@ jobs:
       - name: Install pipeline
         run: |
           python -m pip install --upgrade pip
-          pip install -r pipeline/requirements.txt
+          pip install -r ai_protect/requirements.txt
 
       - name: Discover manifests
         id: discover
@@ -57,14 +57,14 @@ jobs:
           # gate-coverage smoke tests). User-owned production manifests
           # (example-ads_*, opt_ads, etc.) are scanned via /scan in the UI;
           # CI deliberately doesn't run against them on every push.
-          manifests=$(ls pipeline/manifests/SAMPLE-*.yml | jq -R -s -c 'split("\n")[:-1]')
+          manifests=$(ls ai_protect/manifests/SAMPLE-*.yml | jq -R -s -c 'split("\n")[:-1]')
           echo "manifests=$manifests" >> "$GITHUB_OUTPUT"
 
       - name: Print tier for each manifest
         run: |
-          for m in pipeline/manifests/SAMPLE-*.yml; do
+          for m in ai_protect/manifests/SAMPLE-*.yml; do
             echo "::group::Tier classification — $m"
-            python -m pipeline.cli tier "$m"
+            python -m ai_protect.cli tier "$m"
             echo "::endgroup::"
           done
 
@@ -86,7 +86,7 @@ jobs:
       - name: Install pipeline
         run: |
           python -m pip install --upgrade pip
-          pip install -r pipeline/requirements.txt
+          pip install -r ai_protect/requirements.txt
 
       # The built-in adapters (manifest_validator, threat_model_check,
       # mcp_scope, eval_suite, telemetry_drift) need no extra tooling.
@@ -119,7 +119,7 @@ jobs:
           echo "Running pipeline stage=$STAGE for ${{ matrix.manifest }}"
           # Exit code 2 = a blocking gate failed. We surface that to the job.
           set +e
-          python -m pipeline.cli --findings "$out" run "${{ matrix.manifest }}" --stage "$STAGE"
+          python -m ai_protect.cli --findings "$out" run "${{ matrix.manifest }}" --stage "$STAGE"
           ec=$?
           set -e
           echo "rc=$ec" >> "$GITHUB_OUTPUT"
@@ -134,8 +134,8 @@ jobs:
         run: |
           out="${{ steps.run.outputs.out }}"
           if [ -s "$out" ]; then
-            python -m pipeline.cli --findings "$out" report --kind technical --format text > "${out%.jsonl}.technical.txt" || true
-            python -m pipeline.cli --findings "$out" report --kind executive --format text > "${out%.jsonl}.executive.txt" || true
+            python -m ai_protect.cli --findings "$out" report --kind technical --format text > "${out%.jsonl}.technical.txt" || true
+            python -m ai_protect.cli --findings "$out" report --kind executive --format text > "${out%.jsonl}.executive.txt" || true
           fi
 
       - name: Upload findings + reports
@@ -165,10 +165,10 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -r pipeline/requirements.txt
+          pip install -r ai_protect/requirements.txt
           pip install pytest
       - name: Test
-        run: python -m pytest pipeline/tests/ -q
+        run: python -m pytest ai_protect/tests/ -q
 
   quickstart:
     # Docs-as-tests: prove the README Quickstart actually works on a clean
@@ -201,7 +201,7 @@ jobs:
           test "$n" -ge 40
 
       - name: ai-protect tier <sample> (bundled manifest resolves)
-        run: ai-protect tier pipeline/manifests/SAMPLE-clinical-assistant-prototype.yml
+        run: ai-protect tier ai_protect/manifests/SAMPLE-clinical-assistant-prototype.yml
 
       - name: ai-protect-ui serves the dashboard
         run: |

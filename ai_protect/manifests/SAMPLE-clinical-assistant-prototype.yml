@@ -1,0 +1,63 @@
+name: SAMPLE-clinical-assistant-prototype
+owner: jdoe@example.health
+on_call: appsec-oncall@example.health
+description: Clinician-facing assistant that summarizes patient charts and drafts
+  follow-up notes. Pulls PHI from the EHR via an internal MCP server.
+data_sensitivity: phi
+decision_impact: clinical_influence
+integration_footprint: agent_tool_use
+user_population: enterprise
+models:
+- name: claude-sonnet-bedrock-baa
+  provider: anthropic
+  model: claude-sonnet-4-6
+  via_gateway: true
+  baa_covered: true
+  auth_env: ANTHROPIC_API_KEY
+mcp_servers:
+- name: ehr-read-mcp
+  tier: 1
+  data_scope: phi
+  actions:
+  - get_chart
+  - search_problems
+  - list_medications
+  side_effects: read_only
+  third_party: false
+- name: messaging-mcp
+  tier: 2
+  data_scope: internal
+  actions:
+  - send_secure_message
+  side_effects: mutating
+  third_party: false
+surfaces:
+  has_user_chat: true
+  has_document_ingest: true
+target:
+  base_url: https://clinical-assistant.example.health
+  api_url: https://agent-runtime.example.health/api/v1
+  test_user_token_env: TEST_AGENT_TOKEN
+  network_allowed_zones:
+  - ai-application-zone
+expected_actions:
+- get_chart
+- search_problems
+- list_medications
+expected_data_scopes:
+- phi
+- internal
+threat_model_path: ai_protect/fixtures/clinical_assistant_threat_model.yml
+source_paths:
+- ai_protect/fixtures/clinical_assistant
+guardrails_path: ai_protect/fixtures/clinical_assistant_guardrails.yml
+step_up_auth:
+  required_for:
+  - messaging-mcp
+# Findings-sink overrides (optional). When `cli run --sink defectdojo` runs, this
+# app's findings import into this DefectDojo product/engagement. Omit to fall
+# back to /settings defaults, then the app name / stage.
+integrations:
+  defectdojo:
+    product: Clinical Assistant (prototype)
+    engagement: ai-protect preprod

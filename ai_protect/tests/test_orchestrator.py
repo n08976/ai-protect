@@ -1,0 +1,130 @@
+from pathlib import Path
+
+import pytest
+
+from ai_protect.core.findings import FindingStore
+from ai_protect.core.manifest import Manifest
+from ai_protect.core.orchestrator import Orchestrator
+
+
+REPO = Path(__file__).resolve().parent.parent.parent
+MANIFESTS = REPO / "ai_protect" / "manifests"
+
+
+def test_dry_run_clinical_all_stages(tmp_path):
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=True)
+    results = orc.run_all_stages()
+    # Tier 1 has adapters at every stage -> 5 stage results, all dry-run skipped.
+    assert len(results) == 5
+    for r in results:
+        assert r.gate_passed
+        for ar in r.adapter_results:
+            assert ar.status == "skipped"
+
+
+def test_intake_validates_phi_without_baa_blocks(tmp_path):
+    """A manifest declaring PHI but a non-BAA model should fail intake."""
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    # Strip BAA coverage to force the manifest_validator to fail.
+    m.models[0].baa_covered = False
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=False)
+    result = orc.run_stage("intake")
+    assert not result.gate_passed
+    assert "manifest_validator" in (result.gate_reason or "")
+
+
+def test_mcp_scope_runs_without_external_tools(tmp_path):
+    """MCP scope adapter is policy-as-code; should always run."""
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=False)
+    result = orc.run_stage("preprod")
+    # mcp_scope is in the Tier 1 preprod policy.
+    by_name = {ar.adapter: ar for ar in result.adapter_results}
+    assert "mcp_scope" in by_name
+    assert by_name["mcp_scope"].status in ("ok",)
+
+
+def test_low_risk_tier_4_minimal_pipeline(tmp_path):
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-dev-code-summarizer.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=True)
+    result = orc.run_stage("build")
+    # Tier 4 build runs the SAST + secret + dep + multi-mode stack (no red-team adapters).
+    names = [ar.adapter for ar in result.adapter_results]
+    for expected in ("trufflehog", "gitleaks", "detect_secrets",
+                     "semgrep", "bandit", "bearer", "codeql", "njsscan", "hadolint",
+                     "pip_audit", "dependency_check", "trivy"):
+        assert expected in names, f"missing {expected} in tier 4 build"
+    assert all(n not in names for n in ("garak", "pyrit", "atomic", "sqlmap", "burp"))
+
+
+def test_dast_and_policy_adapters_run_when_source_materialization_fails(tmp_path, monkeypatch):
+    """A failed source clone (e.g. private repo, no PAT) must NOT block DAST /
+    policy adapters — they probe a live target or read only the manifest, so
+    they need no source. Regression for the orchestrator source-partition fix."""
+    from ai_protect.core.orchestrator import AdapterResult
+    from ai_protect.core.scan_modes import mode_for, MODE_SAST
+    from ai_protect.sources.base import SourceError
+
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=False)
+
+    # Simulate source-provider failure without any real clone/network.
+    def boom():
+        raise SourceError("simulated clone failure")
+    monkeypatch.setattr(orc, "_materialize_source", boom)
+
+    # Stub adapter execution so no real tools/network run; record dispatches.
+    dispatched: list[str] = []
+    def fake_run(call, stage, tier):
+        dispatched.append(call.adapter)
+        return AdapterResult(adapter=call.adapter, blocking=call.blocking, status="ok")
+    monkeypatch.setattr(orc, "_run_adapter", fake_run)
+
+    result = orc.run_stage("build")   # tier-1 build has SAST + DAST + policy adapters
+    names = {ar.adapter for ar in result.adapter_results}
+
+    # Source clone failed -> one _source error, gate fails.
+    assert "_source" in names
+    assert not result.gate_passed
+    # SAST adapters were NOT dispatched (nothing to read).
+    assert not any(mode_for(a) == MODE_SAST for a in dispatched), dispatched
+    # DAST + policy adapters ran anyway.
+    assert "nuclei" in dispatched        # DAST
+    assert "intel_match" in dispatched   # policy
+
+
+def test_dast_mode_never_materializes_source(tmp_path, monkeypatch):
+    """mode='dast' must skip source materialization entirely (no clone, no
+    _source error) and run only DAST + policy adapters."""
+    from ai_protect.core.orchestrator import AdapterResult
+    from ai_protect.core.scan_modes import mode_for, MODE_SAST
+
+    m = Manifest.from_yaml(MANIFESTS / "SAMPLE-clinical-assistant-prototype.yml")
+    store = FindingStore(tmp_path / "f.jsonl")
+    orc = Orchestrator(m, store, dry_run=False, mode="dast")
+
+    called = {"materialize": False}
+    def boom():
+        called["materialize"] = True
+        raise AssertionError("DAST mode must not materialize source")
+    monkeypatch.setattr(orc, "_materialize_source", boom)
+
+    dispatched: list[str] = []
+    def fake_run(call, stage, tier):
+        dispatched.append(call.adapter)
+        return AdapterResult(adapter=call.adapter, blocking=call.blocking, status="ok")
+    monkeypatch.setattr(orc, "_run_adapter", fake_run)
+
+    result = orc.run_stage("build")   # tier-1 build has SAST + DAST + policy
+    names = {ar.adapter for ar in result.adapter_results}
+    assert called["materialize"] is False    # never even attempted a clone
+    assert "_source" not in names            # so no source error
+    assert all(mode_for(a) != MODE_SAST for a in dispatched), dispatched  # no SAST ran
+    assert "nuclei" in dispatched            # DAST ran
+    assert "intel_match" in dispatched       # policy ran
