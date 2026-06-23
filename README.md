@@ -8,7 +8,7 @@
 >
 > **`v0.1.1` — the first public release is live.** Install it in one line:
 > ```bash
-> pip install ai-protect
+> pipx install ai-protect
 > ```
 > 48 security scanner adapters (SAST · DAST · AI red-team) with graceful degradation, a zero-config first run, a Flask findings dashboard, CVE intel feeds, and a batteries-included Docker image — all MIT-licensed. Jump to the [Quickstart](#quickstart--run-it-locally), or run `ai-protect doctor` to see what lights up on your machine.
 
@@ -21,11 +21,18 @@ The work is anchored on a single strategic reframe: offensive security as the **
 ## Quickstart — run it locally
 
 ```bash
-pip install ai-protect       # installs the `ai-protect` + `ai-protect-ui` commands
+pipx install ai-protect      # installs the `ai-protect` + `ai-protect-ui` commands
 
 ai-protect doctor            # what works on your machine — and what needs installing
 ai-protect-ui                # dashboard → http://localhost:8000
 ```
+
+[`pipx`](https://pipx.pypa.io) is recommended — it installs the CLI in its own isolated
+environment and works out of the box on Ubuntu/Debian and macOS, where a bare `pip install`
+is blocked by [PEP 668](https://peps.python.org/pep-0668/) "externally-managed-environment".
+No pipx yet? Install it for your OS (`sudo apt install pipx`, `brew install pipx`) — see the
+[pipx install guide](https://pipx.pypa.io/stable/installation/). Inside a virtualenv or conda
+env, plain `pip install ai-protect` works too.
 
 Prefer to run from source (for development)?
 
