@@ -68,6 +68,48 @@ image with `docker compose run --rm ai-protect ai-protect doctor`. Findings and
 config persist in the `ai-protect-data` volume. Credentialed adapters (Burp,
 Metasploit, CodeQL, garak/pyrit) stay opt-in.
 
+### …or run the dashboard as a system service (systemd)
+
+For an always-on deployment on a Linux host — dashboard up at boot, auto-restart
+on failure, background feed poller always running — install the UI as a systemd
+unit instead of launching it by hand:
+
+```ini
+# /etc/systemd/system/ai-protect-ui.service
+[Unit]
+Description=ai-protect Web UI (Flask dashboard + feed poller)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=youruser
+Group=youruser
+# pipx installs to ~/.local/bin; adjust if you installed elsewhere
+ExecStart=/home/youruser/.local/bin/ai-protect-ui --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now ai-protect-ui   # start now + at every boot
+systemctl status ai-protect-ui              # verify
+journalctl -u ai-protect-ui -f              # logs
+```
+
+Findings, settings, and intel feeds all live under the service user's
+`~/.ai-protect/`, so the CLI and the service share state. After upgrading the
+package (`pipx upgrade ai-protect`) or editing the source, apply the change with
+`sudo systemctl restart ai-protect-ui` — don't kill the process or start a second
+manual instance (systemd would restart the old one and the port would conflict).
+Running from a source checkout instead? Use
+`ExecStart=/usr/bin/python3 -m ai_protect.ui.server --host 0.0.0.0 --port 8000`
+with `WorkingDirectory=` pointing at the clone.
+
 ---
 
 ## Why this exists
@@ -240,6 +282,12 @@ See [`ai_protect/README.md`](ai_protect/README.md) for the full picture: routes,
 ```
 ai-protect/
 ├── README.md                       # This file
+├── LICENSE                         # MIT
+├── pyproject.toml                  # Packaging — `pip install ai-protect` → `ai-protect` + `ai-protect-ui` commands
+├── requirements.txt                # Runtime deps (mirror of pyproject dependencies, for pip -r workflows)
+├── Dockerfile                      # Batteries-included image: pipeline + SAST/secrets/SCA/container scanners
+├── docker-compose.yml              # UI + ZAP DAST daemon, persistent data volume
+├── RELEASING.md                    # PyPI release process (Trusted Publishing via GitHub Actions)
 ├── .gitignore
 ├── ai_protect/                       # The runnable AI assurance pipeline
 │   ├── README.md                   # Pipeline architecture, adapter catalog, extension guide
@@ -830,6 +878,6 @@ echo 'export CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect' >> ~/.bas
 
 ---
 
-## License and distribution
+## License
 
-Internal — Offensive Security. Prepared by the Office of the Director, Offensive Security. Not for external distribution without explicit approval from the CISO.
+[MIT](LICENSE) — code, diagrams, and the strategy documents under `docs/` alike.
