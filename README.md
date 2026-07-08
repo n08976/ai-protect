@@ -268,7 +268,7 @@ The pipeline ships with three example manifests covering the spread: Tier 1 clin
 
 - **Scan modes (SAST / DAST split)** — `/scan` has a top-level segmented control. Source code (SAST) keeps the original manifest + stage + adapter form; Live target (DAST) adds a Known-app / Arbitrary-URL sub-tab with URL safety guards (hard-deny cloud metadata + non-`http(s)` schemes + embedded creds; default-deny RFC1918 / loopback / link-local etc. with typed-confirmation override; DNS re-resolved every check; HTTPS by default). DAST execution is constrained by a typed `DastConfig` carrier — rate-limit, concurrency, hard timebox, scope-prefix enforcement for crawlers (ZAP, nuclei, katana, burp).
 - **Scanning from GitHub** — `/settings → Source providers` configures public / PAT / GitHub-App auth, per-scan or cached clone, github.com or GHES. Manifest declares `source_provider: github` + `github_repo` + `github_ref`; the orchestrator clones to a temp dir or persistent cache before adapter dispatch and cleans up via try/finally even on adapter errors.
-- **Intel feeds + system status lamp** — background poller fetches external CVE / threat feeds (CISA KEV, cvedaily.com per-tag feeds, cvefeed.io, custom JSON/Atom/RSS/XML). Overall green/yellow/red lamp on the home page (worst-of feeds, scans, findings-store health).
+- **Intel feeds + system status lamp** — background poller fetches external CVE / threat feeds (NVD CVE JSON 2.0 `modified` feed with META-gated gzip downloads, CISA KEV, cvefeed.io, custom JSON/Atom/RSS/XML). Overall green/yellow/red lamp on the home page (worst-of feeds, scans, findings-store health).
 - **Intel-scan integration** — feeds participate in scans two ways: (a) **Enrichment** stamps intel context onto every scanner finding before persist; CVEs on CISA KEV ratchet up to CRITICAL. (b) **Detection** — an `intel_match` adapter cross-references manifest-declared assets against the intel store and emits findings the structured scanners didn't catch.
 - **Auto-resolve on re-scan absence** — when a re-scan's `status=ok` adapters don't re-emit a previously-emitted fingerprint, the system automatically writes a Change with `state=applied` and `strategy=auto_resolve_absent`. Scanner is treated as ground truth. Guards: adapter scope, stage scope, honor-revert, skip-already-resolved.
 - **Schema-driven settings + /docs** — `/settings` is generated from `ai_protect/core/settings.py`'s `SCHEMA` (5 sections / 20+ fields, progressive disclosure for nested choices). Every help bubble links to a step-by-step setup walkthrough on `/docs` (PAT creation, GitHub App + installation-id retrieval, GHES URL format, DAST safety matrix, auto-resolve guards, etc.).
@@ -852,29 +852,6 @@ Single-tool repositories evaluated and explicitly skipped. Recorded so the catal
 5. Add the call to the relevant `ai_protect/core/policy.py` tier × stage.
 6. Add a test in `ai_protect/tests/`.
 7. Update this section of the README so the source is recorded.
-
----
-
-## Resuming a Claude Code session in this project
-
-This project's Claude Code config lives under `/home/user/.claude/projects/ai-protect` (not the default `~/.claude`). To resume a prior session in a new terminal:
-
-```bash
-cd /home/user/.claude/projects/ai-protect && export CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect PATH=$HOME/bin:$HOME/.local/bin:$PATH && claude --resume --dangerously-skip-permissions --add-dir /home/user/ai-protect --add-dir /opt/app
-```
-
-What each flag does:
-- `CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect` — points Claude at the project-scoped config + session storage (where conversations for this project actually live).
-- `PATH=$HOME/bin:$HOME/.local/bin:$PATH` — makes the installed pipeline tools (nuclei, trufflehog, gitleaks, trivy, syft, grype, bearer, hadolint, dockle, ProjectDiscovery binaries, plus pip-installed garak / bandit / semgrep / sqlmap / njsscan / detect-secrets) available immediately.
-- `claude --resume` — interactive picker over saved conversations; pick the one you want.
-- `--dangerously-skip-permissions` — bypasses tool permission prompts (one-time confirmation at startup).
-- `--add-dir /home/user/ai-protect --add-dir /opt/app` — grants tool access to the repo and the scan target without per-file prompts.
-
-Optional: persist the config-dir for any future shell:
-
-```bash
-echo 'export CLAUDE_CONFIG_DIR=/home/user/.claude/projects/ai-protect' >> ~/.bashrc
-```
 
 ---
 
