@@ -112,6 +112,8 @@ python -m ai_protect.ui.server --findings ~/.ai-protect/findings.jsonl --port 30
 
 > **Findings path warning:** never use `/tmp/findings.jsonl` — Linux wipes `/tmp` on reboot and any findings there are lost. Use `~/.ai-protect/findings.jsonl` (or any path outside `/tmp`); the file is append-only and is created on first write.
 
+For an always-on deployment (dashboard at boot, auto-restart, feed poller never stops), run the UI as a systemd service — see [Run the dashboard as a system service](../README.md#or-run-the-dashboard-as-a-system-service-systemd) in the top-level README for the unit file and lifecycle commands (`systemctl restart` to pick up code changes; `journalctl -u ai-protect-ui` for logs).
+
 **Findings**
 
 - `/` — findings table with severity / app / adapter / category / fixable filters and the system-status lamp. Findings auto-resolved by a re-scan show a green "auto-resolved" provenance callout on `/finding/<id>` linking to the synthetic Change record.
@@ -373,7 +375,7 @@ To tune for a specific tier, override the default in `policy.py`:
 AdapterCall("intel_match", config={"min_severity": "critical"}),
 ```
 
-**Additivity guarantee.** Zero scanner adapter imports anything from `pipeline.intel`. Intel feeds augment scanner findings; they do not replace them. The original adapter's findings remain the source of truth — enrichment only adds context, and `intel_match` only emits when its tokens match.
+**Additivity guarantee.** Zero scanner adapter imports anything from `ai_protect.intel`. Intel feeds augment scanner findings; they do not replace them. The original adapter's findings remain the source of truth — enrichment only adds context, and `intel_match` only emits when its tokens match.
 
 ## Manifest schema
 
