@@ -126,8 +126,8 @@ For an always-on deployment (dashboard at boot, auto-restart, feed poller never 
 
 **Intel feeds**
 
-- `/feeds` — feed catalogue. Inline **Add feed** form (URL + polling period; format is auto-detected), per-row **Fetch / Edit / Pause / Resume / Delete / View intel** actions, **Fetch all** button at the section header, and an expandable **Recent fetches** detail per feed. Large clusters of feeds sharing a URL prefix (e.g. the 800+ `cvedaily.com/feed-tags/` per-tag feeds) auto-collapse into one `<details>` block with aggregate counts so the main table stays scannable.
-- `/feeds/discover` — point at an aggregator page (e.g. `https://cvedaily.com/pages/tags/`) and the server scrapes `<a href>` links matching `.xml`/`.atom`/`.rss`/`.json` or `/feed`/`/rss`/`/atom`, then auto-detects the format of each candidate **in parallel** (ThreadPoolExecutor, ~3s for 800+ links). Operator picks via checkboxes; selected feeds are imported with `last_fetch_ts` staggered uniformly across the polling window to prevent a thundering herd on the next poller tick.
+- `/feeds` — feed catalogue. Inline **Add feed** form (URL + polling period; format is auto-detected), per-row **Fetch / Edit / Pause / Resume / Delete / View intel** actions, **Fetch all** button at the section header, and an expandable **Recent fetches** detail per feed. Large clusters of feeds sharing a URL prefix (hundreds of per-tag feeds from a single aggregator) auto-collapse into one `<details>` block with aggregate counts so the main table stays scannable.
+- `/feeds/discover` — point at an aggregator page that links out to many individual feeds and the server scrapes `<a href>` links matching `.xml`/`.atom`/`.rss`/`.json` or `/feed`/`/rss`/`/atom`, then auto-detects the format of each candidate **in parallel** (ThreadPoolExecutor, ~3s for 800+ links). Operator picks via checkboxes; selected feeds are imported with `last_fetch_ts` staggered uniformly across the polling window to prevent a thundering herd on the next poller tick.
 - `/feeds/validate` — JSON validator endpoint. Fetches the URL once, returns `{ok, detected_format, item_count, sample, error}`. Used by the **Validate first** button on the Add form so you know whether the as-is translator handles the feed or you need a custom one.
 - `/feeds/<id>/fetch`, `/feeds/<id>/edit`, `/feeds/<id>/toggle`, `/feeds/<id>/delete` — per-feed actions. POST `/feeds/fetch-all` force-fetches every enabled feed.
 - `/intel` — fetched CVE / threat items, filterable by severity and source feed. Each row links to the original advisory.
@@ -330,14 +330,29 @@ External CVE / threat feeds are first-class citizens: configured in the UI, poll
 
 | Component | What it does |
 | --- | --- |
-| `feeds.py` | `Feed` + `FeedStore` (latest-row-per-id wins), `FeedFetch` + `FeedFetchStore` (append-only history), `IntelItem` + `IntelStore` (deduped by hash of `source_feed_id + cve_id`). Persisted to `~/.ai-protect/feeds.jsonl`, `feed_fetches.jsonl`, `intel.jsonl`. |
-| `translators.py` | One translator per format: **atom**, **rss**, **xml** (generic), **json**. `detect_format(raw)` peeks at the bytes (root tag / leading char) to pick the right one. JSON translator knows the CISA KEV shape (`cveID`, `vulnerabilityName`, `shortDescription`, `dateAdded`) and marks every KEV row severity=critical because KEV inclusion ≙ active exploitation in the wild. |
-| `fetcher.py` | `fetch_feed()` (single fetch + translate + persist + log + status update), `validate_feed()` (dry-run for the UI validator), `start_poller()` (idempotent daemon thread, 30s tick, dispatches each feed whose interval has elapsed). |
+| `feeds.py` | `Feed` + `FeedStore` (latest-row-per-id wins), `FeedFetch` + `FeedFetchStore` (append-only history), `IntelItem` + `IntelStore` (keyed by hash of `source_feed_id + cve_id`, **upsert semantics**: a re-emitted item whose material fields changed — severity, CVSS, title, summary — supersedes the stored row, so CVEs that NVD scores days after publication don't stay frozen at their empty first-seen state). Persisted to `~/.ai-protect/feeds.jsonl`, `feed_fetches.jsonl`, `intel.jsonl`. |
+| `translators.py` | One translator per format: **atom**, **rss**, **xml** (generic), **json**. `detect_format(raw)` peeks at the bytes (root tag / leading char) to pick the right one. JSON translator knows the **NVD CVE JSON 2.0** shape (nested `{"cve": {...}}` rows: English description, newest-CVSS-wins metrics with Primary-over-CNA preference, Rejected CVEs kept but demoted to `info`) and the CISA KEV shape (`cveID`, `vulnerabilityName`, `shortDescription`, `dateAdded`) — every KEV row is severity=critical because KEV inclusion ≙ active exploitation in the wild. |
+| `fetcher.py` | `fetch_feed()` (single fetch + translate + persist + log + status update), transparent **gzip decompression** (magic-byte sniff, 512 MB inflate cap — NVD ships `.json.gz` file feeds), **META sidecar gate** (NVD publishes a tiny `.meta` with the feed's sha256 every ~2h; the fetcher checks it first and skips the multi-MB download when unchanged — the polite-consumer pattern NVD asks for), `validate_feed()` (dry-run for the UI validator), `start_poller()` (idempotent daemon thread, 30s tick, dispatches each feed whose interval has elapsed). |
 | `status.py` | `overall_status()` computes the green/yellow/red lamp by combining feed / scan / store health. |
+
+**NVD as the primary CVE source.** cvedaily.com retired its per-tag RSS feeds in mid-2026, so the recommended baseline CVE feed is now NVD's CVE JSON 2.0 **modified** feed — every CVE added *or updated* in the last 8 days, regenerated every ~2 hours:
+
+```text
+URL:     https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-modified.json.gz
+Format:  json (auto-detected; gzip handled transparently)
+Poll:    14400s (4h) — 6 fetches/day, far under NVD's 200-requests/day guidance,
+         and the META gate turns most of those into a 165-byte sidecar check.
+```
+
+Add it via `/feeds` like any other feed. Notes:
+
+- **Window and backfill:** the modified feed only covers the last 8 days. If the poller is down longer than that, backfill by temporarily adding a year feed (`.../nvdcve-2.0-2026.json.gz`) as a one-shot feed, letting it fetch once, then deleting it — the gzip support and the NVD translator handle year files fine (largest is ~24 MB gz).
+- **Unanalyzed CVEs** arrive with `vulnStatus: Received` and no CVSS — they're stored score-less and upserted with real severity/CVSS once NVD analyzes them.
+- Pair it with **CISA KEV** (actively-exploited ratchet) and any vendor-specific RSS/Atom feeds; the NVD feed is breadth, KEV is urgency.
 
 **Polling and stagger.** The poller wakes every 30s and dispatches each enabled feed whose `last_fetch_ts + poll_seconds` has elapsed. Bulk imports (via `/feeds/discover/import`) randomize `last_fetch_ts = now − uniform(0, poll_seconds)` per imported feed, so 800+ feeds spread their next-fetch times uniformly across the polling window — no thundering herd.
 
-**Format support.** Atom 1.0, RSS 2.0, generic XML (iterates top-level children, pulls common fields by tag name), and JSON (handles JSON Feed 1.x, NVD-style `{"vulnerabilities":[...]}`, CISA KEV, and bare lists of records). When detection fails, the validator surfaces the parser's exact error so you can tell the operator whether the feed needs a custom translator.
+**Format support.** Atom 1.0, RSS 2.0, generic XML (iterates top-level children, pulls common fields by tag name), and JSON (handles JSON Feed 1.x, NVD CVE JSON 2.0 — both feed files and API responses — CISA KEV, and bare lists of records). Gzip-compressed bodies are decompressed transparently before detection. When detection fails, the validator surfaces the parser's exact error so you can tell the operator whether the feed needs a custom translator.
 
 **Operator workflow:**
 

@@ -6,18 +6,59 @@ enabled feed whose `poll_seconds` since `last_fetch_ts` has elapsed.
 """
 from __future__ import annotations
 
+import re
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 
 from .feeds import Feed, FeedFetch, FeedFetchStore, FeedStore, IntelStore
 from .translators import TranslatorError, detect_format, translate
 
 POLL_TICK_SECONDS = 30
-USER_AGENT = "ai-protect/1.0 (+CVE intel poller)"
-HTTP_TIMEOUT = 20
+USER_AGENT = "ai-protect/1.0 (+https://github.com/n08976/ai-protect; CVE intel poller)"
+HTTP_TIMEOUT = 60
+# Download / decompression ceilings — NVD's largest year file is ~30 MB gz /
+# ~350 MB raw; anything past these is misconfiguration or a decompression bomb.
+MAX_DOWNLOAD_BYTES = 128 * 1024 * 1024
+MAX_DECOMPRESSED_BYTES = 512 * 1024 * 1024
+
+
+def _gunzip_capped(data: bytes, cap: int = MAX_DECOMPRESSED_BYTES) -> bytes:
+    """Decompress gzip bytes, refusing to inflate past `cap`.
+
+    Handles multi-member streams (valid gzip may be concatenated members) and
+    rejects truncated input — a partially-downloaded NVD feed that still
+    parses as JSON would otherwise ingest an incomplete dataset silently.
+    """
+    out = bytearray()
+    remaining = data
+    while remaining:
+        d = zlib.decompressobj(wbits=16 + zlib.MAX_WBITS)
+        out += d.decompress(remaining, cap - len(out) + 1)
+        if len(out) > cap:
+            raise ValueError(f"gzip body exceeds {cap} bytes decompressed — refusing")
+        if not d.eof:
+            raise ValueError("truncated gzip stream — refusing partial feed body")
+        # Next member, if any. Some producers zero-pad the tail; tolerate it.
+        remaining = d.unused_data.lstrip(b"\x00")
+    return bytes(out)
+
+
+def _read_capped(resp, cap: int = MAX_DOWNLOAD_BYTES) -> bytes:
+    """Read an HTTP response body in chunks, refusing to buffer past `cap`."""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = resp.read(1024 * 1024)
+        if not chunk:
+            return b"".join(chunks)
+        total += len(chunk)
+        if total > cap:
+            raise ValueError(f"response body exceeds {cap} bytes — refusing")
+        chunks.append(chunk)
 
 
 def _http_get(url: str) -> tuple[int, bytes]:
@@ -27,9 +68,45 @@ def _http_get(url: str) -> tuple[int, bytes]:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     try:
         with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:  # nosec B310 — scheme restricted to http(s) above
-            return resp.status, resp.read()
+            body = _read_capped(resp)
     except urllib.error.HTTPError as e:
         return e.code, b""
+    # Gzip *file* feeds (NVD ships .json.gz) arrive as opaque bytes, not as
+    # Content-Encoding — sniff the magic and inflate so every downstream
+    # consumer (translators, validator, /feeds/discover) sees plain text.
+    if body[:2] == b"\x1f\x8b":
+        body = _gunzip_capped(body)
+    return resp.status, body
+
+
+# NVD-style feeds publish a tiny .meta sidecar (lastModifiedDate, size,
+# sha256) refreshed every ~2h. Checking it before pulling the multi-MB feed
+# is the polite-consumer pattern NVD asks for on the data-feeds page.
+_META_SIDECAR_HOSTS = ("nvd.nist.gov",)
+_META_SHA_RE = re.compile(r"sha256\s*:\s*([0-9A-Fa-f]{64})")
+
+
+def _meta_sidecar_url(url: str) -> str:
+    """Return the .meta URL for feeds known to ship one, else ''."""
+    parts = urllib.parse.urlsplit(url)
+    # .json.zip is deliberately absent — the fetcher inflates gzip only, so
+    # claiming zip here would gate a body we can't decompress.
+    if parts.hostname in _META_SIDECAR_HOSTS and parts.path.endswith((".json.gz", ".json")):
+        return re.sub(r"\.json(\.gz)?$", ".meta", url)
+    return ""
+
+
+def _meta_sha256(meta_url: str) -> str:
+    """Fetch the sidecar and pull out its sha256. '' on any failure —
+    callers fall through to a normal full fetch."""
+    try:
+        status, body = _http_get(meta_url)
+        if status >= 400 or not body:
+            return ""
+        m = _META_SHA_RE.search(body.decode("utf-8", "replace"))
+        return m.group(1).upper() if m else ""
+    except Exception:
+        return ""
 
 
 def fetch_feed(feed: Feed, feed_store: FeedStore, fetch_store: FeedFetchStore,
@@ -37,22 +114,33 @@ def fetch_feed(feed: Feed, feed_store: FeedStore, fetch_store: FeedFetchStore,
     """One fetch attempt — HTTP, translate, persist, log. Always returns a FeedFetch."""
     started = time.time()
     fetch = FeedFetch(feed_id=feed.feed_id, ts=started, status="ok")
+    unchanged = False
+    meta_sha = ""
     try:
-        http_status, body = _http_get(feed.url)
-        fetch.http_status = http_status
-        if http_status >= 400 or not body:
-            fetch.status = "http_error"
-            fetch.error = f"HTTP {http_status}"
-        else:
-            try:
-                items = translate(body, feed.format, feed.feed_id)
-            except TranslatorError as e:
-                fetch.status = "translator_error"
-                fetch.error = str(e)
-                items = []
-            fetch.items_count = len(items)
-            if items:
-                fetch.new_count = intel_store.write_many(items)
+        meta_url = _meta_sidecar_url(feed.url)
+        if meta_url:
+            meta_sha = _meta_sha256(meta_url)
+            if meta_sha and meta_sha == feed.last_meta_sha256:
+                unchanged = True
+                fetch.note = "unchanged (META gate) — feed body not downloaded"
+        if not unchanged:
+            http_status, body = _http_get(feed.url)
+            fetch.http_status = http_status
+            if http_status >= 400 or not body:
+                fetch.status = "http_error"
+                fetch.error = f"HTTP {http_status}"
+            else:
+                try:
+                    items = translate(body, feed.format, feed.feed_id)
+                except TranslatorError as e:
+                    fetch.status = "translator_error"
+                    fetch.error = str(e)
+                    items = []
+                fetch.items_count = len(items)
+                if items:
+                    fetch.new_count = intel_store.write_many(items)
+                if meta_sha and fetch.status == "ok":
+                    feed.last_meta_sha256 = meta_sha
     except Exception as e:
         fetch.status = "http_error"
         fetch.error = f"{type(e).__name__}: {e}"
@@ -62,8 +150,11 @@ def fetch_feed(feed: Feed, feed_store: FeedStore, fetch_store: FeedFetchStore,
     feed.last_fetch_ts = fetch.ts
     feed.last_status = fetch.status
     feed.last_error = fetch.error
-    feed.last_item_count = fetch.items_count
-    feed.last_new_count = fetch.new_count
+    if not unchanged:
+        # An unchanged META short-circuit keeps the previous corpus counts —
+        # overwriting them with 0 would misread as "the feed went empty".
+        feed.last_item_count = fetch.items_count
+        feed.last_new_count = fetch.new_count
     feed_store.write(feed)
     return fetch
 

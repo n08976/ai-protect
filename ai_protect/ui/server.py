@@ -1456,8 +1456,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         feeds = store.all()
         # Auto-group: feeds whose URLs share the same prefix-up-to-last-slash
         # collapse into one expandable section. Threshold of 5 keeps small,
-        # hand-curated sets (e.g. three cvedaily root feeds) in the main table
-        # and only collapses the bulk clusters (e.g. 800+ per-tag feeds).
+        # hand-curated sets (NVD + KEV + a few vendor feeds) in the main table
+        # and only collapses bulk clusters (e.g. 800+ per-tag aggregator feeds).
         GROUP_THRESHOLD = 5
         buckets: dict[str, list] = defaultdict(list)
         for f in feeds:
@@ -1560,8 +1560,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
     @app.route("/feeds/discover", methods=["GET", "POST"])
     def feeds_discover():
         """Scrape an aggregator page for feed-like links so an operator can
-        bulk-import (e.g. https://cvedaily.com/pages/tags/ links to one feed
-        per tag). Detection is best-effort: an HTML parser pulls every <a href>,
+        bulk-import (a tags/topics index that links to one feed per tag).
+        Detection is best-effort: an HTML parser pulls every <a href>,
         we keep links that look like feeds (extension or path hint), then
         auto-detect format per candidate. Operator picks via checkboxes."""
         if request.method == "GET":
@@ -1647,7 +1647,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             seen.add(full)
             targets.append((href, full))
         # Second pass: detect format in parallel. 32 workers comfortably
-        # handles the 800+ per-tag feeds on cvedaily.com in a few seconds;
+        # handles an 800-link aggregator page in a few seconds;
         # any single hung connection only delays itself thanks to per-call
         # HTTP_TIMEOUT.
         urls = [full for (_h, full) in targets]

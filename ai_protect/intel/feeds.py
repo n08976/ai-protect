@@ -3,7 +3,9 @@
 Three append-only JSONL files live in REMEDIATE_HOME:
 - feeds.jsonl         — latest-row-per-feed_id wins (config + last_* status)
 - feed_fetches.jsonl  — every fetch attempt, in order
-- intel.jsonl         — fetched intel items, deduped by (source_feed_id, cve_id)
+- intel.jsonl         — fetched intel items, latest-row-wins per (source_feed_id,
+                        cve_id); re-emitted items whose material fields changed
+                        append a superseding row (upsert on read)
 
 Stores re-read from disk on every call. Fine for the volumes we expect
 (< 100 feeds, < 100k items) — avoids any in-process cache invalidation bugs
@@ -46,6 +48,7 @@ class Feed:
     last_error: str = ""
     last_item_count: int | None = None
     last_new_count: int | None = None   # new (unseen) items in last fetch
+    last_meta_sha256: str = ""          # sha256 from the feed's .meta sidecar (NVD-style), when one exists
     deleted: bool = False
 
     def to_dict(self) -> dict:
@@ -97,6 +100,7 @@ class FeedFetch:
     duration_ms: int = 0
     http_status: int | None = None
     error: str = ""
+    note: str = ""         # non-error annotation, e.g. "unchanged (META gate)"
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -160,14 +164,33 @@ class IntelStore:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Fields that make a re-emitted item worth re-writing. NVD publishes CVEs
+    # with vulnStatus "Received" (no metrics yet) and fills in CVSS/severity
+    # days later when analyzed — a seen-once dedupe would freeze the empty
+    # first-seen row forever. `fetched_at` is deliberately excluded so an
+    # unchanged item re-fetched later doesn't append a no-op row every poll.
+    _UPSERT_FIELDS = ("title", "severity", "cvss", "link", "published", "summary")
+
     def write_many(self, items: list[IntelItem]) -> int:
-        """Append items, returning the count actually appended (dedup-filtered)."""
-        existing = {i.item_id for i in self.all()}
-        new = [i for i in items if i.item_id not in existing]
+        """Upsert items, returning the count actually appended.
+
+        Appends items whose item_id is unseen OR whose material fields changed
+        since the stored row (all() is latest-row-wins per item_id, so an
+        appended update supersedes the old row on the next read).
+        """
+        existing = {i.item_id: i for i in self.all()}
+
+        def changed(new: IntelItem, old: IntelItem) -> bool:
+            return any(getattr(new, f) != getattr(old, f) for f in self._UPSERT_FIELDS)
+
+        to_write = [
+            i for i in items
+            if i.item_id not in existing or changed(i, existing[i.item_id])
+        ]
         with open(self.path, "a") as f:
-            for i in new:
+            for i in to_write:
                 f.write(json.dumps(i.to_dict()) + "\n")
-        return len(new)
+        return len(to_write)
 
     def all(self) -> list[IntelItem]:
         if not self.path.exists():

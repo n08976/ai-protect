@@ -8,7 +8,7 @@
   <article class="change-detail" style="margin-top:14px">
     <header><h2>Discover feeds from a page</h2></header>
     <p class="muted">
-      Point at an aggregator page (e.g. <code>https://cvedaily.com/pages/tags/</code>) and we'll scan its links for anything that looks like a feed —
+      Point at a page that links out to many individual feeds and we'll scan its links for anything that looks like a feed —
       paths or extensions matching <code>.xml</code>, <code>.atom</code>, <code>.rss</code>, <code>.json</code>, or <code>/feed</code>/<code>/rss</code>.
       Each candidate is then fetched once to auto-detect its format. You pick which to import.
     </p>
@@ -18,7 +18,7 @@
     <form method="POST" action="{{ url_for('feeds_discover') }}" class="scan-form">
       <div class="filter-group" style="margin-bottom:14px">
         <label>Page URL</label>
-        <input type="url" name="page_url" required value="{{ page_url }}" placeholder="https://cvedaily.com/pages/tags/">
+        <input type="url" name="page_url" required value="{{ page_url }}" placeholder="https://example.com/security/feeds/">
       </div>
       <button type="submit" class="btn btn-primary">Scan page</button>
     </form>

@@ -31,7 +31,9 @@ _SEV_NORMALIZE = {
     "info": "info", "informational": "info", "none": "info", "na": "info",
 }
 
-_CVE_RE = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
+# Sequence part is open-ended: CVE ids beyond 7 digits are already reserved
+# by the CVE Numbering Authorities' format spec.
+_CVE_RE = re.compile(r"CVE-\d{4}-\d{4,}", re.IGNORECASE)
 _BRACKET_SEV_RE = re.compile(r"\[(critical|high|medium|moderate|low|info|informational)\]", re.IGNORECASE)
 _PIPE_SEV_RE = re.compile(r"(\d+(?:\.\d+)?)\s*\|\s*(critical|high|medium|low|none|na)", re.IGNORECASE)
 _CVSS_RE = re.compile(r"(?:CVSS[^\d]{0,8})?(\d+(?:\.\d+)?)\s*(?:/10|\s*\|\s*[a-z]+)?", re.IGNORECASE)
@@ -283,10 +285,67 @@ def translate_xml_generic(raw: bytes, source_feed_id: str) -> list[IntelItem]:
     return items_out
 
 
+def _nvd2_row_to_item(cve: dict, source_feed_id: str, fetched_at: float) -> IntelItem | None:
+    """One NVD CVE JSON 2.0 record ({"cve": {...}} inner dict) → IntelItem.
+
+    Shape reference: https://nvd.nist.gov/feeds/json/cve/2.0 — id, vulnStatus,
+    descriptions[{lang,value}], metrics.cvssMetricV40/V31/V30/V2[{cvssData}].
+    """
+    cve_id = str(cve.get("id", "")).upper()
+    if not _CVE_RE.fullmatch(cve_id):
+        return None
+
+    desc = ""
+    for d in cve.get("descriptions") or []:
+        if isinstance(d, dict) and d.get("value"):
+            desc = str(d["value"])
+            if d.get("lang") == "en":
+                break
+
+    # Newest CVSS version wins; within a version prefer the Primary (NVD)
+    # entry over CNA-supplied secondaries.
+    cvss = None
+    severity = ""
+    metrics = cve.get("metrics") or {}
+    for key in ("cvssMetricV40", "cvssMetricV31", "cvssMetricV30", "cvssMetricV2"):
+        entries = [m for m in metrics.get(key) or [] if isinstance(m, dict)]
+        if not entries:
+            continue
+        entry = next((m for m in entries if m.get("type") == "Primary"), entries[0])
+        data = entry.get("cvssData") or {}
+        try:
+            cvss = float(data["baseScore"])
+        except (KeyError, TypeError, ValueError):
+            cvss = None
+        # v2 keeps baseSeverity beside cvssData; v3/v4 keep it inside.
+        sev_raw = str(data.get("baseSeverity") or entry.get("baseSeverity") or "")
+        severity = _SEV_NORMALIZE.get(sev_raw.lower(), "")
+        break
+
+    # Rejected/withdrawn CVEs stay in the store (so operators see the
+    # retraction) but must not look actionable to enrichment/intel_match.
+    if str(cve.get("vulnStatus", "")).lower() == "rejected":
+        severity = "info"
+
+    title = f"{cve_id}: {desc[:120]}" if desc else cve_id
+    return IntelItem(
+        item_id=make_item_id(source_feed_id, cve_id, ""),
+        source_feed_id=source_feed_id,
+        cve_id=cve_id,
+        title=title,
+        severity=severity,
+        cvss=cvss,
+        link=f"https://nvd.nist.gov/vuln/detail/{cve_id}",
+        published=str(cve.get("published", "")),
+        summary=html.unescape(desc)[:2000],
+        fetched_at=fetched_at,
+    )
+
+
 def translate_json(raw: bytes, source_feed_id: str) -> list[IntelItem]:
     """JSON feed translator. Handles common shapes:
        - JSON Feed 1.x (items list with title/url/date_published/summary)
-       - NVD-ish ({"vulnerabilities": [{...}]})
+       - NVD CVE JSON 2.0 ({"vulnerabilities": [{"cve": {...}}]}) — feed files and API responses
        - CISA KEV ({"vulnerabilities": [{"cveID", "vulnerabilityName", ...}]})
        - Bare list of records
     """
@@ -313,6 +372,14 @@ def translate_json(raw: bytes, source_feed_id: str) -> list[IntelItem]:
     items_out: list[IntelItem] = []
     fetched_at = time.time()
     for row in rows:
+        # NVD CVE JSON 2.0: each vulnerabilities[] row nests the record under
+        # a "cve" dict — the flat-field extraction below would only see dict
+        # reprs. Route to the dedicated parser.
+        if isinstance(row.get("cve"), dict):
+            item = _nvd2_row_to_item(row["cve"], source_feed_id, fetched_at)
+            if item:
+                items_out.append(item)
+            continue
         # CVE id alias set covers JSON Feed (id), NVD (cve), CISA KEV (cveID).
         cve_id = _extract_cve_id(
             str(row.get("cveID", "")),
