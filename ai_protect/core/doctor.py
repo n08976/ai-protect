@@ -101,10 +101,16 @@ def _probe(name: str, cls, manifest: Manifest) -> AdapterStatus:
             return AdapterStatus(name, kind, category, NEEDS_SETUP,
                                  f"{type(e).__name__}: {_first_line(str(e))}")
 
+    # Most preflights are a `which`/socket check and finish in well under a
+    # second, so the tight default keeps a mis-probed daemon adapter from
+    # hanging doctor. Adapters that load a model in preflight (presidio pulls
+    # in a ~400 MB spaCy model) declare a longer budget via a class attribute.
+    timeout = getattr(cls, "doctor_probe_timeout", None) or _PROBE_TIMEOUT
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
         fut = ex.submit(run)
         try:
-            return fut.result(timeout=_PROBE_TIMEOUT)
+            return fut.result(timeout=timeout)
         except concurrent.futures.TimeoutError:
             return AdapterStatus(name, kind, category, NEEDS_SETUP,
                                  "probe timed out — required service/daemon not reachable")

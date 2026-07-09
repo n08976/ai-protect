@@ -48,6 +48,10 @@ SCANNABLE_EXTS = {".py", ".js", ".ts", ".html", ".md", ".txt", ".yml", ".yaml",
 class PresidioAdapter(Adapter):
     name = "presidio"
     description = "Microsoft Presidio — PHI/PII detection in text and source files (v2.1 default scrubber)"
+    # preflight loads the ~400 MB en_core_web_lg spaCy model (~7 s cold on CPU),
+    # which overruns doctor's default 6 s probe cap — give it room so a live
+    # install doesn't get mislabeled "needs setup".
+    doctor_probe_timeout = 25.0
 
     def preflight(self) -> None:
         super().preflight()
