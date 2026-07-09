@@ -9,10 +9,21 @@ This is the DETECTION half of the intel integration (the other half is
 enrichment in core.intel_enrichment, which stamps context onto findings other
 scanners already produced). Together they ensure CVE feeds participate in
 scans rather than just sitting on the side.
+
+Corpus scope (why this adapter doesn't flood): a manifest is matched against a
+BOUNDED slice of the intel store, not the whole append-only corpus. By default
+that slice is CISA KEV only — actively-exploited CVEs, a slow-growing (~1-2k),
+high-signal set — so the emitted count tracks the app's declared components and
+the KEV list, NOT the raw size of the feed store. Set `intel_match_recent_days`
+in the policy config to additionally include CVEs first seen within N days.
+Without this bound the count climbed with every feed poll (matched CVEs never
+leave the append-only store, so they were re-emitted forever and never
+auto-resolved) — see the 2026-07 metaads-commercial regression.
 """
 from __future__ import annotations
 
 import re
+import time
 
 from ..core.findings import Category, Severity
 from ..core.tiering import classify
@@ -133,6 +144,11 @@ _SEV_RANK = {
 }
 
 
+def _is_kev_feed(feed_name: str) -> bool:
+    n = (feed_name or "").lower()
+    return "kev" in n or "known exploited" in n
+
+
 class IntelMatchAdapter(Adapter):
     name = "intel_match"
     description = "Cross-reference manifest-declared assets against fetched intel feeds (CISA KEV, NVD, vendor CVE feeds)"
@@ -174,6 +190,31 @@ class IntelMatchAdapter(Adapter):
         if not intel:
             return []
         feeds_by_id = {f.feed_id: f for f in FeedStore().all(include_deleted=True)}
+        kev_feed_ids = {fid for fid, f in feeds_by_id.items() if _is_kev_feed(f.name)}
+
+        # Bound the matching corpus. The intel store is append-only and only
+        # grows (the NVD 'modified' feed alone adds thousands of CVEs per poll),
+        # so matching against ALL of it made the emitted count climb with the
+        # feed rather than the app — matched CVEs never leave the store, so they
+        # were re-emitted every scan and never auto-resolved. We instead match
+        # against KEV (actively-exploited, slow-growing, high-signal) plus,
+        # optionally, CVEs first seen within `intel_match_recent_days`.
+        try:
+            recent_days = int(self.config.get("intel_match_recent_days", 0) or 0)
+        except (TypeError, ValueError):
+            recent_days = 0
+        recent_cutoff = time.time() - recent_days * 86400 if recent_days > 0 else None
+
+        def _in_scope(it) -> bool:
+            if it.source_feed_id in kev_feed_ids:
+                return True
+            if recent_cutoff is not None and (it.fetched_at or 0) >= recent_cutoff:
+                return True
+            return False
+
+        intel = [it for it in intel if _in_scope(it)]
+        if not intel:
+            return []
 
         # Frequency-based noise filter. A manifest token is useful for matching
         # ONLY if it's discriminating — rare in the intel corpus. "python" or
@@ -222,7 +263,7 @@ class IntelMatchAdapter(Adapter):
 
             feed = feeds_by_id.get(item.source_feed_id)
             feed_name = feed.name if feed else item.source_feed_id
-            is_kev = "kev" in feed_name.lower() or "known exploited" in feed_name.lower()
+            is_kev = item.source_feed_id in kev_feed_ids
             # Severity cap: intel_match is UNVERIFIED token-overlap. We cannot
             # tell from a feed whether the operator's app actually uses the
             # affected product — only that a manifest word overlaps a CVE
