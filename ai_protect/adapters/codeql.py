@@ -5,12 +5,25 @@ it. We use the standard 'security-extended' suite by default and parse the
 SARIF output. Different class than Semgrep — catches injection sinks Semgrep's
 pattern rules can't reach via static patterns alone.
 
-Install:
-    Download CodeQL CLI bundle from
-    https://github.com/github/codeql-cli-binaries/releases (about 200MB).
-    Extract somewhere on PATH (e.g. ~/codeql/codeql).
+Install (use the BUNDLE, not the bare CLI):
+    Download the CodeQL *bundle* from
+    https://github.com/github/codeql-action/releases (asset
+    codeql-bundle-linux64.tar.gz, ~1GB extracted). Extract it and put the
+    `codeql` binary on PATH, e.g.:
 
-Repo: https://github.com/github/codeql-cli-binaries
+        tar xzf codeql-bundle-linux64.tar.gz -C /opt
+        ln -s /opt/codeql/codeql /usr/local/bin/codeql
+
+    The bundle ships the precompiled standard query packs
+    (codeql/python-queries, codeql/javascript-queries, …) so the
+    `<lang>-security-extended` suite this adapter runs resolves OFFLINE. The
+    bare CLI from github/codeql-cli-binaries does NOT include the query packs —
+    with it, `database analyze <suite>` would need to download packs at run
+    time (network + `codeql pack download`), so the scan fails in an air-gapped
+    or first-run environment. Always prefer the bundle.
+
+Repos: https://github.com/github/codeql-action (bundle) ·
+       https://github.com/github/codeql-cli-binaries (bare CLI)
 """
 from __future__ import annotations
 
@@ -53,8 +66,9 @@ class CodeQLAdapter(Adapter):
         super().preflight()
         if not shutil.which("codeql"):
             raise AdapterUnavailable(
-                "codeql not on PATH. Install the CodeQL CLI bundle from "
-                "https://github.com/github/codeql-cli-binaries/releases (extract somewhere on PATH)."
+                "codeql not on PATH. Install the CodeQL *bundle* (ships the query packs, "
+                "so suites resolve offline) from https://github.com/github/codeql-action/releases "
+                "— asset codeql-bundle-linux64.tar.gz; extract and symlink its `codeql` onto PATH."
             )
 
     def run(self):
