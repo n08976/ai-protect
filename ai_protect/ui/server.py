@@ -204,16 +204,13 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         # has-fix pill count: items in base_no_fix that have a remediator.
         pill_fixable_count = sum(1 for f in base_no_fix if fixable.get(f.finding_id))
 
-        # Count of hidden unverified intel findings so the toggle pill can
-        # show "Show unverified intel (N)". Cheap — we already have all
-        # active findings via _active_findings; just count the ones the
-        # dashboard filter removed.
-        hidden_unverified_count = 0
-        if not include_unverified:
-            hidden_unverified_count = sum(
-                1 for f in _active_findings(store)
-                if (f.evidence or {}).get("intel_match_unverified")
-            )
+        # Count of unverified intel findings so the toggle pill can show
+        # "(N)" in either state (shown → offer to hide; hidden → offer to
+        # show). Cheap — we already read all active findings above.
+        unverified_count = sum(
+            1 for f in _active_findings(store)
+            if (f.evidence or {}).get("intel_match_unverified")
+        )
         return render_template(
             "index.html",
             findings=findings,
@@ -236,7 +233,7 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
             catalog=CATALOG,
             system_status=overall_status(app.config["FINDINGS_PATH"]),
             include_unverified=include_unverified,
-            hidden_unverified_count=hidden_unverified_count,
+            unverified_count=unverified_count,
         )
 
     @app.route("/finding/<finding_id>")
@@ -301,8 +298,8 @@ def create_app(findings_path: str, manifests_dir: str) -> Flask:
         store._cache = None
         # Active dashboard view: deduped by fingerprint + resolved filtered.
         # ?include_resolved=1 → full append-only history (no dedup, no filter)
-        # ?include_unverified=1 → include intel_match_unverified findings
-        # (hidden by default to keep automated callers in sync with the UI)
+        # intel_match_unverified findings are INCLUDED by default (in sync
+        # with the UI); ?include_unverified=0 drops them for a scanner-only view
         if request.args.get("include_resolved"):
             return jsonify([f.to_dict() for f in store.all()])
         out = _dashboard_findings(store, include_unverified=_include_unverified(request))
@@ -1889,16 +1886,17 @@ from ..core.dashboard import (
 
 
 def _dashboard_findings(store, *, include_unverified: bool) -> list:
-    """Dashboard-facing wrapper around _active_findings that hides
-    intel_match_unverified findings unless the caller opts back in.
+    """Dashboard-facing wrapper around _active_findings. Includes
+    intel_match_unverified findings by default; the caller can opt to hide
+    them (``include_unverified=False``).
 
-    Why: token-overlap intel matches are unverified by construction and
-    grow into 100s per app — drowning out real scanner signal. Hiding by
-    default keeps the dashboard scannable. The findings are still in the
-    store (audit), still reachable by direct URL (/finding/<id>), and
-    still seen by scan_runner / auto_resolve. The "Show unverified
-    intel" toggle on /index re-includes them when an operator wants
-    to triage.
+    Intel matches are now bounded to CISA KEV (+ optional recency) in the
+    intel_match adapter, so they're a small, high-signal set — actively-
+    exploited CVEs against a declared component — rather than the token-
+    overlap flood they once were. They belong in the default view. An
+    operator who wants a scanner-only view can still hide them via the
+    /index toggle (``?include_unverified=0``); every intel finding stays
+    tagged `unverified` so it reads as "confirm the product applies".
     """
     out = _active_findings(store)
     if not include_unverified:
@@ -1907,11 +1905,13 @@ def _dashboard_findings(store, *, include_unverified: bool) -> list:
 
 
 def _include_unverified(request) -> bool:
-    """Read the ?include_unverified= query param; default False so the
-    dashboard hides by default. Accepts '1' / 'on' / 'true' (case
-    insensitive)."""
-    v = (request.args.get("include_unverified") or "").lower()
-    return v in ("1", "on", "true", "yes")
+    """Whether the dashboard includes intel_match_unverified findings.
+    Default TRUE (shown). Pass ?include_unverified=0 (or off/false/no) to
+    hide them for a scanner-only view."""
+    v = (request.args.get("include_unverified") or "").strip().lower()
+    if v in ("0", "off", "false", "no"):
+        return False
+    return True
 
 
 def _stats(findings) -> dict:

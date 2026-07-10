@@ -117,22 +117,24 @@
          href="{% if filter_fixable %}{{ _url(clear='fixable') }}{% else %}{{ _url(override='fixable') }}{% endif %}">
         ⚡ has fix <strong>{{ fixable_count }}</strong>
       </a>
-      {# Unverified-intel toggle: by default the dashboard hides
-         intel_match_unverified findings (token-overlap noise that grows
-         to hundreds per app and drowns real scanner signal). Click to
-         re-include in the active view; click again to hide. #}
-      {% if include_unverified %}
+      {# Unverified-intel toggle: intel_match matches (now KEV-bounded) are
+         SHOWN by default. They carry an `unverified` tag because they're
+         token overlap with a feed advisory — confirm the product applies
+         before acting. Click to hide for a scanner-only view. #}
+      {% if unverified_count %}
+        {% if include_unverified %}
         <a class="severity-pill sev-info active"
-           href="{{ url_for('index') }}"
-           title="Unverified intel matches are currently included in the active view. Click to hide them again.">
-          intel unverified: shown · hide →
+           href="{{ url_for('index', include_unverified=0) }}"
+           title="Unverified intel matches (KEV-bounded) are included in the active view. Click to hide them for a scanner-only view.">
+          intel unverified: shown <strong>{{ unverified_count }}</strong> · hide →
         </a>
-      {% elif hidden_unverified_count %}
+        {% else %}
         <a class="severity-pill sev-low"
-           href="{{ url_for('index', include_unverified=1) }}"
-           title="Token-overlap intel matches are hidden from the active view. Click to include them for triage / bulk-dismiss.">
-          intel unverified hidden <strong>{{ hidden_unverified_count }}</strong>
+           href="{{ url_for('index') }}"
+           title="Unverified intel matches are hidden. Click to include them.">
+          intel unverified hidden <strong>{{ unverified_count }}</strong>
         </a>
+        {% endif %}
       {% endif %}
     </div>
   </section>
